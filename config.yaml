@@ -1,0 +1,5 @@
+%YAML:1.0
+cache_root: ".cache"
+yolov5_path: "./YOLOv5"
+detector:
+  yolov5weights: "yolov5m.pt"

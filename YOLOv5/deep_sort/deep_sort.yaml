@@ -1,0 +1,9 @@
+DEEPSORT:
+  REID_CKPT: "deep_sort/deep/checkpoint/ckpt.t7"
+  MAX_DIST: 0.2  # cosine_distance > MAX_DIST are considered as unmatched
+  MIN_CONFIDENCE: 0.25  # same as detection
+  NMS_MAX_OVERLAP: 0.5   # same as detection
+  MAX_IOU_DISTANCE: 0.7
+  MAX_AGE: 70  # tracks exceed the age are considered left the scene
+  N_INIT: 3  # the number of frames that confirms the tracking
+  NN_BUDGET: 100

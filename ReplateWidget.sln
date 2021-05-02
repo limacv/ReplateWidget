@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.31205.134
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ReplateWidget", "ReplateWidget.vcxproj", "{FF67D8BA-735F-4818-826B-958378A822CF}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{FF67D8BA-735F-4818-826B-958378A822CF}.Debug|x64.ActiveCfg = Debug|x64
+		{FF67D8BA-735F-4818-826B-958378A822CF}.Debug|x64.Build.0 = Debug|x64
+		{FF67D8BA-735F-4818-826B-958378A822CF}.Release|x64.ActiveCfg = Release|x64
+		{FF67D8BA-735F-4818-826B-958378A822CF}.Release|x64.Build.0 = Release|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {28A289C9-03F4-4903-A976-A63098F71195}
+	EndGlobalSection
+EndGlobal
