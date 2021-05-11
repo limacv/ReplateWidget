@@ -1,7 +1,9 @@
 #pragma once
 
 #include <QWidget>
-#include "ui_Step2Widget.h"
+#include "MLStep2Data.h"
+
+namespace Ui { class Step2Widget; };
 
 class Step2Widget : public QWidget
 {
@@ -10,7 +12,13 @@ class Step2Widget : public QWidget
 public:
 	Step2Widget(QWidget *parent = Q_NULLPTR);
 	~Step2Widget();
+	void initState();
+
+private slots:
+	void runStitching();
 
 private:
-	Ui::Step2Widget ui;
+	Ui::Step2Widget *ui;
+
+	MLStep2Data data;
 };

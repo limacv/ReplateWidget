@@ -52,13 +52,16 @@
     <ClCompile Include="Step1Widget.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Step2Widget.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="MLStep1Data.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="MLStep2Data.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Step2Widget.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="StitcherCV2.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -104,6 +107,15 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="MLPythonWarpper.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MLStepDataBase.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="StitcherCV2.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="StitcherBase.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

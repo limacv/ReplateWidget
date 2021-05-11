@@ -121,8 +121,8 @@ def track(opt):
                         for j, output in enumerate(outputs):
                             bbox_left = output[0]
                             bbox_top = output[1]
-                            bbox_w = output[2]
-                            bbox_h = output[3]
+                            bbox_w = output[2] - output[0]
+                            bbox_h = output[3] - output[1]
                             identity = output[-1]
                             f.write(('%g ' * 7 + '\n') % (frame_idx, classid, identity, bbox_left,
                                                           bbox_top, bbox_w, bbox_h))  # label format

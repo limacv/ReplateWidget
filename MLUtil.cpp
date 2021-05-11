@@ -11,18 +11,13 @@ namespace MLUtil
         // TODO: add more format
         if (src.type() == CV_8UC3)
         {
-            if (format == QImage::Format_RGB888)
-            {
-                ret = QImage((const uchar*)src.data,
-                    src.cols, src.rows, src.step, format);
-            }
-            else if (format == QImage::Format_ARGB32_Premultiplied)
-            {
-                ret = QImage((const uchar*)src.data, src.cols, src.rows,
-                    src.step, QImage::Format_RGB888).convertToFormat(format);
-            }
-            else
-                qDebug() << "Undefined format conversion! " << src.type() << format;
+            ret = QImage((const uchar*)src.data, src.cols, src.rows, src.step, QImage::Format_RGB888)
+                .convertToFormat(format);
+        }
+        else if (src.type() == CV_8UC1)
+        {
+            ret = QImage((const uchar*)src.data, src.cols, src.rows, src.step, QImage::Format_Grayscale8)
+                .convertToFormat(format);
         }
         else if (src.type() == CV_8UC4)
         {

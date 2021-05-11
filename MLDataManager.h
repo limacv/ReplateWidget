@@ -3,6 +3,7 @@
 #include <qvector.h>
 #include <qstring.h>
 #include <opencv2/core.hpp>
+#include <array>
 
 class MLStep1Data;
 class MLStep2Data;
@@ -11,7 +12,7 @@ class MLDataManager
 {
 public:
 	MLDataManager()
-		:step1data(nullptr), step2data(nullptr) 
+		:step1datap(nullptr), step2datap(nullptr)
 	{}
 	~MLDataManager() {};
 	static MLDataManager& get()
@@ -22,6 +23,7 @@ public:
 
 	bool load_raw_video(const QString& path);
 	int get_framecount() const { return raw_frames.size(); }
+	bool is_prepared(int step) const;
 
 public:
 	cv::Size raw_frame_size;
@@ -29,7 +31,7 @@ public:
 	QVector<cv::Mat> raw_frames;
 	QVector<cv::Mat> stitched_frames;
 
-	MLStep1Data* step1data;
-	MLStep1Data* step2data;
+	MLStep1Data* step1datap;
+	MLStep2Data* step2datap;
 };
 
