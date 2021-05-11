@@ -15,7 +15,12 @@ public:
 private:
     void initConfig(const QString& cfgpath) const;
 
+    void setStepTo(int step);
+    void nextStep();
+    void lastStep();
+
 private:
     Ui::ReplateWidgetClass ui;
     QtStartSelector starter;
+    int current_step;
 };

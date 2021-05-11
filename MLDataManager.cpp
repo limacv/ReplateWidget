@@ -32,3 +32,10 @@ bool MLDataManager::load_raw_video(const QString& path)
 	MLConfigManager::get().update_videopath(path);
 	return true;
 }
+
+bool MLDataManager::is_prepared(int step) const
+{
+	if (step > 0 && step1datap == nullptr) return false;
+	if (step > 1 && step2datap == nullptr) return false;
+	return true;
+}

@@ -4,6 +4,31 @@
 #include <qmessagebox.h>
 #include <qtextstream.h>
 
+QVector<QString> MLStep1Data::classid2name = {
+	"person", "bicycle", "car", "motorcycle", "airplane", 
+	"bus", "train", "truck", "boat", "traffic light", 
+	"fire hydrant", "stop sign", "parking meter", "bench", "bird", 
+	"cat", "dog", "horse", "sheep", "cow", 
+	"elephant", "bear", "zebra", "giraffe", "backpack", 
+	"umbrella", "handbag", "tie", "suitcase", "frisbee", 
+	"skis", "snowboard", "sports ball", "kite", "baseball bat", 
+	"baseball glove", "skateboard", "surfboard", "tennis racket", "bottle", 
+	"wine glass", "cup", "fork", "knife", "spoon", 
+	"bowl", "banana", "apple", "sandwich", "orange", 
+	"broccoli", "carrot", "hot dog", "pizza", "donut", 
+	"cake", "chair", "couch", "potted plant", "bed", 
+	"dining table", "toilet", "tv", "laptop", "mouse", 
+	"remote", "keyboard", "cell phone", "microwave", "oven", 
+	"toaster", "sink", "refrigerator", "book", "clock", 
+	"vase", "scissors", "teddy bear", "hair drier", "toothbrush"
+};
+
+MLStep1Data::~MLStep1Data()
+{
+	for (auto& pbox : track_boxes_list)
+		delete pbox;
+}
+
 bool MLStep1Data::tryLoadDetectionFromFile()
 {
 	const auto& pathcfg = MLConfigManager::get();
@@ -74,12 +99,21 @@ bool MLStep1Data::tryLoadTrackFromFile()
 			width = lines.at(5).toInt();
 			height = lines.at(6).toInt();
 			
-			BBox box(frameidx, classid, instanceid, top, left, width, height, 1);
-			track_boxes_list.push_back(box);
-			BBox* pbox = &track_boxes_list[track_boxes_list.size() - 1];
+			BBox* pbox = new BBox(frameidx, classid, instanceid, top, left, width, height, 1);
+			track_boxes_list.push_back(pbox);
 			frameidx2boxes[frameidx].insert(ObjID(classid, instanceid), pbox);
 			objectid2boxes[ObjID(classid, instanceid)].push_back(pbox);
 		}
 	}
 	return true;
+}
+
+void MLStep1Data::reinitMasks(const cv::Size& sz, int framecount)
+{
+	masks.resize(framecount);
+	for (int i = 0; i < framecount; ++i)
+	{
+		masks[i].create(sz, CV_8UC1);
+		masks[i].setTo(255);
+	}
 }
