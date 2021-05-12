@@ -40,6 +40,9 @@ namespace Ssfm {
             vector<uchar>& status_mask, Features& features1, Matches& m01,
             const cv::Mat& mask1=cv::Mat());
 
+        void track(const cv::Mat& image0, const cv::Mat& image1, const vector<cv::Point2f>& keypoints0,
+            vector<uchar>& status_mask, vector<cv::Point2f>& keypoints1);
+
     private:
         const double min_dist; // minimum distance between existing points and detecting points
         const int xradius; // horizontal tracking radius

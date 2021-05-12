@@ -19,7 +19,7 @@ public:
 	StitcherCV2()
 		:try_cuda(false),
 		work_megapix(0.6),
-		seam_megapix(0.1),
+		seam_megapix(0.2),
 		compose_megapix(-1),
 		ba_conf_thresh(1.),
 		features_type("surf"),
@@ -37,9 +37,7 @@ public:
 		expos_comp_block_size(32),
 		seam_find_type("gc_color"),
 		blend_type(cv::detail::Blender::MULTI_BAND),
-		timelapse_type(cv::detail::Timelapser::AS_IS),
 		blend_strength(5),
-		timelapse(false),
 		range_width(-1),
 
 		work_scale(1),
@@ -108,8 +106,6 @@ private:
 	std::string seam_find_type;
 
 	int blend_type;
-	int timelapse_type;
 	float blend_strength;
-	bool timelapse;
 	int range_width;
 };

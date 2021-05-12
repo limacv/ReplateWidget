@@ -64,6 +64,9 @@
     <ClCompile Include="StitcherCV2.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="StitcherSsfm.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="QtStartSelector.h">
@@ -116,6 +119,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="StitcherBase.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="StitcherSsfm.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

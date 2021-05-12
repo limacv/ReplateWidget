@@ -15,4 +15,7 @@ namespace Ssfm {
 
     void visualize_fpts_match(const vector<cv::Point2f>& curkpts, const cv::Mat img,
         const vector<cv::Point2f>& prevkpts = {}, const Matches& matches = Matches());
+
+    void visualize_fpts_andid(const vector<cv::Point2f>& curkpts, const vector<int>& curpid, const cv::Mat img,
+        const string& windowname = "feature points");
 }

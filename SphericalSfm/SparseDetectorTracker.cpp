@@ -141,3 +141,32 @@ void SparseDetectorTracker::track(const cv::Mat& image0, const cv::Mat& image1, 
         }
     }
 }
+
+void SparseDetectorTracker::track(const cv::Mat& image0, const cv::Mat& image1, const vector<cv::Point2f>& keypoints0, 
+    vector<uchar>& status_mask, vector<cv::Point2f>& keypoints1)
+{
+    assert(status_mask.size() == keypoints0.size());
+    if (keypoints0.empty()) return;
+    const size_t npts0 = keypoints0.size();
+
+    vector<uchar> status;
+    vector<float> err;
+
+    cv::calcOpticalFlowPyrLK(image0, image1, keypoints0, keypoints1, status, err, cv::Size(xradius * 2 + 1, yradius * 2 + 1));
+
+    int outofboundarycount = 0;
+    for (int i = 0; i < npts0; i++)
+    {
+        if (keypoints1[i].x < xradius || keypoints1[i].y < yradius
+            || keypoints1[i].x > image0.cols - xradius || keypoints1[i].y > image0.rows - yradius)
+        {
+            outofboundarycount++;
+            status_mask[i] = 5; // arbitrary number
+        }
+        // if current status is unsucess, update status_mask
+        if (status[i] != 1)
+        {
+            status_mask[i] = status[i];
+        }
+    }
+}

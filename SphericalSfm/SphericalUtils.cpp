@@ -239,4 +239,21 @@ namespace Ssfm {
         cv::imshow("feature points", display);
         cv::waitKey(1);
     }
+
+    void visualize_fpts_andid(const vector<cv::Point2f>& curkpts, const vector<int>& curpid, const cv::Mat img,
+        const string& windowname)
+    {
+        return;
+        cv::Mat display = img.clone();
+        if (display.channels() == 1)
+            cv::cvtColor(display, display, cv::COLOR_GRAY2BGR);
+        auto idt = curpid.begin();
+        for (auto it = curkpts.begin(); it != curkpts.end(); ++it, ++idt)
+        {
+            cv::Scalar color((*idt) * 255 / 500, ((*idt) + 100) * 255 / 500, ((*idt) + 200) * 255 / 500);
+            cv::circle(display, *it, 3, color, 2);
+        }
+        cv::imshow(windowname, display);
+        cv::waitKey(1);
+    }
 }

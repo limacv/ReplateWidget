@@ -586,6 +586,8 @@ namespace Ssfm {
 	{
 		//FILE* f = fopen(path.c_str(), "w");
 		auto f = ofstream(path);
+		if (!f.is_open())
+			std::cout << "cannot open" << path << endl;
 		for (int i = 0; i < numPoints; i++)
 		{
 			if (!points.exists(i)) continue;
@@ -596,8 +598,9 @@ namespace Ssfm {
 			if (distance == 0) continue;
 			else if (distance > 100)
 				X /= (distance / 100.);
-			f << "v " << X(0) << X(1) << X(2) << endl;
+			f << "v " << X(0) << " " << X(1) << " " << X(2) << endl;
 		}
+		f.close();
 	}
 
 	void SfM::WriteCameraCentersOBJ(const std::string& path)
@@ -608,8 +611,9 @@ namespace Ssfm {
 		{
 			Pose pose = GetPose(i);
 			Eigen::Vector3d center = pose.getCenter();
-			f << "v " << center(0) << center(1) << center(2) << endl;
+			f << "v " << center(0) << " " << center(1) << " " << center(2) << endl;
 			//fprintf(f, "v %0.15lf %0.15lf %0.15lf\n", center(0), center(1), center(2));
 		}
+		f.close();
 	}
 }

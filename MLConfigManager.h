@@ -27,7 +27,15 @@ public:
 	void initFromFile(const QString& cfgpath = "./config.yaml");
 
 public:
+	// Step1
 	QString get_cache_path() const { return QDir(cache_root).filePath(basename); }
+
+	QString get_yolov5_path() const { return yolov5_path; }
+	QString get_yolov5_weight() const { return yolov5_weight; }
+	QString get_python_path() const { return python_path; }
+	QString get_raw_video_path() const { return raw_video_path; }
+	QString get_raw_video_base() const { return basename; }
+
 	QString get_detect_result_cache(int frameidx) const 
 	{ 
 		return QString("%1%2%3_%4.txt").arg(
@@ -43,11 +51,15 @@ public:
 			QDir::separator()
 		);
 	}
-	QString get_yolov5_path() const { return yolov5_path; }
-	QString get_yolov5_weight() const { return yolov5_weight; }
-	QString get_python_path() const { return python_path; }
-	QString get_raw_video_path() const { return raw_video_path; }
-	QString get_raw_video_base() const { return basename; }
+
+	QString get_stitch_cache() const 
+	{ 
+		return QString("%1%2stitch%3").arg(
+			get_cache_path(),
+			QDir::separator(),
+			QDir::separator()
+		);
+	}
 private:
 	QString cache_root;
 	QString yolov5_path;

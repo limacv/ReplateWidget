@@ -113,6 +113,7 @@
     <ClCompile Include="QtStartSelector.cpp" />
     <ClCompile Include="Step1Widget.cpp" />
     <ClCompile Include="Step2Widget.cpp" />
+    <ClCompile Include="StitcherSsfm.cpp" />
     <QtRcc Include="ReplateWidget.qrc" />
     <QtUic Include="QtStartSelector.ui" />
     <QtMoc Include="ReplateWidget.h" />
@@ -135,6 +136,7 @@
     <ClInclude Include="StitcherBase.h" />
     <ClInclude Include="StitcherCV2.h" />
     <ClInclude Include="MLUtil.h" />
+    <ClInclude Include="StitcherSsfm.h" />
     <QtMoc Include="Step2Widget.h" />
     <QtMoc Include="Step1Widget.h" />
   </ItemGroup>

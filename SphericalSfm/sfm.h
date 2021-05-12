@@ -228,6 +228,16 @@ namespace Ssfm {
         void GetAllPoints(std::vector<Eigen::Vector3d>& allpoints, std::vector<int>& allpointids);
         void GetAllPointsHomo(std::vector<Eigen::Vector4d>& allpoints, std::vector<int>& allpointids);
     public:
+        SfM()
+            : intrinsics(0, 0, 0),
+            numCameras(0),
+            numPoints(0),
+            nextCamera(-1),
+            nextPoint(0),
+            optimizeFocal(false),
+            notranslation(false)
+        {}
+
         SfM(const Intrinsics& _intrinsics, bool optimizeFocal, bool notranslation)
             : intrinsics(_intrinsics),
             numCameras(0),

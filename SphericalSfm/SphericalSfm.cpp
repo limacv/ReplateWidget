@@ -1,20 +1,344 @@
 #include "SphericalSfm.h"
+#include "SphericalSfm.h"
 #include "EstimatorSpherical.h"
 #include "SfmUtils.hpp"
 #include "SphericalUtils.h"
 #include "SparseDetectorTracker.h"
 #include "so3.hpp"
 #include "rotation_averaging.h"
-#include "sfm.h"
 #include <string>
 #include <iostream>
 #include <opencv2/core.hpp>
 #include <opencv2/imgproc.hpp>
+#include <opencv2/core/eigen.hpp>
+#include <ceres/ceres.h>
 
 
 using namespace Ssfm;
 using namespace cv;
 using namespace cv::detail;
+
+CameraParams pose2camparam(const Pose& pose, const Intrinsics& intrin)
+{
+	CameraParams cam;
+	cv::eigen2cv(pose.t, cam.t);
+	cv::eigen2cv(static_cast<Eigen::Matrix3d>(so3exp(pose.r).transpose()), cam.R);
+	cam.t.convertTo(cam.t, CV_32FC1);
+	cam.R.convertTo(cam.R, CV_32FC1);
+	cam.aspect = 1;
+	cam.focal = intrin.focal;
+	cam.ppx = intrin.centerx;
+	cam.ppy = intrin.centery;
+	return cam;
+}
+
+void Ssfm::SphericalSfm::track_all_frames(const vector<cv::Mat>& frames, const vector<cv::Mat>& masks, SparseModel& outmodel)
+{
+	const Eigen::Matrix3d Kinv = model3d.GetIntrinsics().getKinv();
+
+	cv::Mat cameraIntrinsic;
+	cv::eigen2cv(model3d.GetIntrinsics().getK(), cameraIntrinsic);
+	cameraIntrinsic.convertTo(cameraIntrinsic, CV_32F);\
+	const int totalframecount = frames.size();
+
+	outmodel.points2d.resize(totalframecount);
+	outmodel.pointsid.resize(totalframecount);
+	outmodel.poses.resize(totalframecount);
+
+	cv::Mat image = frames[0].clone();
+	if (image.channels() == 3) cv::cvtColor(image, image, cv::COLOR_BGR2GRAY);
+
+	int xradius, yradius; yradius = xradius = trackwin;
+	SparseDetectorTracker detectortracker;
+
+	int camera0 = model3d.GetCameraIdxfromFrameIdx(0);
+	vector<cv::Point2f> keypoints0;
+	vector<int> ptids0;
+	model3d.GetAllKpointsofCam(camera0, keypoints0, ptids0);
+
+	if (verbose)
+		visualize_fpts_andid(keypoints0, ptids0, image);
+
+	cout << keypoints0.size() << " features in image 0\n";
+
+	int bufferBeginIdx = 0;
+	vector<cv::Mat> framesBuffer; // store images from image0 to image1
+	vector<vector<cv::Point2f>> kpointsBuffer; // store keypoints list from image0 to image1
+	vector<vector<int>> kpidsBuffer; // store point id from image0 to image1
+
+	framesBuffer.push_back(image.clone());
+	kpointsBuffer.push_back(keypoints0);
+	kpidsBuffer.push_back(ptids0);
+	
+	for (int frame_idx = 1; frame_idx < totalframecount; ++frame_idx)
+	{
+		image = frames[frame_idx].clone();
+		if (image.channels() == 3) cv::cvtColor(image, image, cv::COLOR_BGR2GRAY);
+
+		vector<cv::Point2f> keypoints1;
+		auto& lastframe = framesBuffer[framesBuffer.size() - 1];
+		auto& lastkeypoint = kpointsBuffer[kpointsBuffer.size() - 1];
+		auto& lastkptid = kpidsBuffer[kpidsBuffer.size() - 1];
+		vector<uchar> cur_status(lastkeypoint.size(), 1);
+		detectortracker.track(lastframe, image, lastkeypoint, cur_status, keypoints1);
+
+		// the status should all be successful
+		int ninliers = 0;
+		vector<cv::Point2f> tracked_kpoints; tracked_kpoints.reserve(keypoints1.size());
+		vector<int> tracked_kpointsid; tracked_kpointsid.reserve(keypoints1.size());
+		for (int i = 0; i < cur_status.size(); ++i)
+		{
+			if (cur_status[i] == 1)
+			{
+				ninliers++;
+				tracked_kpoints.push_back(keypoints1[i]);
+				tracked_kpointsid.push_back(lastkptid[i]); // same idx as ptids0
+			}
+		}
+		cout << "tracked " << ninliers << " features in image " << frame_idx << "\n";
+		assert(keypoints1.size() == tracked_kpoints.size());
+		if (verbose)
+			visualize_fpts_andid(tracked_kpoints, tracked_kpointsid, image);
+
+		framesBuffer.push_back(image.clone());
+		kpointsBuffer.push_back(tracked_kpoints);
+		kpidsBuffer.push_back(tracked_kpointsid);
+		if (model3d.IsKeyframe(frame_idx))
+		{
+			// features1 is tracked kpoints while newfeatures1 is the previously track+detect kpoints
+			vector<cv::Point2f> newkeypoints;
+			vector<int> newkpointsid;
+			const int buffersize = framesBuffer.size();
+
+			const int camera1 = model3d.GetCameraIdxfromFrameIdx(frame_idx);
+			model3d.GetAllKpointsofCam(camera1, newkeypoints, newkpointsid);
+			kpointsBuffer[buffersize - 1] = newkeypoints;
+			kpidsBuffer[buffersize - 1] = newkpointsid;
+
+			//find for extra keypoints and test whether the points matches
+			vector<cv::Point2f> extrakeypoints;
+			vector<int> extraptids;
+			{
+				std::unordered_map<int, cv::Point2f> kptid2pos;
+				for (int i = 0; i < tracked_kpoints.size(); ++i)
+					kptid2pos[tracked_kpointsid[i]] = tracked_kpoints[i];
+				for (int i = 0; i < newkeypoints.size(); ++i)
+				{
+					auto posit = kptid2pos.find(newkpointsid[i]);
+					if (posit == kptid2pos.end()) // not find, means it's new
+					{
+						extrakeypoints.push_back(newkeypoints[i]);
+						extraptids.push_back(newkpointsid[i]);
+					}
+					else
+					{
+						auto errordis = cv::norm(posit->second - newkeypoints[i]);
+						if (errordis > 0.0001) // tracking failed
+							cout << "tracking failed for "
+							<< "id " << posit->first << ", pos " << posit->second
+							<< "newid " << newkpointsid[i] << ", pos " << newkeypoints[i]
+							<< "err " << errordis << endl;
+					}
+				}
+			}
+
+			// track backwards
+			std::vector<uchar> backwards_status(extrakeypoints.size(), 1);
+			for (int bufferidx = buffersize - 1; bufferidx > 0; --bufferidx)
+			{
+				std::vector<cv::Point2f> curkpts;
+				detectortracker.track(framesBuffer[bufferidx], framesBuffer[bufferidx - 1], extrakeypoints, backwards_status, curkpts);
+				for (int i = 0; i < curkpts.size(); ++i)
+				{
+					if (backwards_status[i] == 1)
+					{
+						kpointsBuffer[bufferidx - 1].push_back(curkpts[i]);
+						kpidsBuffer[bufferidx - 1].push_back(extraptids[i]);
+					}
+				}
+				if (verbose)
+					visualize_fpts_andid(kpointsBuffer[bufferidx - 1], kpidsBuffer[bufferidx - 1], framesBuffer[bufferidx - 1], "backwards");
+				extrakeypoints = curkpts;
+			}
+			//cv::destroyWindow("backwards");
+			// apply pose refine (rotation averaging)
+			vector<Eigen::Vector3d> rotsBuffer; rotsBuffer.reserve(buffersize);
+			vector<Eigen::Vector3d> transBuffer; transBuffer.reserve(buffersize);
+			vector<double> ave_reproject_errors; ave_reproject_errors.reserve(buffersize);
+			{
+				cout << "computing pose for non-keyframe" << endl;
+				/********
+				* Scheme1: interpolate the rotation using rotation_averaging algorithm + linear interpolate translation
+				******/
+				auto pose0 = model3d.GetPose(camera0),
+					pose1 = model3d.GetPose(camera1);
+				//rotsBuffer.insert(rotsBuffer.begin(), cache.allrotation.begin() + bufferBeginIdx, cache.allrotation.begin() + bufferBeginIdx + buffersize)
+				// Todo: this function has some bug
+				//optimize_rotations_my(rotsBuffer, pose0.r, pose1.r);
+
+				/********
+				* Scheme2: linear interpolate the rotation and translation
+				******/
+				//Eigen::Vector3d stepr = (pose1.r - pose0.r) / (buffersize - 1);
+				//for (int i = 0; i < buffersize; ++i)
+				//    rotsBuffer[i] = (pose0.r + i * stepr);
+
+				// linear interpolate the translation
+				//Eigen::Vector3d step = (pose1.t - pose0.t) / (buffersize - 1);
+				//for (int i = 0; i < buffersize; ++i)
+				//    transBuffer.push_back(pose0.t + i * step);
+
+				/********
+				* Scheme3: minimize the reprojection error
+				******/
+				// initialize with first pose
+				rotsBuffer.resize(buffersize / 2, pose0.r);
+				transBuffer.resize(buffersize / 2, pose0.t);
+				rotsBuffer.resize(buffersize, pose1.r);
+				transBuffer.resize(buffersize, pose1.t);
+				for (int bufferi = 0; bufferi < buffersize - 1; ++bufferi)
+				{
+					const auto& pt2ds = kpointsBuffer[bufferi];
+					const auto& pt3dids = kpidsBuffer[bufferi];
+					const double focal = model3d.GetIntrinsics().focal,
+						centerx = model3d.GetIntrinsics().centerx,
+						centery = model3d.GetIntrinsics().centery;
+					std::vector<Pointhomo> pt3dpos; pt3dpos.reserve(pt3dids.size());
+					for (auto& id : pt3dids)
+						pt3dpos.push_back(model3d.GetPoint(id));
+					ceres::Problem problem;
+					ceres::LossFunction* lossfunc = new ceres::SoftLOneLoss(2.);
+					for (int pti = 0; pti < pt2ds.size(); ++pti)
+					{
+						if (pt3dpos[pti] == Pointhomo(0, 0, 0, 1) || pt3dpos[pti] == Pointhomo(0, 0, 0, 0))
+							continue;
+						ReprojectionErrorhomo* reproj_error = new ReprojectionErrorhomo(focal, pt2ds[pti].x - centerx, pt2ds[pti].y - centery);
+						ceres::CostFunction* costfunc = new ceres::AutoDiffCostFunction<ReprojectionErrorhomo, 2, 3, 3, 4>(reproj_error);
+						problem.AddResidualBlock(costfunc, lossfunc, transBuffer[bufferi].data(), rotsBuffer[bufferi].data(), pt3dpos[pti].data());
+						problem.SetParameterBlockConstant(pt3dpos[pti].data());
+					}
+					ceres::Solver::Options solveropt;
+					solveropt.max_num_iterations = 500;
+					solveropt.minimizer_type = ceres::TRUST_REGION;
+					solveropt.logging_type = ceres::LoggingType::SILENT;
+					//solveropt.minimizer_progress_to_stdout = true;
+					solveropt.num_threads = 12;
+					ceres::Solver::Summary summary;
+					ceres::Solve(solveropt, &problem, &summary);
+					//std::cout << summary.FullReport() << std::endl;
+					// get reproject loss after optimization
+					double finalcost = summary.final_cost * 2;
+					finalcost /= pt2ds.size();
+					finalcost = ceres::sqrt(finalcost);
+					ave_reproject_errors.push_back(finalcost);
+					if (summary.termination_type == ceres::FAILURE)
+					{
+						std::cout << "error: ceres failed when solve pose for frame " << bufferi + bufferBeginIdx;
+						throw runtime_error("ceres error");
+					}
+				}
+			}
+			camera0 = camera1;
+
+			// save the buffer to the file 
+			const cv::Scalar red(0, 0, 255), darkred(0, 0, 100),
+				blue(255, 0, 0), darkblue(100, 0, 0),
+				green(0, 255, 0), darkgreen(0, 255, 0);
+			for (int i = 0; i < buffersize - 1; ++i)
+			{
+				// key points position and global ids
+				auto& pt2ds = kpointsBuffer[i];
+				auto& pt3dids = kpidsBuffer[i];
+				Pose curpose(transBuffer[i], rotsBuffer[i]);
+				int frameindex = bufferBeginIdx + i;
+
+				std::vector<bool> inlier(pt2ds.size(), true); int inliernum = pt2ds.size();
+				// detect inlier based on reproject error and visualize
+				{
+					const auto& thisintrinsic = model3d.GetIntrinsics().getK();
+					cv::Mat display = framesBuffer[i].clone();
+					cv::cvtColor(display, display, cv::COLOR_GRAY2BGR);
+					auto it1 = pt2ds.begin(); auto it2 = pt3dids.begin();
+					for (; it1 != pt2ds.end(); ++it1, ++it2)
+					{
+						const int index = std::distance(pt2ds.begin(), it1);
+
+						auto numobs = model3d.GetNumObservationOfPoint(*it2);
+						// compute reproject error
+						Pointhomo thispt3d = model3d.GetPoint(*it2);
+						if (thispt3d == Pointhomo(0, 0, 0, 1) || thispt3d == Pointhomo(0, 0, 0, 0)) // if not exist or not optimized
+						{
+							inlier[index] = false; inliernum--;
+							continue;
+						}
+
+						thispt3d = curpose.P * thispt3d;
+						auto depth = thispt3d[2] / thispt3d[3];
+						Point thispt2d_proj = thisintrinsic * thispt3d.head(3);
+						cv::Point2f pt2d_proj(thispt2d_proj[0] / thispt2d_proj[2], thispt2d_proj[1] / thispt2d_proj[2]);
+
+						auto reprojecterror = cv::norm(*it1 - pt2d_proj);
+
+						// when depth < 1. the point invisiable
+						// when projecterror > threshold, the point is invalid
+						cv::circle(display, *it1, 2 /*numobs*/, green);
+						cv::line(display, *it1, pt2d_proj, blue);
+						if (reprojecterror > ave_reproject_errors[i] + 5 || depth < 1.)
+						{
+							inlier[index] = false;
+							inliernum--;
+							cv::circle(display, pt2d_proj, 6, darkred, 2);
+						}
+						else
+							cv::circle(display, pt2d_proj, 2, red);
+					}
+				}
+				std::vector<cv::Point2f> pt2ds_inlier; pt2ds_inlier.reserve(inliernum);
+				std::vector<int> pt3dids_inlier; pt3dids_inlier.reserve(inliernum);
+				for (int pti = 0; pti < inlier.size(); ++pti)
+				{
+					if (inlier[pti])
+					{
+						pt2ds_inlier.push_back(pt2ds[pti]);
+						pt3dids_inlier.push_back(pt3dids[pti]);
+					}
+				}
+				std::cout << "frame " << frameindex << " finally got " << inliernum << " inlier points" << std::endl;
+
+				outmodel.points2d[frameindex] = pt2ds_inlier;
+				outmodel.pointsid[frameindex] = pt3dids_inlier;
+				outmodel.poses[frameindex] = pose2camparam(curpose, model3d.GetIntrinsics());
+			}
+
+			// update all the information for next frame
+			kpointsBuffer[0] = kpointsBuffer[buffersize - 1]; kpointsBuffer.resize(1);
+			kpidsBuffer[0] = kpidsBuffer[buffersize - 1]; kpidsBuffer.resize(1);
+			framesBuffer[0] = framesBuffer[buffersize - 1]; framesBuffer.resize(1);
+			bufferBeginIdx = frame_idx;
+			//last_status.resize(0);
+			//last_status.resize(kpointsBuffer[0].size(), 1);
+
+			if (frame_idx == totalframecount - 1) // lastframe
+			{
+				outmodel.points2d[frame_idx] = kpointsBuffer[0];
+				outmodel.pointsid[frame_idx] = kpidsBuffer[0];
+				outmodel.poses[frame_idx] = pose2camparam(model3d.GetPose(camera1), model3d.GetIntrinsics());
+			}
+		}
+	}
+
+	// store global information
+	vector<Pointhomo> allpt3dpos; vector<int> allpt3did;
+	model3d.GetAllPointsHomo(allpt3dpos, allpt3did);
+	const int allptnum = allpt3dpos.size();
+
+	for (int i = 0; i < allptnum; ++i)
+	{
+		auto& pt3d = allpt3dpos[i];
+		outmodel.points3d[allpt3did[i]] = Point3f(pt3d[0] / pt3d[3], pt3d[1] / pt3d[3], pt3d[2] / pt3d[3]);
+	}
+
+}
 
 /// <summary>
 /// detect, track and compute feature point and ORB features
@@ -373,7 +697,7 @@ void SphericalSfm::refine_rotations()
 /// </summary>
 void SphericalSfm::bundle_adjustment()
 {
-	SfM sfm(intrinsic, optimizeFocal, notranslation);
+	model3d = SfM(intrinsic, optimizeFocal, notranslation);
 	// buliding tracks
 	vector< vector<int> > tracks(keyframes.size());
 	for (int i = 0; i < keyframes.size(); i++)
@@ -395,12 +719,12 @@ void SphericalSfm::bundle_adjustment()
 			curpose = Pose(Eigen::Vector3d(0, 0, 0), so3ln(rotations[index]));
 		else
 			curpose = Pose(Eigen::Vector3d(0, 0, -1), so3ln(rotations[index]));
-		int camera = sfm.AddCamera(curpose, keyframes[index].index);
-		sfm.SetRotationFixed(camera, (index == 0));
+		int camera = model3d.AddCamera(curpose, keyframes[index].index);
+		model3d.SetRotationFixed(camera, (index == 0));
 		if (softspherical)
-			sfm.SetTranslationFixed(camera, (index == 0)/*true*/); // Soft spherical constrain 
+			model3d.SetTranslationFixed(camera, (index == 0)/*true*/); // Soft spherical constrain 
 		else
-			sfm.SetTranslationFixed(camera, true);
+			model3d.SetTranslationFixed(camera, true);
 	}
 
 	cout << "adding tracks\n";
@@ -435,41 +759,41 @@ void SphericalSfm::bundle_adjustment()
 
 			//Observation obs0( feature0.x-sfm.GetIntrinsics().centerx, feature0.y-sfm.GetIntrinsics().centery );
 			//Observation obs1( feature1.x-sfm.GetIntrinsics().centerx, feature1.y-sfm.GetIntrinsics().centery );
-			Observation obs0(pt0.x - sfm.GetIntrinsics().centerx, pt0.y - sfm.GetIntrinsics().centery);
-			Observation obs1(pt1.x - sfm.GetIntrinsics().centerx, pt1.y - sfm.GetIntrinsics().centery);
+			Observation obs0(pt0.x - model3d.GetIntrinsics().centerx, pt0.y - model3d.GetIntrinsics().centery);
+			Observation obs1(pt1.x - model3d.GetIntrinsics().centerx, pt1.y - model3d.GetIntrinsics().centery);
 
 			// this case means the previous keypoints is tracked (have an id),
 			// so add the current observation and copy the id
 			if (track0 != -1 && track1 == -1)
 			{
 				track1 = track0;
-				sfm.AddObservation(index1, track0, obs1);
+				model3d.AddObservation(index1, track0, obs1);
 			}
 			// this case means the previous keypoints is tracked
 			// usually happened when there is a loop
 			else if (track0 == -1 && track1 != -1)
 			{
 				track0 = track1;
-				sfm.AddObservation(index0, track1, obs0);
+				model3d.AddObservation(index0, track1, obs0);
 			}
 			// this case, the point is newly discovered, so should first assign a global ID
 			// and then add two observations
 			else if (track0 == -1 && track1 == -1)
 			{
 				//track0 = track1 = sfm.AddPoint( Eigen::Vector3d::Zero(), feature0.descriptor );
-				track0 = track1 = sfm.AddPoint(Eigen::Vector4d::Zero(), features0.descs.row(it->first));
+				track0 = track1 = model3d.AddPoint(Eigen::Vector4d::Zero(), features0.descs.row(it->first));
 
-				sfm.SetPointFixed(track0, false);
+				model3d.SetPointFixed(track0, false);
 
-				sfm.AddObservation(index0, track0, obs0);
-				sfm.AddObservation(index1, track1, obs1);
+				model3d.AddObservation(index0, track0, obs0);
+				model3d.AddObservation(index1, track1, obs1);
 			}
 			// this case, the two point is all ready discovered, but was recognized as two points
 			// this usually happened when there is a loop
 			else if (track0 != -1 && track1 != -1 && (track0 != track1))
 			{
 				// track1 will be removed
-				sfm.MergePoint(track0, track1);
+				model3d.MergePoint(track0, track1);
 
 				// update all features with track1 and set to track0
 				for (int i = 0; i < tracks.size(); i++)
@@ -484,10 +808,10 @@ void SphericalSfm::bundle_adjustment()
 	}
 
 	cout << "retriangulating...\n";
-	auto wrongpoints = sfm.Retriangulate();
+	auto wrongpoints = model3d.Retriangulate();
 
 	// Bundle Adjustment
-	sfm.Optimize();
+	model3d.Optimize();
 	
 }
 

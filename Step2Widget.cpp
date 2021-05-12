@@ -4,6 +4,7 @@
 #include "MLDataManager.h"
 #include "SphericalSfm/SphericalSfm.h"
 #include "StitcherCV2.h"
+#include "StitcherSsfm.h"
 #include "ui_Step2Widget.h"
 
 Step2Widget::Step2Widget(QWidget *parent)
@@ -26,11 +27,14 @@ void Step2Widget::initState()
 void Step2Widget::runStitching()
 {
 	const cv::Size& framesz = MLDataManager::get().raw_frame_size;
-	const auto rawframes = MLDataManager::get().raw_frames.mid(20, 5).toStdVector();
-	const auto rawmasks = MLDataManager::get().step1datap->masks.mid(20, 5).toStdVector();
+	const auto rawframes = MLDataManager::get().raw_frames.toStdVector();
+	const auto rawmasks = MLDataManager::get().step1datap->masks.toStdVector();
 
 	std::unique_ptr<StitcherBase> st;
-	st = std::make_unique<StitcherCV2>();
+	if (true)
+		st = std::make_unique<StitcherSsfm>();
+	else
+		st = std::make_unique<StitcherCV2>();
 
 	st->stitch(rawframes, rawmasks);
 	st->get_warped_frames(data.warped_frames, data.warped_mask, data.rois);
