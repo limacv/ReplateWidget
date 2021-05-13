@@ -212,10 +212,10 @@ int StitcherSsfm::warp_and_composite(const std::vector<cv::Mat>& frames, const s
         images_warped[img_idx] = img_warped;
         masks_warped[img_idx] = mask_warped;
 
-        //dilate(seammasks_warp[img_idx], dilated_mask, Mat());
-        //resize(dilated_mask, seam_mask, mask_warped.size(), 0, 0, INTER_LINEAR_EXACT);
-        resize(seammasks_warp[img_idx], seam_mask, mask_warped.size(), 0, 0, INTER_LINEAR_EXACT);
-        bitwise_and(seam_mask, mask_warped, seam_mask);
+        dilate(seammasks_warp[img_idx], dilated_mask, Mat());
+        resize(dilated_mask, seam_mask, mask_warped.size(), 0, 0, INTER_LINEAR_EXACT);
+        //resize(seammasks_warp[img_idx], seam_mask, mask_warped.size(), 0, 0, INTER_LINEAR_EXACT);
+        //bitwise_and(seam_mask, mask_warped, seam_mask);
         if (!blender)
         {
             blender = Blender::createDefault(blend_type);

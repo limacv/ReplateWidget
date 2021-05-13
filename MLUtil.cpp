@@ -21,21 +21,8 @@ namespace MLUtil
         }
         else if (src.type() == CV_8UC4)
         {
-            if (format == QImage::Format_ARGB32_Premultiplied)
-            {
-                //            cv::Mat argb(src.rows, src.cols, CV_8UC4);
-                //            int from_to[] = {0,1, 1,2, 2,3, 3,0};
-                //            cv::mixChannels( &src, 1, &argb, 1, from_to, 4 );
-                //            ret = QImage((const uchar*) argb.data, argb.cols, argb.rows,
-                //                         QImage::Format_ARGB32_Premultiplied).copy();
-                            // TODO: dont' know why it has to change format
-                cv::Mat bgr;
-                cv::cvtColor(src, bgr, cv::COLOR_RGBA2BGRA);
-                ret = QImage((const uchar*)bgr.data, bgr.cols, bgr.rows, bgr.step,
-                    QImage::Format_ARGB32).convertToFormat(format);
-            }
-            else
-                qDebug() << "Undefined format conversion! " << src.type() << format;
+            ret = QImage((const uchar*)src.data, src.cols, src.rows, src.step, QImage::Format_RGBA8888)
+                .convertToFormat(format);
         }
         else
             qDebug() << "Undefined format conversion! " << src.type() << format;

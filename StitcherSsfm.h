@@ -20,7 +20,7 @@ public:
 	StitcherSsfm()
 		:warp_type("cylindrical"),
 		seam_find_type("gc_color"),
-		seam_scale(0.2),
+		seam_scale(0.1),
 		expos_comp_type(cv::detail::ExposureCompensator::GAIN_BLOCKS),
 		expos_comp_nr_feeds(1),
 		expos_comp_nr_filtering(2),
@@ -37,14 +37,17 @@ public:
 		return 0;
 	}
 
-	virtual bool get_warped_frames(std::vector<cv::Mat>& frames, std::vector<cv::Mat>& masks, std::vector<cv::Rect>& windows)
+	virtual bool get_warped_frames(std::vector<cv::Mat>& frames, std::vector<cv::Rect>& windows)
 	{
-		frames = images_warped;
-		masks = masks_warped;
 		const int num_img = images_warped.size();
+		frames.resize(num_img);
 		windows.resize(num_img);
 		for (int i = 0; i < images_warped.size(); ++i)
+		{
+			cv::merge(std::vector<cv::Mat>({ images_warped[i], masks_warped[i] }), frames[i]);
 			windows[i] = cv::Rect(corners[i], sizes[i]);
+		}
+		return true;
 	}
 	virtual cv::Mat get_stitched_image() { return stitch_result; }
 

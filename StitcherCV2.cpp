@@ -16,7 +16,7 @@ using namespace std;
 using namespace cv;
 using namespace cv::detail;
 
-bool StitcherCV2::get_warped_frames(std::vector<cv::Mat>& frames, std::vector<cv::Mat>& masks, std::vector<cv::Rect>& windows)
+bool StitcherCV2::get_warped_frames(std::vector<cv::Mat>& frames, std::vector<cv::Rect>& windows)
 {
     if (images_warped.empty()
         || images_warped.size() != masks_warped.size()
@@ -27,12 +27,10 @@ bool StitcherCV2::get_warped_frames(std::vector<cv::Mat>& frames, std::vector<cv
     {
         const int num_img = images_warped.size();
         frames.resize(num_img); 
-        masks.resize(num_img); 
         windows.resize(num_img);
         for (int i = 0; i < images_warped.size(); ++i)
         {
-            frames[i] = images_warped[i].getMat(cv::ACCESS_RW);
-            masks_warped[i].getMat(cv::ACCESS_RW);
+            cv::merge(vector<UMat>({ images_warped[i], masks_warped[i] }), frames[i]);
             windows[i] = cv::Rect(corners[i], sizes[i]);
         }
     }

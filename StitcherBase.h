@@ -12,7 +12,6 @@ public:
 	virtual int stitch(const std::vector<cv::Mat>& frames, const std::vector<cv::Mat>& masks) = 0;
 	virtual bool get_warped_frames(
 		std::vector<cv::Mat>& frames_warpped,
-		std::vector<cv::Mat>& masks_warpped,
 		std::vector<cv::Rect>& windows
 		) = 0;
 	virtual cv::Mat get_stitched_image() = 0;

@@ -55,7 +55,7 @@ public:
 		return 0;
 	}
 	
-	virtual bool get_warped_frames(std::vector<cv::Mat>& frames, std::vector<cv::Mat>& masks, std::vector<cv::Rect>& windows);
+	virtual bool get_warped_frames(std::vector<cv::Mat>& frames, std::vector<cv::Rect>& windows);
 	virtual cv::Mat get_stitched_image() { return stitch_result; }
 
 private:

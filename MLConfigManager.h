@@ -36,30 +36,14 @@ public:
 	QString get_raw_video_path() const { return raw_video_path; }
 	QString get_raw_video_base() const { return basename; }
 
-	QString get_detect_result_cache(int frameidx) const 
-	{ 
-		return QString("%1%2%3_%4.txt").arg(
-			get_cache_path(), 
-			QDir::separator(), 
-			get_raw_video_base(), 
-			QString::number(frameidx)); 
-	}
-	QString get_track_result_cache() const
-	{
-		return QString("%1%2tracking.txt").arg(
-			get_cache_path(),
-			QDir::separator()
-		);
-	}
+	QString get_detect_result_cache(int frameidx) const { return QDir(get_cache_path()).filePath(QString("%1_%2.txt").arg(get_raw_video_base(), QString::number(frameidx))); }
+	QString get_track_result_cache() const { return QDir(get_cache_path()).filePath("tracking.txt"); }
 
-	QString get_stitch_cache() const 
-	{ 
-		return QString("%1%2stitch%3").arg(
-			get_cache_path(),
-			QDir::separator(),
-			QDir::separator()
-		);
-	}
+	QString get_stitch_cache() const { return QDir(get_cache_path()).filePath("stitch"); }
+	QString get_stitch_aligned_path(int frameidx) const { return QDir(get_stitch_cache()).filePath(QString("frame_%1.png").arg(QString::number(frameidx))); }
+	QString get_stitch_background_path() const { return QDir(get_stitch_cache()).filePath("background.png"); }
+	QString get_stitch_meta_path() const { return QDir(get_stitch_cache()).filePath("meta.txt"); }
+
 private:
 	QString cache_root;
 	QString yolov5_path;

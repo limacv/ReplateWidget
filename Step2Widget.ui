@@ -72,7 +72,7 @@
     </layout>
    </widget>
   </widget>
-  <widget class="QWidget" name="">
+  <widget class="QWidget" name="layoutWidget">
    <property name="geometry">
     <rect>
      <x>150</x>
@@ -83,7 +83,7 @@
    </property>
    <layout class="QVBoxLayout" name="verticalLayout">
     <item>
-     <widget class="QWidget" name="imageWidget" native="true"/>
+     <widget class="Step2RenderArea" name="imageWidget" native="true"/>
     </item>
     <item>
      <widget class="QSlider" name="frameSlider">
@@ -96,6 +96,14 @@
   </widget>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
+ <customwidgets>
+  <customwidget>
+   <class>Step2RenderArea</class>
+   <extends>QWidget</extends>
+   <header location="global">Step2Widget.h</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>
