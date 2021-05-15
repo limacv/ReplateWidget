@@ -52,10 +52,10 @@
     <ClCompile Include="Step1Widget.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="MLStep1Data.cpp">
+    <ClCompile Include="MLCacheTrajectories.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="MLStep2Data.cpp">
+    <ClCompile Include="MLCacheStitching.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Step2Widget.cpp">
@@ -67,6 +67,12 @@
     <ClCompile Include="StitcherSsfm.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Step3Widget.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Step4Widget.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="QtStartSelector.h">
@@ -76,6 +82,12 @@
       <Filter>Header Files</Filter>
     </QtMoc>
     <QtMoc Include="Step2Widget.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
+    <QtMoc Include="Step3Widget.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
+    <QtMoc Include="Step4Widget.h">
       <Filter>Header Files</Filter>
     </QtMoc>
   </ItemGroup>
@@ -92,6 +104,12 @@
     <QtUic Include="Step2Widget.ui">
       <Filter>Form Files</Filter>
     </QtUic>
+    <QtUic Include="Step3Widget.ui">
+      <Filter>Form Files</Filter>
+    </QtUic>
+    <QtUic Include="Step4Widget.ui">
+      <Filter>Form Files</Filter>
+    </QtUic>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="MLDataManager.h">
@@ -103,16 +121,16 @@
     <ClInclude Include="MLConfigManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="MLStep1Data.h">
+    <ClInclude Include="MLCacheTrajectories.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="MLStep2Data.h">
+    <ClInclude Include="MLCacheStitching.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="MLPythonWarpper.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="MLStepDataBase.h">
+    <ClInclude Include="MLDataStructure.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="StitcherCV2.h">

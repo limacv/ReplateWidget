@@ -55,9 +55,9 @@ public:
 		return 0;
 	}
 	
-	virtual bool get_warped_frames(std::vector<cv::Mat>& frames, std::vector<cv::Rect>& windows);
-	virtual cv::Mat get_stitched_image() { return stitch_result; }
-
+	virtual bool get_warped_frames(std::vector<cv::Mat>& frames, std::vector<cv::Rect>& windows) const ;
+	virtual cv::Mat get_stitched_image() const { return stitch_result; }
+	virtual bool get_warped_rects(const int frameidx, std::vector<cv::Rect>& inoutboxes) const { return false; }
 private:
 	void build_feature_matches(const std::vector<cv::Mat>& frames, const std::vector<cv::Mat>& masks);
 	int bundle_adjustment();

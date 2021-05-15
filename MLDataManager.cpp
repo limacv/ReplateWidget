@@ -33,9 +33,18 @@ bool MLDataManager::load_raw_video(const QString& path)
 	return true;
 }
 
+void MLDataManager::reinitMasks()
+{
+	const int framecount = get_framecount();
+	masks.resize(framecount);
+	for (int i = 0; i < framecount; ++i)
+	{
+		masks[i].create(raw_frame_size, CV_8UC1);
+		masks[i].setTo(255);
+	}
+}
+
 bool MLDataManager::is_prepared(int step) const
 {
-	if (step > 0 && step1datap == nullptr) return false;
-	if (step > 1 && step2datap == nullptr) return false;
 	return true;
 }

@@ -106,8 +106,10 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="MLDataManager.cpp" />
-    <ClCompile Include="MLStep1Data.cpp" />
-    <ClCompile Include="MLStep2Data.cpp" />
+    <ClCompile Include="MLCacheTrajectories.cpp" />
+    <ClCompile Include="MLCacheStitching.cpp" />
+    <ClCompile Include="Step3Widget.cpp" />
+    <ClCompile Include="Step4Widget.cpp" />
     <ClCompile Include="StitcherCV2.cpp" />
     <ClCompile Include="MLUtil.cpp" />
     <ClCompile Include="QtStartSelector.cpp" />
@@ -122,6 +124,8 @@
     <QtUic Include="ReplateWidget.ui" />
     <QtUic Include="Step1Widget.ui" />
     <QtUic Include="Step2Widget.ui" />
+    <QtUic Include="Step3Widget.ui" />
+    <QtUic Include="Step4Widget.ui" />
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="QtStartSelector.h" />
@@ -130,9 +134,11 @@
     <ClInclude Include="MLConfigManager.h" />
     <ClInclude Include="MLDataManager.h" />
     <ClInclude Include="MLPythonWarpper.h" />
-    <ClInclude Include="MLStep1Data.h" />
-    <ClInclude Include="MLStep2Data.h" />
-    <ClInclude Include="MLStepDataBase.h" />
+    <ClInclude Include="MLCacheTrajectories.h" />
+    <ClInclude Include="MLCacheStitching.h" />
+    <ClInclude Include="MLDataStructure.h" />
+    <QtMoc Include="Step3Widget.h" />
+    <QtMoc Include="Step4Widget.h" />
     <ClInclude Include="StitcherBase.h" />
     <ClInclude Include="StitcherCV2.h" />
     <ClInclude Include="MLUtil.h" />

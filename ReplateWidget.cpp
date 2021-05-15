@@ -33,6 +33,7 @@ ReplateWidget::ReplateWidget(QWidget *parent)
     // initialize the StepXWidget
     ui.step1Widget->initState();
     ui.step2Widget->initState();
+    ui.step3Widget->initState();
     // initialize index 0 layout
     setStepTo(current_step);
 
@@ -51,20 +52,24 @@ void ReplateWidget::setStepTo(int step)
     if (step == 0)
     {
         ui.buttonLastStep->hide();
+        ui.buttonNextStep->show();
+    }
+    else if (step == STEP_COUNT - 1)
+    {
+        ui.buttonLastStep->show();
+        ui.buttonNextStep->hide();
     }
     else
     {
+        ui.buttonNextStep->show();
         ui.buttonLastStep->show();
     }
 }
 
 void ReplateWidget::nextStep()
 {
-    if (MLDataManager::get().is_prepared(current_step + 1))
-    {
-        current_step++;
-        ui.pipelineWidget->setCurrentIndex(current_step);
-    }
+    current_step++;
+    ui.pipelineWidget->setCurrentIndex(current_step);
 }
 
 void ReplateWidget::lastStep()

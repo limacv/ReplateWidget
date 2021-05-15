@@ -1,8 +1,9 @@
 #pragma once
 
 #include <QWidget>
-#include "MLStep2Data.h"
+#include "MLCacheStitching.h"
 #include <qtimer.h>
+#include <qpalette.h>
 
 namespace Ui { class Step2Widget; };
 
@@ -19,20 +20,21 @@ public:
 
 private slots:
 	void runStitching();
+	void runInpainting();
 	void updateFrameidx(int frameidx);
 
 private:
 	Ui::Step2Widget *ui;
 
-	MLStep2Data data;
+	MLCacheStitching* stitchdatap;
 
 	// for display
 	QTimer display_timer;
 	bool display_showbackground;
 	bool display_showwarped;
 	bool display_showbox;
-	bool display_showtrace;
 	int display_frameidx;
+	
 	friend class Step2RenderArea;
 };
 
@@ -45,7 +47,13 @@ class Step2RenderArea : public QWidget
 
 public:
 	Step2RenderArea(QWidget* parent = Q_NULLPTR)
-		:QWidget(parent), step2widget(nullptr) {}
+		:QWidget(parent), step2widget(nullptr) 
+	{
+		QPalette pal = palette();
+		pal.setColor(QPalette::Background, Qt::black);
+		this->setPalette(pal);
+	}
+
 	~Step2RenderArea() {};
 	void setStep2Widget(Step2Widget* p) { step2widget = p; }
 

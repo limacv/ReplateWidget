@@ -183,13 +183,15 @@ namespace Ssfm {
 
     class SfM
     {
-    public:
+    private:
         bool optimizeFocal;
         bool notranslation;
+        bool oneintrinsic;  // guarantee that this option can only change ones
     protected:
         friend class ParallelTriangulator;
-        Intrinsics intrinsics;
-        
+        //Intrinsics intrinsics;
+        Intrinsics* globalintrin;
+        SparseVector<Intrinsics*> intrinsics;  // either point to globalintrin or separate intrinsics
         SparseVector<Camera> cameras;          // m cameras
         SparseVector<Pointhomo> points;            // n points
         
@@ -229,26 +231,48 @@ namespace Ssfm {
         void GetAllPointsHomo(std::vector<Eigen::Vector4d>& allpoints, std::vector<int>& allpointids);
     public:
         SfM()
-            : intrinsics(0, 0, 0),
+            :globalintrin(new Intrinsics(0, 0, 0)),
             numCameras(0),
             numPoints(0),
             nextCamera(-1),
             nextPoint(0),
             optimizeFocal(false),
-            notranslation(false)
+            notranslation(false),
+            oneintrinsic(true)
         {}
 
-        SfM(const Intrinsics& _intrinsics, bool optimizeFocal, bool notranslation)
-            : intrinsics(_intrinsics),
+        SfM(const Intrinsics& _intrinsics, bool optimizeFocal=false, bool notranslation=false, bool oneintrinsic=true)
+            : globalintrin(new Intrinsics(_intrinsics)),
             numCameras(0),
             numPoints(0),
             nextCamera(-1),
             nextPoint(0),
             optimizeFocal(optimizeFocal),
-            notranslation(notranslation)
+            notranslation(notranslation),
+            oneintrinsic(oneintrinsic)
         {}
+
+        ~SfM()
+        {
+            delete globalintrin;
+            for (auto& ip : intrinsics)
+                if (ip.second != nullptr && ip.second != globalintrin)
+                {
+                    delete ip.second;
+                }
+            globalintrin = nullptr;
+        }
         
-        Intrinsics GetIntrinsics() const { return intrinsics; }
+        Intrinsics GetIntrinsics(int camera) const { 
+            if (oneintrinsic)
+                return *globalintrin;
+            else
+                return *(intrinsics.at(camera)); 
+        }
+
+        Intrinsics GetGlobalIntrinsics() const {
+            return *globalintrin;
+        }
         
         int AddCamera( const Pose &initial_pose, const int videoIdx);
         int AddPoint( const Pointhomo &initial_position, const cv::Mat &descriptor = cv::Mat() );
@@ -268,6 +292,7 @@ namespace Ssfm {
         cv::Mat GetDescriptor( int point ) { return descriptors(point); }
         
         std::vector<int> Retriangulate();
+        std::vector<int> Retriangulate_mp();
         
         bool Optimize();
         

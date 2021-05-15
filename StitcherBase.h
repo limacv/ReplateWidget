@@ -13,6 +13,7 @@ public:
 	virtual bool get_warped_frames(
 		std::vector<cv::Mat>& frames_warpped,
 		std::vector<cv::Rect>& windows
-		) = 0;
-	virtual cv::Mat get_stitched_image() = 0;
+		) const = 0;
+	virtual cv::Mat get_stitched_image() const = 0;
+	virtual bool get_warped_rects(const int frameidx, std::vector<cv::Rect>& inoutboxes) const = 0;
 };

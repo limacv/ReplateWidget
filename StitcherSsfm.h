@@ -20,6 +20,7 @@ public:
 	StitcherSsfm()
 		:warp_type("cylindrical"),
 		seam_find_type("gc_color"),
+		blend_scheme("blend"), // seam, blend
 		seam_scale(0.1),
 		expos_comp_type(cv::detail::ExposureCompensator::GAIN_BLOCKS),
 		expos_comp_nr_feeds(1),
@@ -33,11 +34,14 @@ public:
 	virtual int stitch(const std::vector<cv::Mat>& frames, const std::vector<cv::Mat>& masks)
 	{
 		int ret = align(frames, masks);
-		ret = warp_and_composite(frames, masks);
+		if (blend_scheme == "seam")
+			ret = warp_and_compositebyseam(frames, masks);
+		else
+			ret = warp_and_compositebyblend(frames, masks);
 		return 0;
 	}
 
-	virtual bool get_warped_frames(std::vector<cv::Mat>& frames, std::vector<cv::Rect>& windows)
+	virtual bool get_warped_frames(std::vector<cv::Mat>& frames, std::vector<cv::Rect>& windows) const
 	{
 		const int num_img = images_warped.size();
 		frames.resize(num_img);
@@ -49,11 +53,13 @@ public:
 		}
 		return true;
 	}
-	virtual cv::Mat get_stitched_image() { return stitch_result; }
+	virtual cv::Mat get_stitched_image() const { return stitch_result; }
+	virtual bool get_warped_rects(const int frameidx, std::vector<cv::Rect>& inoutboxes) const;
 
 private:
 	int align(const std::vector<cv::Mat>& frames, const std::vector<cv::Mat>& masks);
-	int warp_and_composite(const std::vector<cv::Mat>& frames, const std::vector<cv::Mat>& masks);
+	int warp_and_compositebyseam(const std::vector<cv::Mat>& frames, const std::vector<cv::Mat>& masks);
+	int warp_and_compositebyblend(const std::vector<cv::Mat>& frames, const std::vector<cv::Mat>& masks);
 
 private:  // intermediate variables
 	std::vector<cv::Mat> images_warped;
@@ -63,6 +69,7 @@ private:  // intermediate variables
 
 	std::vector<cv::detail::CameraParams> cameras;
 	cv::Mat stitch_result;
+	cv::Ptr<cv::detail::RotationWarper> warper;
 
 private:  // configures
 	std::string warp_type;
@@ -73,6 +80,7 @@ private:  // configures
 	int expos_comp_nr_filtering;
 	int expos_comp_block_size;
 	int blend_type;
+	std::string blend_scheme;
 	float blend_strength;
 	// float compose_scale == 1;
 	// float work_scale == 1;

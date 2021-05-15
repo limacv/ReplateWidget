@@ -2,7 +2,7 @@
 
 #include <QWidget>
 #include <qtimer.h>
-#include "MLStep1Data.h"
+#include "MLCacheTrajectories.h"
 
 namespace Ui { class Step1Widget; };
 
@@ -27,7 +27,7 @@ private slots:
 private:
 	Ui::Step1Widget *ui;
 
-	MLStep1Data data;
+	MLCacheTrajectories* trajp;  // only for convenient
 	
 	// for display
 	QTimer display_timer;
@@ -56,9 +56,5 @@ protected:
 	virtual void paintEvent(QPaintEvent* event);
 
 private:
-	QColor getColor(const ObjID& id);
-
-private:
 	Step1Widget* step1widget;
-	QHash<ObjID, QColor> colormap;
 };

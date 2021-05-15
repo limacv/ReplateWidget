@@ -34,11 +34,6 @@ CameraParams pose2camparam(const Pose& pose, const Intrinsics& intrin)
 
 void Ssfm::SphericalSfm::track_all_frames(const vector<cv::Mat>& frames, const vector<cv::Mat>& masks, SparseModel& outmodel)
 {
-	const Eigen::Matrix3d Kinv = model3d.GetIntrinsics().getKinv();
-
-	cv::Mat cameraIntrinsic;
-	cv::eigen2cv(model3d.GetIntrinsics().getK(), cameraIntrinsic);
-	cameraIntrinsic.convertTo(cameraIntrinsic, CV_32F);\
 	const int totalframecount = frames.size();
 
 	outmodel.points2d.resize(totalframecount);
@@ -51,10 +46,10 @@ void Ssfm::SphericalSfm::track_all_frames(const vector<cv::Mat>& frames, const v
 	int xradius, yradius; yradius = xradius = trackwin;
 	SparseDetectorTracker detectortracker;
 
-	int camera0 = model3d.GetCameraIdxfromFrameIdx(0);
+	int camera0 = model3d->GetCameraIdxfromFrameIdx(0);
 	vector<cv::Point2f> keypoints0;
 	vector<int> ptids0;
-	model3d.GetAllKpointsofCam(camera0, keypoints0, ptids0);
+	model3d->GetAllKpointsofCam(camera0, keypoints0, ptids0);
 
 	if (verbose)
 		visualize_fpts_andid(keypoints0, ptids0, image);
@@ -103,15 +98,15 @@ void Ssfm::SphericalSfm::track_all_frames(const vector<cv::Mat>& frames, const v
 		framesBuffer.push_back(image.clone());
 		kpointsBuffer.push_back(tracked_kpoints);
 		kpidsBuffer.push_back(tracked_kpointsid);
-		if (model3d.IsKeyframe(frame_idx))
+		if (model3d->IsKeyframe(frame_idx))
 		{
 			// features1 is tracked kpoints while newfeatures1 is the previously track+detect kpoints
 			vector<cv::Point2f> newkeypoints;
 			vector<int> newkpointsid;
 			const int buffersize = framesBuffer.size();
 
-			const int camera1 = model3d.GetCameraIdxfromFrameIdx(frame_idx);
-			model3d.GetAllKpointsofCam(camera1, newkeypoints, newkpointsid);
+			const int camera1 = model3d->GetCameraIdxfromFrameIdx(frame_idx);
+			model3d->GetAllKpointsofCam(camera1, newkeypoints, newkpointsid);
 			kpointsBuffer[buffersize - 1] = newkeypoints;
 			kpidsBuffer[buffersize - 1] = newkpointsid;
 
@@ -162,6 +157,7 @@ void Ssfm::SphericalSfm::track_all_frames(const vector<cv::Mat>& frames, const v
 			}
 			//cv::destroyWindow("backwards");
 			// apply pose refine (rotation averaging)
+			vector<Intrinsics> intrinBuffer; intrinBuffer.reserve(buffersize);
 			vector<Eigen::Vector3d> rotsBuffer; rotsBuffer.reserve(buffersize);
 			vector<Eigen::Vector3d> transBuffer; transBuffer.reserve(buffersize);
 			vector<double> ave_reproject_errors; ave_reproject_errors.reserve(buffersize);
@@ -170,8 +166,10 @@ void Ssfm::SphericalSfm::track_all_frames(const vector<cv::Mat>& frames, const v
 				/********
 				* Scheme1: interpolate the rotation using rotation_averaging algorithm + linear interpolate translation
 				******/
-				auto pose0 = model3d.GetPose(camera0),
-					pose1 = model3d.GetPose(camera1);
+				auto pose0 = model3d->GetPose(camera0),
+					pose1 = model3d->GetPose(camera1);
+				const auto intrin0 = model3d->GetIntrinsics(camera0),
+					intrin1 = model3d->GetIntrinsics(camera1);
 				//rotsBuffer.insert(rotsBuffer.begin(), cache.allrotation.begin() + bufferBeginIdx, cache.allrotation.begin() + bufferBeginIdx + buffersize)
 				// Todo: this function has some bug
 				//optimize_rotations_my(rotsBuffer, pose0.r, pose1.r);
@@ -194,29 +192,39 @@ void Ssfm::SphericalSfm::track_all_frames(const vector<cv::Mat>& frames, const v
 				// initialize with first pose
 				rotsBuffer.resize(buffersize / 2, pose0.r);
 				transBuffer.resize(buffersize / 2, pose0.t);
+				intrinBuffer.resize(buffersize / 2, intrin0);
 				rotsBuffer.resize(buffersize, pose1.r);
 				transBuffer.resize(buffersize, pose1.t);
+				intrinBuffer.resize(buffersize, intrin1);
 				for (int bufferi = 0; bufferi < buffersize - 1; ++bufferi)
 				{
 					const auto& pt2ds = kpointsBuffer[bufferi];
 					const auto& pt3dids = kpidsBuffer[bufferi];
-					const double focal = model3d.GetIntrinsics().focal,
-						centerx = model3d.GetIntrinsics().centerx,
-						centery = model3d.GetIntrinsics().centery;
+					
 					std::vector<Pointhomo> pt3dpos; pt3dpos.reserve(pt3dids.size());
 					for (auto& id : pt3dids)
-						pt3dpos.push_back(model3d.GetPoint(id));
+						pt3dpos.push_back(model3d->GetPoint(id));
+
 					ceres::Problem problem;
 					ceres::LossFunction* lossfunc = new ceres::SoftLOneLoss(2.);
 					for (int pti = 0; pti < pt2ds.size(); ++pti)
 					{
 						if (pt3dpos[pti] == Pointhomo(0, 0, 0, 1) || pt3dpos[pti] == Pointhomo(0, 0, 0, 0))
 							continue;
-						ReprojectionErrorhomo* reproj_error = new ReprojectionErrorhomo(focal, pt2ds[pti].x - centerx, pt2ds[pti].y - centery);
-						ceres::CostFunction* costfunc = new ceres::AutoDiffCostFunction<ReprojectionErrorhomo, 2, 3, 3, 4>(reproj_error);
-						problem.AddResidualBlock(costfunc, lossfunc, transBuffer[bufferi].data(), rotsBuffer[bufferi].data(), pt3dpos[pti].data());
+						//ReprojectionErrorhomo* reproj_error = new ReprojectionErrorhomo(focal, pt2ds[pti].x - centerx, pt2ds[pti].y - centery);
+						//ceres::CostFunction* costfunc = new ceres::AutoDiffCostFunction<ReprojectionErrorhomo, 2, 3, 3, 4>(reproj_error);
+						//problem.AddResidualBlock(costfunc, lossfunc, transBuffer[bufferi].data(), rotsBuffer[bufferi].data(), pt3dpos[pti].data());
+						//problem.SetParameterBlockConstant(pt3dpos[pti].data());
+						ReprojErrorhomo_optfocal* reproj_error = new ReprojErrorhomo_optfocal(pt2ds[pti].x - intrinBuffer[bufferi].centerx, pt2ds[pti].y - intrinBuffer[bufferi].centery);
+						ceres::CostFunction* costfunc = new ceres::AutoDiffCostFunction<ReprojErrorhomo_optfocal, 2, 3, 3, 4, 1>(reproj_error);
+						problem.AddResidualBlock(costfunc, lossfunc, transBuffer[bufferi].data(), rotsBuffer[bufferi].data(), pt3dpos[pti].data(), &intrinBuffer[bufferi].focal);
 						problem.SetParameterBlockConstant(pt3dpos[pti].data());
+						if (notranslation)
+							problem.SetParameterBlockConstant(transBuffer[bufferi].data());
+						if (!optimizeFocal || !dynamicFocal)
+							problem.SetParameterBlockConstant(&intrinBuffer[bufferi].focal);
 					}
+
 					ceres::Solver::Options solveropt;
 					solveropt.max_num_iterations = 500;
 					solveropt.minimizer_type = ceres::TRUST_REGION;
@@ -250,12 +258,13 @@ void Ssfm::SphericalSfm::track_all_frames(const vector<cv::Mat>& frames, const v
 				auto& pt2ds = kpointsBuffer[i];
 				auto& pt3dids = kpidsBuffer[i];
 				Pose curpose(transBuffer[i], rotsBuffer[i]);
+				Intrinsics curintrin = intrinBuffer[i];
 				int frameindex = bufferBeginIdx + i;
 
 				std::vector<bool> inlier(pt2ds.size(), true); int inliernum = pt2ds.size();
 				// detect inlier based on reproject error and visualize
 				{
-					const auto& thisintrinsic = model3d.GetIntrinsics().getK();
+					const auto& curK = curintrin.getK();
 					cv::Mat display = framesBuffer[i].clone();
 					cv::cvtColor(display, display, cv::COLOR_GRAY2BGR);
 					auto it1 = pt2ds.begin(); auto it2 = pt3dids.begin();
@@ -263,9 +272,9 @@ void Ssfm::SphericalSfm::track_all_frames(const vector<cv::Mat>& frames, const v
 					{
 						const int index = std::distance(pt2ds.begin(), it1);
 
-						auto numobs = model3d.GetNumObservationOfPoint(*it2);
+						auto numobs = model3d->GetNumObservationOfPoint(*it2);
 						// compute reproject error
-						Pointhomo thispt3d = model3d.GetPoint(*it2);
+						Pointhomo thispt3d = model3d->GetPoint(*it2);
 						if (thispt3d == Pointhomo(0, 0, 0, 1) || thispt3d == Pointhomo(0, 0, 0, 0)) // if not exist or not optimized
 						{
 							inlier[index] = false; inliernum--;
@@ -274,7 +283,7 @@ void Ssfm::SphericalSfm::track_all_frames(const vector<cv::Mat>& frames, const v
 
 						thispt3d = curpose.P * thispt3d;
 						auto depth = thispt3d[2] / thispt3d[3];
-						Point thispt2d_proj = thisintrinsic * thispt3d.head(3);
+						Point thispt2d_proj = curK * thispt3d.head(3);
 						cv::Point2f pt2d_proj(thispt2d_proj[0] / thispt2d_proj[2], thispt2d_proj[1] / thispt2d_proj[2]);
 
 						auto reprojecterror = cv::norm(*it1 - pt2d_proj);
@@ -307,13 +316,16 @@ void Ssfm::SphericalSfm::track_all_frames(const vector<cv::Mat>& frames, const v
 
 				outmodel.points2d[frameindex] = pt2ds_inlier;
 				outmodel.pointsid[frameindex] = pt3dids_inlier;
-				outmodel.poses[frameindex] = pose2camparam(curpose, model3d.GetIntrinsics());
+				outmodel.poses[frameindex] = pose2camparam(curpose, curintrin);
 			}
 
 			// update all the information for next frame
 			kpointsBuffer[0] = kpointsBuffer[buffersize - 1]; kpointsBuffer.resize(1);
 			kpidsBuffer[0] = kpidsBuffer[buffersize - 1]; kpidsBuffer.resize(1);
 			framesBuffer[0] = framesBuffer[buffersize - 1]; framesBuffer.resize(1);
+			rotsBuffer[0] = rotsBuffer[buffersize - 1]; rotsBuffer.resize(1);
+			transBuffer[0] = transBuffer[buffersize - 1]; transBuffer.resize(1);
+			intrinBuffer[0] = intrinBuffer[buffersize - 1]; intrinBuffer.resize(1);
 			bufferBeginIdx = frame_idx;
 			//last_status.resize(0);
 			//last_status.resize(kpointsBuffer[0].size(), 1);
@@ -322,14 +334,15 @@ void Ssfm::SphericalSfm::track_all_frames(const vector<cv::Mat>& frames, const v
 			{
 				outmodel.points2d[frame_idx] = kpointsBuffer[0];
 				outmodel.pointsid[frame_idx] = kpidsBuffer[0];
-				outmodel.poses[frame_idx] = pose2camparam(model3d.GetPose(camera1), model3d.GetIntrinsics());
+				//outmodel.poses[frame_idx] = pose2camparam(model3d->GetPose(camera1), model3d->GetIntrinsics());
+				outmodel.poses[frame_idx] = pose2camparam(Pose(transBuffer[0], rotsBuffer[0]), intrinBuffer[0]);
 			}
 		}
 	}
 
 	// store global information
 	vector<Pointhomo> allpt3dpos; vector<int> allpt3did;
-	model3d.GetAllPointsHomo(allpt3dpos, allpt3did);
+	model3d->GetAllPointsHomo(allpt3dpos, allpt3did);
 	const int allptnum = allpt3dpos.size();
 
 	for (int i = 0; i < allptnum; ++i)
@@ -352,7 +365,7 @@ void SphericalSfm::build_feature_tracks(const vector<cv::Mat>& frames, const vec
 	bool inward = false;
 
 	const int totalframecount = frames.size();
-	Eigen::Matrix3d Kinv = intrinsic.getKinv();
+	Eigen::Matrix3d Kinv = init_intrinsic.getKinv();
 
 	/*************
 	*  image0  => ...  => last_img => image1
@@ -550,7 +563,7 @@ void match(const Features& features0, const Features& features1, Matches& m01, d
 /// <returns></returns>
 int SphericalSfm::make_loop_closures()
 {
-	Eigen::Matrix3d Kinv = intrinsic.getKinv();
+	Eigen::Matrix3d Kinv = init_intrinsic.getKinv();
 	//const double fov = 2 * atan2(intrinsics.centerx, intrinsics.centery);
 	PreemptiveRANSAC<RayPairList, Estimator> ransac;//( 100 );
 	//MSAC<RayPairList,Estimator> ransac;
@@ -697,7 +710,7 @@ void SphericalSfm::refine_rotations()
 /// </summary>
 void SphericalSfm::bundle_adjustment()
 {
-	model3d = SfM(intrinsic, optimizeFocal, notranslation);
+	model3d = new SfM(init_intrinsic, optimizeFocal, notranslation, !dynamicFocal);
 	// buliding tracks
 	vector< vector<int> > tracks(keyframes.size());
 	for (int i = 0; i < keyframes.size(); i++)
@@ -719,12 +732,12 @@ void SphericalSfm::bundle_adjustment()
 			curpose = Pose(Eigen::Vector3d(0, 0, 0), so3ln(rotations[index]));
 		else
 			curpose = Pose(Eigen::Vector3d(0, 0, -1), so3ln(rotations[index]));
-		int camera = model3d.AddCamera(curpose, keyframes[index].index);
-		model3d.SetRotationFixed(camera, (index == 0));
+		int camera = model3d->AddCamera(curpose, keyframes[index].index);
+		model3d->SetRotationFixed(camera, (index == 0));
 		if (softspherical)
-			model3d.SetTranslationFixed(camera, (index == 0)/*true*/); // Soft spherical constrain 
+			model3d->SetTranslationFixed(camera, (index == 0)/*true*/); // Soft spherical constrain 
 		else
-			model3d.SetTranslationFixed(camera, true);
+			model3d->SetTranslationFixed(camera, true);
 	}
 
 	cout << "adding tracks\n";
@@ -759,41 +772,41 @@ void SphericalSfm::bundle_adjustment()
 
 			//Observation obs0( feature0.x-sfm.GetIntrinsics().centerx, feature0.y-sfm.GetIntrinsics().centery );
 			//Observation obs1( feature1.x-sfm.GetIntrinsics().centerx, feature1.y-sfm.GetIntrinsics().centery );
-			Observation obs0(pt0.x - model3d.GetIntrinsics().centerx, pt0.y - model3d.GetIntrinsics().centery);
-			Observation obs1(pt1.x - model3d.GetIntrinsics().centerx, pt1.y - model3d.GetIntrinsics().centery);
+			Observation obs0(pt0.x - model3d->GetGlobalIntrinsics().centerx, pt0.y - model3d->GetGlobalIntrinsics().centery);
+			Observation obs1(pt1.x - model3d->GetGlobalIntrinsics().centerx, pt1.y - model3d->GetGlobalIntrinsics().centery);
 
 			// this case means the previous keypoints is tracked (have an id),
 			// so add the current observation and copy the id
 			if (track0 != -1 && track1 == -1)
 			{
 				track1 = track0;
-				model3d.AddObservation(index1, track0, obs1);
+				model3d->AddObservation(index1, track0, obs1);
 			}
 			// this case means the previous keypoints is tracked
 			// usually happened when there is a loop
 			else if (track0 == -1 && track1 != -1)
 			{
 				track0 = track1;
-				model3d.AddObservation(index0, track1, obs0);
+				model3d->AddObservation(index0, track1, obs0);
 			}
 			// this case, the point is newly discovered, so should first assign a global ID
 			// and then add two observations
 			else if (track0 == -1 && track1 == -1)
 			{
 				//track0 = track1 = sfm.AddPoint( Eigen::Vector3d::Zero(), feature0.descriptor );
-				track0 = track1 = model3d.AddPoint(Eigen::Vector4d::Zero(), features0.descs.row(it->first));
+				track0 = track1 = model3d->AddPoint(Eigen::Vector4d::Zero(), features0.descs.row(it->first));
 
-				model3d.SetPointFixed(track0, false);
+				model3d->SetPointFixed(track0, false);
 
-				model3d.AddObservation(index0, track0, obs0);
-				model3d.AddObservation(index1, track1, obs1);
+				model3d->AddObservation(index0, track0, obs0);
+				model3d->AddObservation(index1, track1, obs1);
 			}
 			// this case, the two point is all ready discovered, but was recognized as two points
 			// this usually happened when there is a loop
 			else if (track0 != -1 && track1 != -1 && (track0 != track1))
 			{
 				// track1 will be removed
-				model3d.MergePoint(track0, track1);
+				model3d->MergePoint(track0, track1);
 
 				// update all features with track1 and set to track0
 				for (int i = 0; i < tracks.size(); i++)
@@ -808,10 +821,10 @@ void SphericalSfm::bundle_adjustment()
 	}
 
 	cout << "retriangulating...\n";
-	auto wrongpoints = model3d.Retriangulate();
+	auto wrongpoints = model3d->Retriangulate();
 
 	// Bundle Adjustment
-	model3d.Optimize();
+	model3d->Optimize();
 	
 }
 

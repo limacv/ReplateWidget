@@ -42,7 +42,8 @@ public:
 	QString get_stitch_cache() const { return QDir(get_cache_path()).filePath("stitch"); }
 	QString get_stitch_aligned_path(int frameidx) const { return QDir(get_stitch_cache()).filePath(QString("frame_%1.png").arg(QString::number(frameidx))); }
 	QString get_stitch_background_path() const { return QDir(get_stitch_cache()).filePath("background.png"); }
-	QString get_stitch_meta_path() const { return QDir(get_stitch_cache()).filePath("meta.txt"); }
+	QString get_stitch_rois_path() const { return QDir(get_stitch_cache()).filePath("rois.txt"); }
+	QString get_stitch_bboxes_path() const { return QDir(get_stitch_cache()).filePath("bboxes.txt"); }
 
 private:
 	QString cache_root;

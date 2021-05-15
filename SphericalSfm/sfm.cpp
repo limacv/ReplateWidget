@@ -52,8 +52,9 @@ namespace Ssfm {
 					if (!(sfm.observations.exists(i, j))) continue;
 
 					Observation vec = sfm.observations(i, j);
-
-					Eigen::Vector2d point(vec(0) / sfm.intrinsics.focal, vec(1) / sfm.intrinsics.focal);
+					
+					const double focal = sfm.intrinsics(i)->focal;
+					Eigen::Vector2d point(vec(0) / focal, vec(1) / focal);
 					Eigen::Matrix4d P = sfm.GetPose(i).P;
 
 					A.row(2 * n + 0) = P.row(2) * point[0] - P.row(0);
@@ -117,12 +118,13 @@ namespace Ssfm {
 		SparseVector<Observation> obsofcamera = observations.at(camera);
 		obses.reserve(numPoints * 3 / numCameras);
 		ptidx.reserve(numPoints * 3 / numCameras);
+		const Intrinsics* intrin = intrinsics(camera);
 		for (int i = 0; i < numPoints; ++i)
 		{
 			if (obsofcamera.exists(i))
 			{
 				const auto& obs = obsofcamera(i);
-				cv::Point2f pt(obs.x() + intrinsics.centerx, obs.y() + intrinsics.centery);
+				cv::Point2f pt(obs.x() + intrin->centerx, obs.y() + intrin->centery);
 				obses.push_back(pt);
 				ptidx.push_back(i);
 			}
@@ -140,7 +142,10 @@ namespace Ssfm {
 		frameIdx2camIdx(videoIdx) = nextCamera;
 		rotationFixed(nextCamera) = false;
 		translationFixed(nextCamera) = false;
-
+		if (oneintrinsic)
+			intrinsics(nextCamera) = globalintrin;
+		else
+			intrinsics(nextCamera) = new Intrinsics(*globalintrin);
 		return nextCamera;
 	}
 
@@ -212,6 +217,93 @@ namespace Ssfm {
 	{
 		std::vector<int> wrongpoints;
 		std::mutex wrongptmutex;
+		for (int j = 0; j < numPoints; j++)
+		{
+			if (!points.exists(j)) continue;
+
+			int firstcam = -1;
+			int lastcam = -1;
+
+			int nobs = 0;
+			for (int i = 0; i < numCameras; i++)
+			{
+				if (!cameras.exists(i)) continue;
+				if (!(observations.exists(i, j))) continue;
+				if (firstcam == -1) firstcam = i;
+				lastcam = i;
+				nobs++;
+			}
+
+			SetPoint(j, Eigen::Vector4d(0, 0, 0, 1));
+			if (nobs < 3) continue;
+
+			Eigen::MatrixXd A(nobs * 2, 4);
+
+			// Theory:
+			// point in world: X
+			// camera extrinsic matrix: P = [p1, p2, p3, p4]^T
+			// observed position in camera (normalized space): point = [x, y, 1]^T
+			// we have 
+			//      1. p1*X / p3*X = x
+			//      2. p2*X / p3*X = y
+			// so we have use DLT to solve the X
+			int n = 0;
+			std::vector<size_t> cameraspt;
+			for (int i = 0; i < numCameras; i++)
+			{
+				if (!cameras.exists(i)) continue;
+				if (!(observations.exists(i, j))) continue;
+
+				Observation vec = observations(i, j);
+				Eigen::Vector2d point(vec(0) / globalintrin->focal, vec(1) / globalintrin->focal); // corresponding 3d point(ray): (point.x, point.y, 1) * lambda
+				Eigen::Matrix4d P = GetPose(i).P;
+
+				A.row(2 * n + 0) = P.row(2) * point[0] - P.row(0);
+				A.row(2 * n + 1) = P.row(2) * point[1] - P.row(1);
+				n++;
+				cameraspt.push_back(i);
+			}
+
+			Eigen::Vector4d Xh;
+			if (!notranslation) // normal triangulation
+			{
+				Eigen::JacobiSVD<Eigen::MatrixXd> svdA(A, Eigen::ComputeFullV);
+				Xh = svdA.matrixV().col(3);
+			}
+			else
+			{
+				// if no translation, then P.col(3) == 1, so A.col(3) == 0
+				// we no more care about homo cooridnate w, so just use the first 3 row
+				Eigen::JacobiSVD<Eigen::MatrixXd> svdA(A.leftCols(3), Eigen::ComputeFullV);
+				Xh.head(3) = svdA.matrixV().col(2);
+				Xh[3] = 0.1;
+			}
+
+			// reproject
+			/*for (int i : cameraspt)
+			{
+				Eigen::Vector4d proj = GetPose(i).P * Xh;
+				double depth = proj[2] / proj[3];
+				if (depth < -1)
+				{
+					Xh[3] = -Xh[3];
+					std::lock_guard<std::mutex> lockprint(wrongptmutex);
+					wrongpoints.push_back(j);
+					break;
+				}
+			}*/
+
+			// MA Li: no use, please delete afterwards
+			Eigen::Vector3d X = Xh.head(3) / Xh(3);
+			SetPoint(j, Xh);
+		}
+		return wrongpoints;
+	}
+
+	std::vector<int> SfM::Retriangulate_mp()
+	{
+		std::vector<int> wrongpoints;
+		std::mutex wrongptmutex;
 		cv::parallel_for_(cv::Range(0, numPoints), [&](const cv::Range& range) {
 			//for ( int j = 0; j < numPoints; j++ )
 			for (int j = range.start; j < range.end; j++)
@@ -252,8 +344,8 @@ namespace Ssfm {
 					if (!(observations.exists(i, j))) continue;
 
 					Observation vec = observations(i, j);
-
-					Eigen::Vector2d point(vec(0) / intrinsics.focal, vec(1) / intrinsics.focal); // corresponding 3d point(ray): (point.x, point.y, 1) * lambda
+					const double focal = globalintrin->focal;
+					Eigen::Vector2d point(vec(0) / focal, vec(1) / focal); // corresponding 3d point(ray): (point.x, point.y, 1) * lambda
 					Eigen::Matrix4d P = GetPose(i).P;
 
 					A.row(2 * n + 0) = P.row(2) * point[0] - P.row(0);
@@ -326,7 +418,7 @@ namespace Ssfm {
 		problem.AddResidualBlock(cost_function, loss_function, GetCameraPtr(camera), GetCameraPtr(camera)+3, GetPointPtr(point) );*/
 
 		double weight = std::min(10. / pointObsnum(point), 3.);
-		ReprojErrhomowithWeight* reproj_err = new ReprojErrhomowithWeight(intrinsics.focal, vec(0), vec(1), weight);
+		ReprojErrhomowithWeight* reproj_err = new ReprojErrhomowithWeight(intrinsics(camera)->focal, vec(0), vec(1), weight);
 		ceres::CostFunction* cost_function = new ceres::AutoDiffCostFunction<ReprojErrhomowithWeight, 2, 3, 3, 4>(reproj_err);
 		problem.AddResidualBlock(cost_function, loss_function, GetCameraPtr(camera), GetCameraPtr(camera) + 3, GetPointPtr(point));
 
@@ -344,7 +436,8 @@ namespace Ssfm {
 
 		ReprojErrorhomo_optfocal* reproj_error = new ReprojErrorhomo_optfocal(vec(0), vec(1));
 		ceres::CostFunction* cost_function = new ceres::AutoDiffCostFunction<ReprojErrorhomo_optfocal, 2, 3, 3, 4, 1>(reproj_error);
-		problem.AddResidualBlock(cost_function, loss_function, GetCameraPtr(camera), GetCameraPtr(camera) + 3, GetPointPtr(point), &intrinsics.focal);
+		auto focalp = &intrinsics(camera)->focal;
+		problem.AddResidualBlock(cost_function, loss_function, GetCameraPtr(camera), GetCameraPtr(camera) + 3, GetPointPtr(point), focalp);
 
 		if (translationFixed(camera))
 			problem.SetParameterBlockConstant(GetCameraPtr(camera));

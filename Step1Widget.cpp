@@ -1,5 +1,4 @@
 #include <qpainter.h>
-#include <qrandom.h>
 #include <qmessagebox.h>
 #include <qstatictext.h>
 #include <qpoint.h>
@@ -17,7 +16,8 @@ Step1Widget::Step1Widget(QWidget* parent)
 	display_showname(false),
 	display_showtrace(false),
 	display_showmask(false),
-	display_frameidx(0)
+	display_frameidx(0),
+	trajp(nullptr)
 {
 	ui = new Ui::Step1Widget();
 	ui->setupUi(this);
@@ -30,6 +30,7 @@ Step1Widget::~Step1Widget()
 
 void Step1Widget::initState()
 {
+	trajp = &MLDataManager::get().trajectories;
 	// init the slider
 	const auto& raw_frames = MLDataManager::get().raw_frames;
 	ui->frameSlider->setRange(0, raw_frames.size() - 1);
@@ -76,11 +77,10 @@ void Step1Widget::initState()
 	//display_timer.start();
 	
 	// try loading the existing track file
-	data.tryLoadDetectionFromFile();
-	data.tryLoadTrackFromFile();
-	data.reinitMasks(MLDataManager::get().raw_frame_size, MLDataManager::get().get_framecount());
+	trajp->tryLoadDetectionFromFile();
+	trajp->tryLoadTrackFromFile();
+	MLDataManager::get().reinitMasks();
 	runSegmentation();
-	MLDataManager::get().step1datap = &data;
 }
 
 void Step1Widget::runDetect()
@@ -115,7 +115,7 @@ void Step1Widget::runDetect()
 		errorBox.setText(QString("detection failed with error code %1").arg(QString::number(ret)));
 		errorBox.exec();
 	}
-	if (!data.tryLoadDetectionFromFile())
+	if (!trajp->tryLoadDetectionFromFile())
 		qWarning("Step1Widget::Failed to load detection file");
 	ui->imageLabel->update();
 }
@@ -144,7 +144,7 @@ void Step1Widget::runTrack()
 		errorBox.setText(QString("tracking failed with error code %1").arg(QString::number(ret)));
 		errorBox.exec();
 	}
-	if (!data.tryLoadTrackFromFile())
+	if (!trajp->tryLoadTrackFromFile())
 		qWarning("Step1Widget::Failed to load track file");
 	ui->imageLabel->update();
 }
@@ -156,7 +156,7 @@ void Step1Widget::runSegmentation()
 	const auto& globaldata = MLDataManager::get();
 	const int framecount = globaldata.get_framecount();
 
-	if (!data.isDetectOk() && !data.isTrackOk())
+	if (!trajp->isDetectOk() && !trajp->isTrackOk())
 	{
 		QMessageBox notpreparedbox;
 		notpreparedbox.setText("The track tracjectories is empty");
@@ -168,8 +168,8 @@ void Step1Widget::runSegmentation()
 
 	for (int i = 0; i < framecount; ++i)
 	{
-		auto& mask = data.masks[i];
-		for (auto pbox : data.frameidx2boxes[i])
+		auto& mask = globaldata.masks[i];
+		for (auto pbox : trajp->frameidx2boxes[i])
 			mask(pbox->rect).setTo(0);
 	}
 	ui->imageLabel->update();
@@ -186,7 +186,7 @@ void Step1Widget::updateFrameidx(int frameidx)
 void Step1RenderArea::paintEvent(QPaintEvent* event)
 {
 	const auto& raw_frames = MLDataManager::get().raw_frames;
-	const auto& masks = step1widget->data.masks;
+	const auto& masks = MLDataManager::get().masks;
 	
 	QPainter paint(this);
 	auto viewport = paint.viewport();
@@ -214,10 +214,10 @@ void Step1RenderArea::paintEvent(QPaintEvent* event)
 	********************/
 	if (step1widget->display_showbox)
 	{
-		const auto& boxes = step1widget->data.frameidx2boxes[step1widget->display_frameidx];
+		const auto& boxes = step1widget->trajp->frameidx2boxes[step1widget->display_frameidx];
 		for (auto it = boxes.constKeyValueBegin(); it != boxes.constKeyValueEnd(); ++it)
 		{
-			const auto& color = getColor(it->first);
+			const auto& color = step1widget->trajp->getColor(it->first);
 			const auto& box = it->second;
 
 			paint.setPen(QPen(color, 2));
@@ -234,13 +234,13 @@ void Step1RenderArea::paintEvent(QPaintEvent* event)
 	******************/
 	if (step1widget->display_showname)
 	{
-		const auto& boxes = step1widget->data.frameidx2boxes[step1widget->display_frameidx];
+		const auto& boxes = step1widget->trajp->frameidx2boxes[step1widget->display_frameidx];
 		for (auto it = boxes.constKeyValueBegin(); it != boxes.constKeyValueEnd(); ++it)
 		{
-			const auto& color = getColor(it->first);
+			const auto& color = step1widget->trajp->getColor(it->first);
 			const auto& box = it->second;
 
-			QString text = QString("%1_%2").arg(MLStep1Data::classid2name[box->classid], QString::number(box->instanceid));
+			QString text = QString("%1_%2").arg(MLCacheTrajectories::classid2name[box->classid], QString::number(box->instanceid));
 			paint.fillRect(
 				(int)(box->rect.x * scalex) - 1,
 				(int)(box->rect.y * scaley) - 10,
@@ -258,12 +258,12 @@ void Step1RenderArea::paintEvent(QPaintEvent* event)
 	******************/
 	if (step1widget->display_showtrace)
 	{
-		const auto& trajectories = step1widget->data.objectid2boxes;
+		const auto& trajectories = step1widget->trajp->objectid2boxes;
 		const auto& frameidx = step1widget->display_frameidx;
 		const auto& framecount = MLDataManager::get().get_framecount();
 		for (auto it = trajectories.constKeyValueBegin(); it != trajectories.constKeyValueEnd(); ++it)
 		{
-			const auto& color = getColor(it->first);
+			const auto& color = step1widget->trajp->getColor(it->first);
 			const auto& boxes = it->second;
 			QPoint lastpt(-999, -999);
 
@@ -285,18 +285,5 @@ void Step1RenderArea::paintEvent(QPaintEvent* event)
 				lastpt = currpt;
 			}
 		}
-	}
-}
-
-QColor Step1RenderArea::getColor(const ObjID& id)
-{
-	if (colormap.contains(id))
-		return colormap.value(id);
-	else
-	{
-		double h = QRandomGenerator::global()->generateDouble();
-		QColor color; color.setHsvF(h, 0.8, 0.8);
-		colormap.insert(id, color);
-		return color;
 	}
 }

@@ -24,10 +24,11 @@
      </rect>
     </property>
     <property name="currentIndex">
-     <number>0</number>
+     <number>2</number>
     </property>
     <widget class="Step1Widget" name="step1Widget"/>
     <widget class="Step2Widget" name="step2Widget"/>
+    <widget class="Step3Widget" name="step3Widget"/>
    </widget>
    <widget class="QWidget" name="layoutWidget">
     <property name="geometry">
@@ -192,6 +193,12 @@
    <class>Step2Widget</class>
    <extends>QWidget</extends>
    <header>Step2Widget.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>Step3Widget</class>
+   <extends>QWidget</extends>
+   <header>step3widget.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

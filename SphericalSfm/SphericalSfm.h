@@ -21,13 +21,19 @@ namespace Ssfm {
 	public:
 		SphericalSfm()
 			:inlier_threshold(2), trackwin(8), min_rot(2.0),
-			optimizeFocal(true), softspherical(true), notranslation(false),
+			optimizeFocal(true), softspherical(true), notranslation(false), dynamicFocal(true),
 			lc_bestonly(false), lc_numbegin(30), lc_numend(30), lc_mininlier(100),
-			intrinsic(0., 0., 0.),
-			verbose(false)
+			init_intrinsic(0., 0., 0.),
+			verbose(false), model3d(nullptr)
 		{}
+
+		~SphericalSfm()
+		{
+			delete model3d; 
+			model3d = nullptr;
+		}
 		
-		void set_intrinsics(double focal, double centerx, double centery) { intrinsic = Intrinsics(focal, centerx, centery); }
+		void set_intrinsics(double focal, double centerx, double centery) { init_intrinsic = Intrinsics(focal, centerx, centery); }
 		void set_verbose(bool v) { verbose = v; }
 		void set_visualize_root(const std::string& path) { visualize_root = path; }
 		void set_allow_translation(bool flag) { notranslation = !flag; }
@@ -44,8 +50,8 @@ namespace Ssfm {
 
 			if (verbose)
 			{
-				model3d.WritePointsOBJ(visualize_root + "/points.obj");
-				model3d.WriteCameraCentersOBJ(visualize_root + "/cameras.obj");
+				model3d->WritePointsOBJ(visualize_root + "/points.obj");
+				model3d->WriteCameraCentersOBJ(visualize_root + "/cameras.obj");
 			}
 		}
 
@@ -64,13 +70,13 @@ namespace Ssfm {
 
 	private:
 		// intermediate vairables
-		Intrinsics intrinsic;
+		Intrinsics init_intrinsic;
 
 		std::vector<Eigen::Matrix3d> rotations;
 		std::vector<Keyframe> keyframes;
 		std::vector<ImageMatch> image_matches;
 		
-		SfM model3d;
+		SfM* model3d;
 
 		// configuration
 		double inlier_threshold;  // inlier threshold in pixels
@@ -79,6 +85,7 @@ namespace Ssfm {
 		bool optimizeFocal;
 		bool softspherical;
 		bool notranslation;
+		bool dynamicFocal;
 
 		bool lc_bestonly;
 		int lc_numbegin; // Number of frames at beginning of sequence to use for loop closure

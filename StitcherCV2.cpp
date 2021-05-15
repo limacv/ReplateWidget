@@ -16,7 +16,7 @@ using namespace std;
 using namespace cv;
 using namespace cv::detail;
 
-bool StitcherCV2::get_warped_frames(std::vector<cv::Mat>& frames, std::vector<cv::Rect>& windows)
+bool StitcherCV2::get_warped_frames(std::vector<cv::Mat>& frames, std::vector<cv::Rect>& windows) const
 {
     if (images_warped.empty()
         || images_warped.size() != masks_warped.size()

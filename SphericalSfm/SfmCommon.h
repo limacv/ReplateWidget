@@ -116,8 +116,12 @@ namespace Ssfm {
     struct Intrinsics
     {
         double focal, centerx, centery;
+        Intrinsics() :
+            focal(0), centerx(0), centery(0) { }
+
         Intrinsics(double _focal, double _centerx, double _centery) :
             focal(_focal), centerx(_centerx), centery(_centery) { }
+
         Eigen::Matrix3d getK() const {
             Eigen::Matrix3d K = Eigen::Matrix3d::Identity();
             K(0, 0) = focal;

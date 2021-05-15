@@ -5,6 +5,8 @@
 #include "ui_ReplateWidget.h"
 #include "QtStartSelector.h"
 
+const int STEP_COUNT = 4;
+
 class ReplateWidget : public QMainWindow
 {
     Q_OBJECT
