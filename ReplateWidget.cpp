@@ -34,11 +34,15 @@ ReplateWidget::ReplateWidget(QWidget *parent)
     ui.step1Widget->initState();
     ui.step2Widget->initState();
     ui.step3Widget->initState();
+    ui.step4Widget->initState();
+
     // initialize index 0 layout
     setStepTo(current_step);
 
     // for debug
     setStepTo(1);
+    setStepTo(2);
+    setStepTo(3);
 }
 
 void ReplateWidget::initConfig(const QString& cfgpath) const
@@ -48,32 +52,39 @@ void ReplateWidget::initConfig(const QString& cfgpath) const
 
 void ReplateWidget::setStepTo(int step)
 {
+    step = step < 0 ? 0 : (step >= STEP_COUNT ? STEP_COUNT - 1 : step);
     ui.pipelineWidget->setCurrentIndex(step);
-    if (step == 0)
+    switch (step)
     {
+    case 0:
         ui.buttonLastStep->hide();
         ui.buttonNextStep->show();
-    }
-    else if (step == STEP_COUNT - 1)
-    {
-        ui.buttonLastStep->show();
-        ui.buttonNextStep->hide();
-    }
-    else
-    {
+        ui.step1Widget->onWidgetShowup();
+        break;
+    case 1:
         ui.buttonNextStep->show();
         ui.buttonLastStep->show();
+        ui.step2Widget->onWidgetShowup();
+        break;
+    case 2:
+        ui.buttonNextStep->show();
+        ui.buttonLastStep->show();
+        ui.step3Widget->onWidgetShowup();
+        break;
+    case 3:
+        ui.buttonLastStep->show();
+        ui.buttonNextStep->hide();
+        ui.step4Widget->onWidgetShowup();
+        break;
     }
 }
 
 void ReplateWidget::nextStep()
 {
-    current_step++;
-    ui.pipelineWidget->setCurrentIndex(current_step);
+    setStepTo(++current_step);
 }
 
 void ReplateWidget::lastStep()
 {
-    current_step--;
-    ui.pipelineWidget->setCurrentIndex(current_step);
+    setStepTo(--current_step);
 }

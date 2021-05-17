@@ -105,6 +105,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="MLCachePlatesConfig.cpp" />
     <ClCompile Include="MLDataManager.cpp" />
     <ClCompile Include="MLCacheTrajectories.cpp" />
     <ClCompile Include="MLCacheStitching.cpp" />
@@ -131,6 +132,7 @@
     <QtMoc Include="QtStartSelector.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="MLCachePlatesConfig.h" />
     <ClInclude Include="MLConfigManager.h" />
     <ClInclude Include="MLDataManager.h" />
     <ClInclude Include="MLPythonWarpper.h" />

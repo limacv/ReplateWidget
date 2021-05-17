@@ -6,12 +6,19 @@
 #include <array>
 #include "MLCacheTrajectories.h"
 #include "MLCacheStitching.h"
+#include "MLCachePlatesConfig.h"
 
 class MLDataManager
 {
 public:
 	MLDataManager()
+		:flag_israwok(false),
+		flag_isstep1ok(false),
+		flag_isstep2ok(false),
+		flag_isstep3ok(false),
+		plates_cache(&stitch_cache, &trajectories)
 	{}
+
 	~MLDataManager() {};
 	static MLDataManager& get()
 	{
@@ -29,12 +36,21 @@ public:
 	bool is_prepared(int step) const;
 
 public:
-	cv::Size raw_frame_size;
-	QString video_filename;
+	VideoConfig raw_video_cfg;
 	QVector<cv::Mat> raw_frames;
 
 	MLCacheTrajectories trajectories;
 	QVector<cv::Mat> masks;
 	MLCacheStitching stitch_cache;
+
+	MLCachePlatesConfig plates_cache;
+	VideoConfig out_video_cfg;
+	QVector<cv::Mat> replate_video;
+
+private:
+	bool flag_israwok;
+	bool flag_isstep1ok;
+	bool flag_isstep2ok;
+	bool flag_isstep3ok;
 };
 

@@ -54,10 +54,10 @@ bool MLCacheTrajectories::tryLoadDetectionFromFile()
 			int centerx, centery, width, height;
 			float confidence;
 			int classid;
-			centerx = (int)(lines.at(0).toFloat() * globaldata.raw_frame_size.width);
-			centery = (int)(lines.at(1).toFloat() * globaldata.raw_frame_size.height);
-			width = (int)(lines.at(2).toFloat() * globaldata.raw_frame_size.width);
-			height = (int)(lines.at(3).toFloat() * globaldata.raw_frame_size.height);
+			centerx = (int)(lines.at(0).toFloat() * globaldata.raw_video_cfg.size.width);
+			centery = (int)(lines.at(1).toFloat() * globaldata.raw_video_cfg.size.height);
+			width = (int)(lines.at(2).toFloat() * globaldata.raw_video_cfg.size.width);
+			height = (int)(lines.at(3).toFloat() * globaldata.raw_video_cfg.size.height);
 			confidence = lines.at(4).toFloat();
 			classid = lines.at(5).toInt();
 			detect_boxes_list.push_back(
@@ -75,9 +75,9 @@ bool MLCacheTrajectories::tryLoadTrackFromFile()
 	
 	//QVector<BBox> track_boxes_list;
 	//QVector<QVector<BBox*>> frameidx2boxes;
-	//QMap<int, QVector<BBox*>> objectid2boxes;
-	const int framesize = globaldata.get_framecount();
-	frameidx2boxes.resize(framesize);
+	//QMap<int, QVector<BBox*>> objid2trajectories;
+	const int framecount = globaldata.get_framecount();
+	frameidx2boxes.resize(framecount);
 	{
 		QFile file(pathcfg.get_track_result_cache());
 		if (!file.open(QIODevice::ReadOnly))
@@ -104,7 +104,9 @@ bool MLCacheTrajectories::tryLoadTrackFromFile()
 			BBox* pbox = new BBox(frameidx, classid, instanceid, top, left, width, height);
 			track_boxes_list.push_back(pbox);
 			frameidx2boxes[frameidx].insert(ObjID(classid, instanceid), pbox);
-			objectid2boxes[ObjID(classid, instanceid)].push_back(pbox);
+			if (objid2trajectories.find(ObjID(classid, instanceid)) == objid2trajectories.end())
+				objid2trajectories[ObjID(classid, instanceid)] = Traject(framecount);
+			objid2trajectories[ObjID(classid, instanceid)].insert(frameidx, pbox);
 		}
 	}
 	return true;
@@ -162,7 +164,6 @@ bool MLCacheTrajectories::saveGlobalBoxes() const
 	return true;
 }
 
-
 QColor MLCacheTrajectories::getColor(const ObjID& id)
 {
 	if (colormap.contains(id))
@@ -175,3 +176,4 @@ QColor MLCacheTrajectories::getColor(const ObjID& id)
 		return color;
 	}
 }
+

@@ -2,11 +2,10 @@
 
 #include <QWidget>
 #include <qtimer.h>
-#include "MLCacheTrajectories.h"
 
 namespace Ui { class Step1Widget; };
 
-
+class MLCacheTrajectories;
 class Step1RenderArea;
 
 class Step1Widget : public QWidget
@@ -18,6 +17,9 @@ public:
 	~Step1Widget();
 	void initState();
 	
+public slots:
+	void onWidgetShowup();
+
 private slots:
 	void runDetect();
 	void runTrack();

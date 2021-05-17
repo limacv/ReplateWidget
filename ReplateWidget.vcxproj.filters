@@ -73,6 +73,9 @@
     <ClCompile Include="Step4Widget.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="MLCachePlatesConfig.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="QtStartSelector.h">
@@ -140,6 +143,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="StitcherSsfm.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MLCachePlatesConfig.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

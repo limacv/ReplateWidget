@@ -24,11 +24,12 @@
      </rect>
     </property>
     <property name="currentIndex">
-     <number>2</number>
+     <number>0</number>
     </property>
     <widget class="Step1Widget" name="step1Widget"/>
     <widget class="Step2Widget" name="step2Widget"/>
     <widget class="Step3Widget" name="step3Widget"/>
+    <widget class="Step4Widget" name="step4Widget"/>
    </widget>
    <widget class="QWidget" name="layoutWidget">
     <property name="geometry">
@@ -100,6 +101,27 @@
        </property>
        <property name="text">
         <string>Step3</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="buttonStep4">
+       <property name="font">
+        <font>
+         <pointsize>13</pointsize>
+        </font>
+       </property>
+       <property name="focusPolicy">
+        <enum>Qt::ClickFocus</enum>
+       </property>
+       <property name="autoFillBackground">
+        <bool>false</bool>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">border: none;</string>
+       </property>
+       <property name="text">
+        <string>Step4</string>
        </property>
       </widget>
      </item>
@@ -198,7 +220,13 @@
   <customwidget>
    <class>Step3Widget</class>
    <extends>QWidget</extends>
-   <header>step3widget.h</header>
+   <header>Step3Widget.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>Step4Widget</class>
+   <extends>QWidget</extends>
+   <header>Step4Widget.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

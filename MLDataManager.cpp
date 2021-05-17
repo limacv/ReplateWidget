@@ -27,7 +27,12 @@ bool MLDataManager::load_raw_video(const QString& path)
 	}
 	qDebug("successfully load %d frames of raw video", raw_frames.size());
 
-	raw_frame_size = raw_frames[0].size();
+	raw_video_cfg.filepath = path;
+	raw_video_cfg.framecount = raw_frames.size();
+	raw_video_cfg.fourcc = cap.get(cv::CAP_PROP_FOURCC);
+	raw_video_cfg.fps = cap.get(cv::CAP_PROP_FPS);
+	raw_video_cfg.size = raw_frames[0].size();
+	out_video_cfg = raw_video_cfg;
 	// update globalconfig
 	MLConfigManager::get().update_videopath(path);
 	return true;
@@ -39,7 +44,7 @@ void MLDataManager::reinitMasks()
 	masks.resize(framecount);
 	for (int i = 0; i < framecount; ++i)
 	{
-		masks[i].create(raw_frame_size, CV_8UC1);
+		masks[i].create(raw_video_cfg.size, CV_8UC1);
 		masks[i].setTo(255);
 	}
 }

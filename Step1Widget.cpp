@@ -83,6 +83,11 @@ void Step1Widget::initState()
 	runSegmentation();
 }
 
+void Step1Widget::onWidgetShowup()
+{
+
+}
+
 void Step1Widget::runDetect()
 {
 	const auto& pathcfg = MLConfigManager::get();
@@ -258,31 +263,39 @@ void Step1RenderArea::paintEvent(QPaintEvent* event)
 	******************/
 	if (step1widget->display_showtrace)
 	{
-		const auto& trajectories = step1widget->trajp->objectid2boxes;
+		const auto& trajectories = step1widget->trajp->objid2trajectories;
 		const auto& frameidx = step1widget->display_frameidx;
 		const auto& framecount = MLDataManager::get().get_framecount();
 		for (auto it = trajectories.constKeyValueBegin(); it != trajectories.constKeyValueEnd(); ++it)
 		{
 			const auto& color = step1widget->trajp->getColor(it->first);
-			const auto& boxes = it->second;
+			const auto& boxes = it->second.boxes;
 			QPoint lastpt(-999, -999);
-
+			bool skip_flag = true;
 			for (const auto& pbox : boxes)
 			{
+				if (pbox == nullptr || pbox->empty())
+				{
+					skip_flag = true;
+					continue;
+				}
+
 				QPoint currpt(scalex * (pbox->rect.x + pbox->rect.width / 2),
 					scaley * (pbox->rect.y + pbox->rect.height / 2));
 
 				if (lastpt.x() < 0)
 				{
 					lastpt = currpt;
+					skip_flag = false;
 					continue;
 				}
-				
 				float width = 4 - qAbs<float>(pbox->frameidx - frameidx) / 5;
 				width = MAX(width, 0.2);
-				paint.setPen(QPen(color, width));
+				auto style = skip_flag ? Qt::PenStyle::DotLine : Qt::PenStyle::SolidLine;
+				paint.setPen(QPen(color, width, style));
 				paint.drawLine(lastpt, currpt);
 				lastpt = currpt;
+				skip_flag = false;
 			}
 		}
 	}

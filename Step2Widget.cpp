@@ -59,6 +59,12 @@ void Step2Widget::initState()
 	ui->imageWidget->setStep2Widget(this);
 }
 
+void Step2Widget::onWidgetShowup()
+{
+
+}
+
+
 void Step2Widget::updateFrameidx(int frameidx)
 {
 	display_frameidx = frameidx;
@@ -67,7 +73,7 @@ void Step2Widget::updateFrameidx(int frameidx)
 
 void Step2Widget::runStitching()
 {
-	const cv::Size& framesz = MLDataManager::get().raw_frame_size;
+	const cv::Size& framesz = MLDataManager::get().raw_video_cfg.size;
 	const auto rawframes = MLDataManager::get().raw_frames.toStdVector();
 	const auto rawmasks = MLDataManager::get().masks.toStdVector();
 

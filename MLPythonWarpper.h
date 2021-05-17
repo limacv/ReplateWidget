@@ -17,7 +17,7 @@ int callDetectPy()
 		pathcfg.get_yolov5_weight(),
 		pathcfg.get_raw_video_path(),
 		pathcfg.get_cache_path(),
-		QString::number(globaldata.raw_frame_size.width)
+		QString::number(globaldata.raw_video_cfg.size.width)
 	);
 	qDebug("Step1Widget::executing command: %s", cmd.toLocal8Bit().constData());
 	return system(cmd.toLocal8Bit().constData());
@@ -75,7 +75,7 @@ int callTrackPy()
 		pathcfg.get_yolov5_path(),
 		pathcfg.get_raw_video_path(),
 		pathcfg.get_cache_path(),
-		QString::number(globaldata.raw_frame_size.width)
+		QString::number(globaldata.raw_video_cfg.size.width)
 	);
 	qDebug("Step1Widget::executing command: %s", cmd.toLocal8Bit().constData());
 	return system(cmd.toLocal8Bit().constData());

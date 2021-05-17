@@ -17,7 +17,7 @@ public:
 	
 	// this will update detect_boxes_list
 	bool tryLoadDetectionFromFile();
-	// this will update track_boxes_list and frameidx/objectid2boxes
+	// this will update track_boxes_list and frameidx/objid2trajectories
 	bool tryLoadTrackFromFile();
 	// this will update all global_rects
 	bool tryLoadGlobalBoxes() const;
@@ -37,7 +37,7 @@ public:
 
 	QVector<BBox*> track_boxes_list;
 	QVector<QMap<ObjID, BBox*>> frameidx2boxes;
-	QMap<ObjID, QVector<BBox*>> objectid2boxes;
+	QMap<ObjID, Traject> objid2trajectories;
 
 private:
 	QHash<ObjID, QColor> colormap;

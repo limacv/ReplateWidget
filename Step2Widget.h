@@ -1,12 +1,12 @@
 #pragma once
 
 #include <QWidget>
-#include "MLCacheStitching.h"
 #include <qtimer.h>
 #include <qpalette.h>
 
 namespace Ui { class Step2Widget; };
 
+class MLCacheStitching;
 class Step2RenderArea;
 
 class Step2Widget : public QWidget
@@ -17,6 +17,9 @@ public:
 	Step2Widget(QWidget *parent = Q_NULLPTR);
 	~Step2Widget();
 	void initState();
+
+public slots:
+	void onWidgetShowup();
 
 private slots:
 	void runStitching();
