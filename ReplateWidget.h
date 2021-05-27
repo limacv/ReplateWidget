@@ -14,12 +14,17 @@ class ReplateWidget : public QMainWindow
 public:
     ReplateWidget(QWidget *parent = Q_NULLPTR);
 
-private:
+protected:
     void initConfig(const QString& cfgpath) const;
     
     void setStepTo(int step);
     void nextStep();
     void lastStep();
+    
+private:
+    void setButtonActive(QPushButton& button);
+    void setButtonInvalid(QPushButton& button);
+    void setButtonValid(QPushButton& button);
 
 private:
     Ui::ReplateWidgetClass ui;
