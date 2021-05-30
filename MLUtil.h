@@ -9,5 +9,7 @@ namespace MLUtil
 	QPixmap mat2qpixmap(const cv::Mat& src, const QImage::Format& format);
 	cv::Mat qimage_to_mat_ref(QImage& img, int format);
 	cv::Mat qimage_to_mat_cpy(const QImage& img, int format);
+	void cvtrgba2rgb_a(const cv::Mat& rgba, cv::Mat& rgb, cv::Mat& a);
+	void cvtrgba2gray_a(const cv::Mat& rgba, cv::Mat& gray, cv::Mat& a);
 };
 

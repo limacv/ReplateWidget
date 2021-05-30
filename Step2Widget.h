@@ -7,6 +7,7 @@
 namespace Ui { class Step2Widget; };
 
 class MLCacheStitching;
+class MLCacheFlow;
 class Step2RenderArea;
 
 class Step2Widget : public QWidget
@@ -24,12 +25,14 @@ public slots:
 private slots:
 	void runStitching();
 	void runInpainting();
+	void runOptflow();
 	void updateFrameidx(int frameidx);
 
 private:
 	Ui::Step2Widget *ui;
 
 	MLCacheStitching* stitchdatap;
+	MLCacheFlow* flowdatap;
 
 	// for display
 	QTimer display_timer;

@@ -61,22 +61,22 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>C:/Program Files/Python37/include;.\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:/Program Files/Python37/include;D:\MSI_NB\source\sourceofLib\install\include;.\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>$(Qt_DEFINES_);_USE_MATH_DEFINES;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>python37.lib;SphericalSfm.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>C:/Program Files/Python37/libs/;$(OutDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>python37.lib;SphericalSfm.lib;yaml-cpp.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>D:\MSI_NB\source\sourceofLib\install\lib;C:/Program Files/Python37/libs/;$(OutDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>C:/Program Files/Python37/include;.\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:/Program Files/Python37/include;D:\MSI_NB\source\sourceofLib\install\include;.\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>$(Qt_DEFINES_);_USE_MATH_DEFINES;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>python37.lib;SphericalSfm.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>C:/Program Files/Python37/libs/;$(OutDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>python37.lib;SphericalSfm.lib;yaml-cpp.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>D:\MSI_NB\source\sourceofLib\install\lib;C:/Program Files/Python37/libs/;$(OutDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'" Label="Configuration">
@@ -105,6 +105,26 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="arthurstyle.cpp" />
+    <ClCompile Include="arthurwidgets.cpp" />
+    <ClCompile Include="GBaseWidget.cpp" />
+    <ClCompile Include="GEffect.cpp" />
+    <ClCompile Include="GEffectManager.cpp" />
+    <ClCompile Include="GInterval.cpp" />
+    <ClCompile Include="GKalman.cpp" />
+    <ClCompile Include="GMainDisplay.cpp" />
+    <ClCompile Include="GObjLayer.cpp" />
+    <ClCompile Include="GPath.cpp" />
+    <ClCompile Include="GTracking.cpp" />
+    <ClCompile Include="GPathTracker.cpp" />
+    <ClCompile Include="GPictureLabel.cpp" />
+    <ClCompile Include="GResultDisplay.cpp" />
+    <ClCompile Include="GRoi.cpp" />
+    <ClCompile Include="GTimelineEx.cpp" />
+    <ClCompile Include="GTimelineWidget.cpp" />
+    <ClCompile Include="GUtil.cpp" />
+    <ClCompile Include="GVideoPlayer.cpp" />
+    <ClCompile Include="MLCacheFlow.cpp" />
     <ClCompile Include="MLCachePlatesConfig.cpp" />
     <ClCompile Include="MLDataManager.cpp" />
     <ClCompile Include="MLCacheTrajectories.cpp" />
@@ -118,6 +138,7 @@
     <ClCompile Include="Step2Widget.cpp" />
     <ClCompile Include="StitcherSsfm.cpp" />
     <QtRcc Include="ReplateWidget.qrc" />
+    <QtRcc Include="shared.qrc" />
     <QtUic Include="QtStartSelector.ui" />
     <QtMoc Include="ReplateWidget.h" />
     <ClCompile Include="ReplateWidget.cpp" />
@@ -132,6 +153,27 @@
     <QtMoc Include="QtStartSelector.h" />
   </ItemGroup>
   <ItemGroup>
+    <QtMoc Include="GInterval.h" />
+    <QtMoc Include="GBaseWidget.h" />
+    <ClInclude Include="arthurstyle.h" />
+    <QtMoc Include="arthurwidgets.h" />
+    <ClInclude Include="GEffect.h" />
+    <ClInclude Include="GEffectCommon.h" />
+    <ClInclude Include="GEffectManager.h" />
+    <QtMoc Include="GTimelineEx.h" />
+    <QtMoc Include="GTimelineWidget.h" />
+    <QtMoc Include="GResultDisplay.h" />
+    <ClInclude Include="GKalman.h" />
+    <QtMoc Include="GVideoPlayer.h" />
+    <QtMoc Include="GObjLayer.h" />
+    <QtMoc Include="GMainDisplay.h" />
+    <ClInclude Include="GPath.h" />
+    <ClInclude Include="GTracking.h" />
+    <ClInclude Include="GPathTracker.h" />
+    <ClInclude Include="GPictureLabel.h" />
+    <ClInclude Include="GRoi.h" />
+    <ClInclude Include="GUtil.h" />
+    <ClInclude Include="MLCacheFlow.h" />
     <ClInclude Include="MLCachePlatesConfig.h" />
     <ClInclude Include="MLConfigManager.h" />
     <ClInclude Include="MLDataManager.h" />

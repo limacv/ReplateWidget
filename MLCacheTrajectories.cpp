@@ -112,7 +112,7 @@ bool MLCacheTrajectories::tryLoadTrackFromFile()
 	return true;
 }
 
-bool MLCacheTrajectories::tryLoadGlobalBoxes() const
+bool MLCacheTrajectories::tryLoadGlobalBoxes()
 {
 	const auto& pathcfg = MLConfigManager::get();
 	const auto& globaldata = MLDataManager::get();

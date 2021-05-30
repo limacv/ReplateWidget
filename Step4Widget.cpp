@@ -51,7 +51,7 @@ void Step4Widget::onWidgetShowup()
 {
 	auto& video_cfg = MLDataManager::get().out_video_cfg;
 	video_cfg.size = MLDataManager::get().stitch_cache.background.size();
-	video_cfg.framecount = MLDataManager::get().plates_cache.framecount;
+	video_cfg.framecount = MLDataManager::get().plates_cache.replate_duration;
 	ui->imageWidget->display_timer.setInterval(1000.f / video_cfg.fps);
 }
 

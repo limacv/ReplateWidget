@@ -20,7 +20,7 @@ public:
 	// this will update track_boxes_list and frameidx/objid2trajectories
 	bool tryLoadTrackFromFile();
 	// this will update all global_rects
-	bool tryLoadGlobalBoxes() const;
+	bool tryLoadGlobalBoxes();
 
 	// this will save global_rects to files
 	bool saveGlobalBoxes() const;

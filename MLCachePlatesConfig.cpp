@@ -6,8 +6,8 @@
 void MLCachePlatesConfig::initialize_cut(int outframecount)
 {
 	const int totalframecount = MLDataManager::get().get_framecount();
-	framecount = outframecount;
-	frameoffset = 0;
+	replate_duration = outframecount;
+	replate_offset = 0;
 	for (auto traj = trajs_datap->objid2trajectories.constKeyValueBegin();
 		traj != trajs_datap->objid2trajectories.constKeyValueEnd(); ++traj)
 	{
@@ -15,7 +15,7 @@ void MLCachePlatesConfig::initialize_cut(int outframecount)
 		int a = traj->second.beginidx / outframecount,
 			b = traj->second.endidx / outframecount + 1;
 		for (int i = a; i <= b; ++i)
-			cut[traj->first].push_back(i * framecount);
+			cut[traj->first].push_back(i * replate_duration);
 	}
 }
 

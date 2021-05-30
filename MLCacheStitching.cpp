@@ -26,7 +26,7 @@ bool MLCacheStitching::tryLoadWarppedFrames()
 	warped_frames.resize(framecount);
 	for (int i = 0; i < framecount; ++i)
 	{
-		cv::Mat load = cv::imread(pathcfg.get_stitch_aligned_path(i).toStdString(), cv::IMREAD_UNCHANGED);
+		cv::Mat load = cv::imread(pathcfg.get_stitch_warpedimg_path(i).toStdString(), cv::IMREAD_UNCHANGED);
 		if (load.empty() || load.channels() != 4)
 		{
 			warped_frames.resize(0);
@@ -88,7 +88,7 @@ bool MLCacheStitching::saveWarppedFrames() const
 		return false;
 
 	for (int i = 0; i < warped_frames.size(); ++i)
-		cv::imwrite(pathcfg.get_stitch_aligned_path(i).toStdString(), warped_frames[i]);
+		cv::imwrite(pathcfg.get_stitch_warpedimg_path(i).toStdString(), warped_frames[i]);
 	return true;
 }
 

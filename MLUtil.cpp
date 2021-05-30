@@ -46,4 +46,15 @@ namespace MLUtil
             const_cast<uchar*>(img.bits()),
             img.bytesPerLine()).clone();
     }
+
+    void cvtrgba2rgb_a(const cv::Mat& rgba, cv::Mat& rgb, cv::Mat& a)
+    {
+        cv::extractChannel(rgba, a, 3);
+        cv::cvtColor(rgba, rgb, cv::COLOR_RGBA2RGB);
+    }
+    void cvtrgba2gray_a(const cv::Mat& rgba, cv::Mat& gray, cv::Mat& a)
+    {
+        cv::extractChannel(rgba, a, 3);
+        cv::cvtColor(rgba, gray, cv::COLOR_RGBA2GRAY);
+    }
 }

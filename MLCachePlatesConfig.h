@@ -10,7 +10,7 @@ class MLCachePlatesConfig
 {
 public:
 	MLCachePlatesConfig(MLCacheStitching* sp, MLCacheTrajectories* tp)
-		:framecount(-1), frameoffset(0), stitch_datap(sp), trajs_datap(tp)
+		:replate_duration(-1), replate_offset(0), stitch_datap(sp), trajs_datap(tp)
 	{ }
 	
 	void initialize_cut(int outframecount);
@@ -23,8 +23,8 @@ private:
 	MLCacheTrajectories* trajs_datap;
 
 public:
-	int framecount;
-	int frameoffset;
+	int replate_duration;
+	int replate_offset;
 	QMap<ObjID, QVector<int>> cut;  // the cut frameidx is not necessarily lies inside totalframes
 };
 

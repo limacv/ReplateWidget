@@ -31,11 +31,13 @@ Step2Widget::~Step2Widget()
 
 void Step2Widget::initState()
 {
-	const auto& global_data = MLDataManager::get();
-	stitchdatap = &MLDataManager::get().stitch_cache;
+	auto& global_data = MLDataManager::get();
+	stitchdatap = &global_data.stitch_cache;
+	flowdatap = &global_data.flow_cache;
 
 	stitchdatap->tryLoadAllFromFiles();
 	global_data.trajectories.tryLoadGlobalBoxes();
+	global_data.flow_cache.tryLoadFlows();
 
 	ui->frameSlider->setRange(0, global_data.get_framecount() - 1);
 	connect(ui->frameSlider, &QSlider::valueChanged, this, &Step2Widget::updateFrameidx);
@@ -61,7 +63,8 @@ void Step2Widget::initState()
 
 void Step2Widget::onWidgetShowup()
 {
-
+	if (!flowdatap->isprepared())
+		runOptflow();
 }
 
 
@@ -88,7 +91,7 @@ void Step2Widget::runStitching()
 		if (ret == QMessageBox::No)
 			return;
 	}
-
+	
 	std::unique_ptr<StitcherBase> st;
 	if (true)
 		st = std::make_unique<StitcherSsfm>();
@@ -117,6 +120,71 @@ void Step2Widget::runStitching()
 		qWarning("Step2Widge::error while save stitch to cache");
 	
 	stitchdatap->update_global_roi();
+}
+
+void Step2Widget::runOptflow()
+{
+	if (!stitchdatap->isprepared())
+		return;
+	const auto& global_data = MLDataManager::get();
+	const int framecount = global_data.get_framecount();
+	const auto& rois = stitchdatap->rois;
+	flowdatap->flows.resize(framecount);
+
+	for (int i = 0; i < framecount; ++i)
+	{
+		cv::Mat flowb, flowf;
+		cv::Mat framecur, maskcur;
+		MLUtil::cvtrgba2gray_a(stitchdatap->warped_frames[i], framecur, maskcur);
+		if (i == 0)
+		{
+			flowb = cv::Mat(framecur.size(), CV_8UC2, cv::Scalar(128, 128));
+		}
+		else
+		{
+			cv::Rect roi_w = (rois[i] | rois[i - 1]) - stitchdatap->global_roi.tl(),
+				roi_1 = rois[i] - stitchdatap->global_roi.tl() - roi_w.tl(),
+				roi_2 = rois[i - 1] - stitchdatap->global_roi.tl() - roi_w.tl();
+			cv::Mat im1, im2;
+			cv::cvtColor(stitchdatap->background(roi_w), im1, cv::COLOR_BGRA2GRAY);
+			im2 = im1.clone();
+			
+			framecur.copyTo(im1(roi_1), maskcur);
+			cv::Mat frameprev, maskprev;
+			MLUtil::cvtrgba2gray_a(stitchdatap->warped_frames[i - 1], frameprev, maskprev);
+			frameprev.copyTo(im2(roi_2), maskprev);
+
+			cv::calcOpticalFlowFarneback(im1, im2, flowb, 0.5, 3, 15, 3, 5, 1.2, 0);
+			flowb.convertTo(flowb, CV_8UC2, 1, 128);  // 0.5 to round
+			flowb = flowb(roi_1);
+		}
+
+		if (i == framecount - 1)
+		{
+			flowf = cv::Mat(framecur.size(), CV_8UC2, cv::Scalar(128, 128));
+		}
+		else
+		{
+			cv::Rect roi_w = (rois[i] | rois[i + 1]) - stitchdatap->global_roi.tl(),
+				roi_1 = rois[i] - stitchdatap->global_roi.tl() - roi_w.tl(),
+				roi_2 = rois[i + 1] - stitchdatap->global_roi.tl() - roi_w.tl();
+			cv::Mat im1, im2;
+			cv::cvtColor(stitchdatap->background(roi_w), im1, cv::COLOR_BGRA2GRAY);
+			im2 = im1.clone();
+
+			framecur.copyTo(im1(roi_1), maskcur);
+			cv::Mat framenext, masknext;
+			MLUtil::cvtrgba2gray_a(stitchdatap->warped_frames[i + 1], framenext, masknext);
+			framenext.copyTo(im2(roi_2), masknext);
+
+			cv::calcOpticalFlowFarneback(im1, im2, flowf, 0.5, 3, 15, 3, 5, 1.2, 0);
+			flowf.convertTo(flowf, CV_8UC2, 1, 128);  // 0.5 to round
+			flowf = flowf(roi_1);
+		}
+		cv::merge(std::vector<cv::Mat>{flowf, flowb}, flowdatap->flows[i]);
+		flowf.release(); flowb.release();
+	}
+	flowdatap->saveFlows();
 }
 
 void Step2Widget::runInpainting()

@@ -6,13 +6,66 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>811</width>
+    <width>1319</width>
     <height>512</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Step3Widget</string>
   </property>
+  <layout class="QGridLayout" name="gridLayout_2">
+   <item row="0" column="0">
+    <layout class="QGridLayout" name="gridLayout">
+     <item row="0" column="0">
+      <widget class="QDockWidget" name="dockResult">
+       <property name="windowTitle">
+        <string>Results</string>
+       </property>
+       <widget class="QWidget" name="dockWidgetContents_3"/>
+      </widget>
+     </item>
+     <item row="0" column="1">
+      <widget class="QDockWidget" name="dockMain">
+       <property name="windowTitle">
+        <string>MainWindow</string>
+       </property>
+       <widget class="QWidget" name="dockWidgetContents_2"/>
+      </widget>
+     </item>
+     <item row="1" column="0" colspan="2">
+      <widget class="QDockWidget" name="dockControl">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Maximum" vsizetype="MinimumExpanding">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="minimumSize">
+        <size>
+         <width>1295</width>
+         <height>100</height>
+        </size>
+       </property>
+       <property name="floating">
+        <bool>false</bool>
+       </property>
+       <property name="windowTitle">
+        <string>Control</string>
+       </property>
+       <widget class="QWidget" name="dockWidgetContents_1"/>
+      </widget>
+     </item>
+     <item row="2" column="0" colspan="2">
+      <widget class="QDockWidget" name="dockTimeline">
+       <property name="windowTitle">
+        <string>Timeline</string>
+       </property>
+       <widget class="QWidget" name="dockWidgetContents_4"/>
+      </widget>
+     </item>
+    </layout>
+   </item>
+  </layout>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
  <resources/>
