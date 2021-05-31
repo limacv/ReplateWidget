@@ -1,45 +1,34 @@
 #include <memory>
 #include <qmessagebox.h>
 #include <qpainter.h>
+#include <qprogressbar.h>
 #include <opencv2/photo.hpp>
 #include <opencv2/xphoto/inpainting.hpp>
 #include "ui_Step2Widget.h"
 #include "Step2Widget.h"
 #include "MLDataManager.h"
+#include "MLConfigManager.h"
 #include "MLCacheTrajectories.h"
 #include "MLCacheStitching.h"
 #include "MLUtil.h"
 #include "SphericalSfm/SphericalSfm.h"
 #include "StitcherCV2.h"
 #include "StitcherSsfm.h"
+#include "MLPythonWarpper.h"
 
-Step2Widget::Step2Widget(QWidget *parent)
-	: QWidget(parent),
+Step2Widget::Step2Widget(QWidget* parent)
+	: StepWidgetBase(parent),
 	display_frameidx(0),
 	display_showbackground(false),
 	display_showwarped(true),
-	display_showbox(false)
+	display_showbox(false),
+	stitchdatap(&MLDataManager::get().stitch_cache),
+	flowdatap(&MLDataManager::get().flow_cache),
+	trajp(&MLDataManager::get().trajectories)
 {
 	ui = new Ui::Step2Widget();
 	ui->setupUi(this);
-}
-
-Step2Widget::~Step2Widget()
-{
-	delete ui;
-}
-
-void Step2Widget::initState()
-{
-	auto& global_data = MLDataManager::get();
-	stitchdatap = &global_data.stitch_cache;
-	flowdatap = &global_data.flow_cache;
-
-	stitchdatap->tryLoadAllFromFiles();
-	global_data.trajectories.tryLoadGlobalBoxes();
-	global_data.flow_cache.tryLoadFlows();
-
-	ui->frameSlider->setRange(0, global_data.get_framecount() - 1);
+	
 	connect(ui->frameSlider, &QSlider::valueChanged, this, &Step2Widget::updateFrameidx);
 
 	connect(ui->buttonStitchBg, &QPushButton::clicked, this, &Step2Widget::runStitching);
@@ -61,10 +50,33 @@ void Step2Widget::initState()
 	ui->imageWidget->setStep2Widget(this);
 }
 
+Step2Widget::~Step2Widget()
+{
+	delete ui;
+}
+
+void Step2Widget::initState()
+{}
+
 void Step2Widget::onWidgetShowup()
 {
-	if (!flowdatap->isprepared())
+	auto& global_data = MLDataManager::get();
+
+	if (!trajp->tryLoadDetectionFromFile())
+		runDetect();
+	if (!trajp->tryLoadTrackFromFile())
+		runTrack();
+
+	if (!trajp->tryLoadGlobalBoxes() || !stitchdatap->tryLoadAllFromFiles())
+	{
+		global_data.initMasks();
+		runSegmentation();
+		runStitching();
+	}
+	if (!flowdatap->tryLoadFlows() || !flowdatap->isprepared())
 		runOptflow();
+	
+	ui->frameSlider->setRange(0, global_data.get_framecount() - 1);
 }
 
 
@@ -73,6 +85,102 @@ void Step2Widget::updateFrameidx(int frameidx)
 	display_frameidx = frameidx;
 	ui->imageWidget->update();
 }
+
+void Step2Widget::runDetect()
+{
+	const auto& pathcfg = MLConfigManager::get();
+	const auto& globaldata = MLDataManager::get();
+	// check if detect file exist
+	bool result_exist = true;
+	for (int i = 0; i < globaldata.get_framecount(); ++i)
+	{
+		auto filepath = pathcfg.get_detect_result_cache(i);
+		if (!QFile::exists(filepath))
+			result_exist = false;
+	}
+	// if exist, promote dialog
+	if (result_exist)
+	{
+		QMessageBox existwarningbox;
+		existwarningbox.setText("Detection result exists.");
+		existwarningbox.setInformativeText("Do you want to overwrite existing detection results?");
+		existwarningbox.setStandardButtons(QMessageBox::Ok | QMessageBox::No);
+		existwarningbox.setDefaultButton(QMessageBox::Ok);
+		int ret = existwarningbox.exec();
+		if (ret == QMessageBox::No)
+			return;
+	}
+
+	QProgressBar bar(this);
+	bar.setMinimum(0); bar.setMaximum(0);
+	int ret = callDetectPy();
+	if (ret != 0)
+	{
+		QMessageBox errorBox;
+		errorBox.setText(QString("detection failed with error code %1").arg(QString::number(ret)));
+		errorBox.exec();
+	}
+	if (!trajp->tryLoadDetectionFromFile())
+		qWarning("Step1Widget::Failed to load detection file");
+	ui->imageWidget->update();
+}
+
+
+void Step2Widget::runTrack()
+{
+	const auto& pathcfg = MLConfigManager::get();
+	const auto& globaldata = MLDataManager::get();
+	// check if detect file exist, if exist, promote dialog
+	if (QFile::exists(pathcfg.get_track_result_cache()))
+	{
+		QMessageBox existwarningbox;
+		existwarningbox.setText("Tracking result exists.");
+		existwarningbox.setInformativeText("Do you want to overwrite existing tracking results?");
+		existwarningbox.setStandardButtons(QMessageBox::Ok | QMessageBox::No);
+		existwarningbox.setDefaultButton(QMessageBox::Ok);
+		int ret = existwarningbox.exec();
+		if (ret == QMessageBox::No)
+			return;
+	}
+
+	int ret = callTrackPy();
+	if (ret != 0)
+	{
+		QMessageBox errorBox;
+		errorBox.setText(QString("tracking failed with error code %1").arg(QString::number(ret)));
+		errorBox.exec();
+	}
+	if (!trajp->tryLoadTrackFromFile())
+		qWarning("Step1Widget::Failed to load track file");
+	ui->imageWidget->update();
+}
+
+
+void Step2Widget::runSegmentation()
+{
+	const auto& pathcfg = MLConfigManager::get();
+	const auto& globaldata = MLDataManager::get();
+	const int framecount = globaldata.get_framecount();
+
+	if (!trajp->isDetectOk() && !trajp->isTrackOk())
+	{
+		QMessageBox notpreparedbox;
+		notpreparedbox.setText("The track tracjectories is empty");
+		notpreparedbox.setInformativeText("The generated mask will be empty.");
+		notpreparedbox.setStandardButtons(QMessageBox::Ok);
+		notpreparedbox.setDefaultButton(QMessageBox::Ok);
+		int ret = notpreparedbox.exec();
+	}
+
+	for (int i = 0; i < framecount; ++i)
+	{
+		auto& mask = globaldata.masks[i];
+		for (auto pbox : trajp->frameidx2boxes[i])
+			mask(pbox->rect).setTo(0);
+	}
+	ui->imageWidget->update();
+}
+
 
 void Step2Widget::runStitching()
 {
@@ -97,7 +205,9 @@ void Step2Widget::runStitching()
 		st = std::make_unique<StitcherSsfm>();
 	else
 		st = std::make_unique<StitcherCV2>();
-
+	
+	QProgressBar bar(this);
+	bar.setMinimum(0); bar.setMaximum(0);
 	st->stitch(rawframes, rawmasks);
 	st->get_warped_frames(stitchdatap->warped_frames, stitchdatap->rois);
 	stitchdatap->background = st->get_stitched_image();

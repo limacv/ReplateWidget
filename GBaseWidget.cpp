@@ -5,7 +5,7 @@ GBaseWidget::GBaseWidget(QWidget *parent)
     , mouse_select_start_(false)
     , select_path_mode_(false)
 {
-
+    
 }
 
 bool GBaseWidget::pathMode() const

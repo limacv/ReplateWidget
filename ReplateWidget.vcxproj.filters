@@ -43,9 +43,6 @@
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="QtStartSelector.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="MLDataManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -141,9 +138,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <QtMoc Include="QtStartSelector.h">
-      <Filter>Header Files</Filter>
-    </QtMoc>
     <QtMoc Include="Step1Widget.h">
       <Filter>Header Files</Filter>
     </QtMoc>
@@ -181,6 +175,9 @@
       <Filter>Header Files</Filter>
     </QtMoc>
     <QtMoc Include="GMainDisplay.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
+    <QtMoc Include="StepWidgetBase.h">
       <Filter>Header Files</Filter>
     </QtMoc>
   </ItemGroup>

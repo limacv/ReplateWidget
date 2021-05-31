@@ -3,29 +3,32 @@
 #include <QWidget>
 #include <qtimer.h>
 #include <qpalette.h>
+#include "StepWidgetBase.h"
 
 namespace Ui { class Step2Widget; };
 
 class MLCacheStitching;
 class MLCacheFlow;
+class MLCacheTrajectories;
 class Step2RenderArea;
 
-class Step2Widget : public QWidget
+class Step2Widget : public StepWidgetBase
 {
 	Q_OBJECT
 
 public:
 	Step2Widget(QWidget *parent = Q_NULLPTR);
-	~Step2Widget();
-	void initState();
-
-public slots:
-	void onWidgetShowup();
+	virtual ~Step2Widget();
+	virtual void initState();
+	virtual void onWidgetShowup();
 
 private slots:
 	void runStitching();
 	void runInpainting();
 	void runOptflow();
+	void runDetect();
+	void runTrack();
+	void runSegmentation();
 	void updateFrameidx(int frameidx);
 
 private:
@@ -33,6 +36,7 @@ private:
 
 	MLCacheStitching* stitchdatap;
 	MLCacheFlow* flowdatap;
+	MLCacheTrajectories* trajp;  // only for convenient
 
 	// for display
 	QTimer display_timer;

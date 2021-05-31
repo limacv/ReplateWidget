@@ -60,7 +60,7 @@ public:
 	void paintWarpedFrames(QPainter& painter, int frameidx, bool paintbg = true, bool paintfg = true) const;
 
 	// step1 <-> step2
-	void reinitMasks();
+	void initMasks();
 
 	bool is_prepared(int step) const;
 

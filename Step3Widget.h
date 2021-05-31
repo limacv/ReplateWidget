@@ -6,6 +6,7 @@
 #include <qslider.h>
 #include "GPathTracker.h"
 #include "GObjLayer.h"
+#include "StepWidgetBase.h"
 namespace Ui { class Step3Widget; };
 
 class MLCachePlatesConfig;
@@ -15,15 +16,15 @@ class GMainDisplay;
 class GResultDisplay;
 class GTimelineWidget;
 
-class Step3Widget : public QWidget
+class Step3Widget : public StepWidgetBase
 {
 	Q_OBJECT
 
 public:
 	Step3Widget(QWidget *parent = Q_NULLPTR);
-	~Step3Widget();
-	void initState();
-
+    virtual ~Step3Widget();
+    virtual void initState();
+    virtual void onWidgetShowup();
 
     void setCurrentEffect(const GEffectPtr& efx);
     GEffectPtr createEffectFromPath(const GPathTrackDataPtr& path, G_EFFECT_ID type);
@@ -33,7 +34,6 @@ signals:
     void frameChanged(int);
 
 public slots:
-	void onWidgetShowup();
     void UpdateDisplay(int i);
     //void OpenVideo(const QString& path = QString());
     //void ExportStarted();

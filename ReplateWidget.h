@@ -1,9 +1,8 @@
 #pragma once
 
 #include <QtWidgets/QMainWindow>
-#include "QtStartSelector.h"
 #include "ui_ReplateWidget.h"
-#include "QtStartSelector.h"
+#include "StepWidgetBase.h"
 
 const int STEP_COUNT = 4;
 
@@ -28,6 +27,7 @@ private:
 
 private:
     Ui::ReplateWidgetClass ui;
-    QtStartSelector starter;
     int current_step;
+    std::array<StepWidgetBase*, STEP_COUNT> stepwidgets;
+    std::array<QPushButton*, STEP_COUNT> stepbuttons;
 };

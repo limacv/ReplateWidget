@@ -133,7 +133,6 @@
     <ClCompile Include="Step4Widget.cpp" />
     <ClCompile Include="StitcherCV2.cpp" />
     <ClCompile Include="MLUtil.cpp" />
-    <ClCompile Include="QtStartSelector.cpp" />
     <ClCompile Include="Step1Widget.cpp" />
     <ClCompile Include="Step2Widget.cpp" />
     <ClCompile Include="StitcherSsfm.cpp" />
@@ -148,9 +147,6 @@
     <QtUic Include="Step2Widget.ui" />
     <QtUic Include="Step3Widget.ui" />
     <QtUic Include="Step4Widget.ui" />
-  </ItemGroup>
-  <ItemGroup>
-    <QtMoc Include="QtStartSelector.h" />
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="GInterval.h" />
@@ -183,6 +179,7 @@
     <ClInclude Include="MLDataStructure.h" />
     <QtMoc Include="Step3Widget.h" />
     <QtMoc Include="Step4Widget.h" />
+    <QtMoc Include="StepWidgetBase.h" />
     <ClInclude Include="StitcherBase.h" />
     <ClInclude Include="StitcherCV2.h" />
     <ClInclude Include="MLUtil.h" />

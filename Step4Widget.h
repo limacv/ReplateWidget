@@ -2,19 +2,19 @@
 
 #include <QWidget>
 #include <qtimer.h>
+#include "StepWidgetBase.h"
+
 namespace Ui { class Step4Widget; };
 
-class Step4Widget : public QWidget
+class Step4Widget : public StepWidgetBase
 {
 	Q_OBJECT
 
 public:
 	Step4Widget(QWidget *parent = Q_NULLPTR);
-	~Step4Widget();
-	void initState();
-
-public slots:
-	void onWidgetShowup();
+	virtual ~Step4Widget();
+	virtual void initState();
+	virtual void onWidgetShowup();
 
 public slots:
 	bool renderReplates();

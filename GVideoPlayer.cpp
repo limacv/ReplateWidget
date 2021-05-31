@@ -34,9 +34,12 @@ void GVideoPlayer::run()
 {
     while(!stop){
         int delay = (1000/m_frameRate);
-        m_curFrameId = (m_curFrameId + 1) % num_images_;
-        emit playFrame(m_curFrameId);
-        this->msleep(delay);
+        if (num_images_ > 0)
+        {
+            m_curFrameId = (m_curFrameId + 1) % num_images_;
+            emit playFrame(m_curFrameId);
+            this->msleep(delay);
+        }
     }
 }
 

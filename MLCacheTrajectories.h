@@ -22,6 +22,14 @@ public:
 	// this will update all global_rects
 	bool tryLoadGlobalBoxes();
 
+	bool tryLoadAll()
+	{
+		if (!tryLoadDetectionFromFile()) return false;
+		if (!tryLoadTrackFromFile()) return false;
+		if (!tryLoadGlobalBoxes()) return false;
+		return true;
+	}
+
 	// this will save global_rects to files
 	bool saveGlobalBoxes() const;
 

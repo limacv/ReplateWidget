@@ -60,7 +60,7 @@ bool MLDataManager::load_raw_video(const QString& path)
 		qCritical("opencv failed to open the video %s", qPrintable(path));
 		return false;
 	}
-	
+	raw_frames.resize(0);
 	int framenum = cap.get(cv::CAP_PROP_FRAME_COUNT);
 	raw_frames.reserve(framenum);
 	cv::Mat frame;
@@ -205,7 +205,7 @@ void MLDataManager::paintWarpedFrames(QPainter& painter, int frameidx, bool pain
 	return;
 }
 
-void MLDataManager::reinitMasks()
+void MLDataManager::initMasks()
 {
 	const int framecount = get_framecount();
 	masks.resize(framecount);

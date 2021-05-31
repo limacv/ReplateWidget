@@ -2,34 +2,30 @@
 
 #include <QWidget>
 #include <qtimer.h>
+#include "StepWidgetBase.h"
 
 namespace Ui { class Step1Widget; };
 
-class MLCacheTrajectories;
 class Step1RenderArea;
 
-class Step1Widget : public QWidget
+class Step1Widget : public StepWidgetBase
 {
 	Q_OBJECT
 
 public:
 	Step1Widget(QWidget *parent = Q_NULLPTR);
-	~Step1Widget();
-	void initState();
-	
-public slots:
-	void onWidgetShowup();
+	virtual ~Step1Widget();
+	virtual void initState();
+	virtual void onWidgetShowup();
 
 private slots:
-	void runDetect();
-	void runTrack();
-	void runSegmentation();
+	void selectVideo();
+	void selectProject();
+
 	void updateFrameidx(int frameidx);
 
 private:
 	Ui::Step1Widget *ui;
-
-	MLCacheTrajectories* trajp;  // only for convenient
 	
 	// for display
 	QTimer display_timer;

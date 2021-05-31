@@ -12,7 +12,7 @@
 #include <opencv2/imgproc.hpp>
 
 Step4Widget::Step4Widget(QWidget *parent)
-	: QWidget(parent)
+	: StepWidgetBase(parent)
 {
 	ui = new Ui::Step4Widget();
 	ui->setupUi(this);

@@ -9,33 +9,25 @@ ReplateWidget::ReplateWidget(QWidget *parent)
 {
     initConfig("./config.yaml");
     ui.setupUi(this);
-    qDebug() << "ReplateWidget::start StartSelector";
-    starter.exec();
-    
-    qDebug() << "ReplateWidget::load raw video from " << starter.filepath;
-    if (!starter.isProjFile)
-    {
-        qDebug() << "ReplateWidget::load from video";
-        MLDataManager::get().load_raw_video(starter.filepath);
-    }
-    else
-    {
-        qDebug() << "ReplateWidget::load from project file";
-    }
 
+    stepwidgets[0] = ui.step1Widget; stepbuttons[0] = ui.buttonStep1;
+    stepwidgets[1] = ui.step2Widget; stepbuttons[1] = ui.buttonStep2;
+    stepwidgets[2] = ui.step3Widget; stepbuttons[2] = ui.buttonStep3;
+    stepwidgets[3] = ui.step4Widget; stepbuttons[3] = ui.buttonStep4;
     connect(ui.buttonStep1, &QPushButton::clicked, this, [this] { setStepTo(0); });
     connect(ui.buttonStep2, &QPushButton::clicked, this, [this] { setStepTo(1); });
     connect(ui.buttonStep3, &QPushButton::clicked, this, [this] { setStepTo(2); });
-    connect(ui.buttonStep4, &QPushButton::clicked, this, [this] { setStepTo(4); });
+    connect(ui.buttonStep4, &QPushButton::clicked, this, [this] { setStepTo(3); });
 
     connect(ui.buttonNextStep, &QPushButton::clicked, this, &ReplateWidget::nextStep);
     connect(ui.buttonLastStep, &QPushButton::clicked, this, &ReplateWidget::lastStep);
 
     // initialize the StepXWidget
-    ui.step1Widget->initState();
-    ui.step2Widget->initState();
-    ui.step3Widget->initState();
-    ui.step4Widget->initState();
+    for (int i = 0; i < STEP_COUNT; ++i)
+    {
+        stepwidgets[i]->initState();
+        stepwidgets[i]->hide();
+    }
 
     // initialize index 0 layout
     setStepTo(current_step);
@@ -52,47 +44,34 @@ void ReplateWidget::initConfig(const QString& cfgpath) const
 void ReplateWidget::setStepTo(int step)
 {
     step = step < 0 ? 0 : (step >= STEP_COUNT ? STEP_COUNT - 1 : step);
+    stepwidgets[current_step]->hide();
     ui.pipelineWidget->setCurrentIndex(step);
+    stepwidgets[current_step]->show();
+    stepwidgets[step]->onWidgetShowup();
+    current_step = step;
 
-    switch (step)
+    if (step == 0)
     {
-    case 0:
         ui.buttonLastStep->hide();
         ui.buttonNextStep->show();
-        ui.step1Widget->onWidgetShowup();
-        setButtonActive(*ui.buttonStep1);
-        setButtonInvalid(*ui.buttonStep2);
-        setButtonInvalid(*ui.buttonStep3);
-        setButtonInvalid(*ui.buttonStep4);
-        break;
-    case 1:
-        ui.buttonNextStep->show();
-        ui.buttonLastStep->show();
-        ui.step2Widget->onWidgetShowup();
-        setButtonValid(*ui.buttonStep1);
-        setButtonActive(*ui.buttonStep2);
-        setButtonInvalid(*ui.buttonStep3);
-        setButtonInvalid(*ui.buttonStep4);
-        break;
-    case 2:
-        ui.buttonNextStep->show();
-        ui.buttonLastStep->show();
-        ui.step3Widget->onWidgetShowup();
-        setButtonValid(*ui.buttonStep1);
-        setButtonValid(*ui.buttonStep2);
-        setButtonActive(*ui.buttonStep3);
-        setButtonInvalid(*ui.buttonStep4);
-        break;
-    case 3:
+    }
+    else if (step == STEP_COUNT - 1)
+    {
         ui.buttonLastStep->show();
         ui.buttonNextStep->hide();
-        ui.step4Widget->onWidgetShowup();
-        setButtonValid(*ui.buttonStep1);
-        setButtonValid(*ui.buttonStep2);
-        setButtonValid(*ui.buttonStep3);
-        setButtonActive(*ui.buttonStep4);
-        break;
     }
+    else
+    {
+        ui.buttonNextStep->show();
+        ui.buttonLastStep->show();
+    }
+    // set button states
+    int i = 0;
+    for (; i < step; ++i)
+        setButtonValid(*stepbuttons[i]);
+    setButtonActive(*stepbuttons[i]);
+    for (; i < STEP_COUNT; ++i)
+        setButtonInvalid(*stepbuttons[i]);
 }
 
 void ReplateWidget::nextStep()

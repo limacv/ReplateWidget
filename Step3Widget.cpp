@@ -7,10 +7,11 @@
 #include "GMainDisplay.h"
 
 Step3Widget::Step3Widget(QWidget *parent)
-	: QWidget(parent)
+	: StepWidgetBase(parent)
 {
 	ui = new Ui::Step3Widget();
 	ui->setupUi(this);
+    PrepStyleSheet();
 }
 
 Step3Widget::~Step3Widget()
@@ -20,8 +21,6 @@ Step3Widget::~Step3Widget()
 
 void Step3Widget::initState()
 {
-    PrepStyleSheet();
-
     display_widget_ = new GMainDisplay(this, this);
     result_widget_ = new GResultDisplay(this);
     control_widget_ = CreateControlGroup(this);
@@ -51,8 +50,6 @@ void Step3Widget::onWidgetShowup()
 {
 	platesp->initialize_cut(45);
 }
-
-
 
 void Step3Widget::CreateConnections()
 {

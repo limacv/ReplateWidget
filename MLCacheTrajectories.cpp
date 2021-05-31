@@ -128,10 +128,10 @@ bool MLCacheTrajectories::tryLoadGlobalBoxes()
 	int rectcount = 0;
 	while (rectfile)
 	{
-		int frameidx, classid, instanceid, x, y, wid, hei;
+		int frameidx = -1, classid, instanceid, x, y, wid, hei;
 		rectfile >> frameidx >> classid >> instanceid >> x >> y >> wid >> hei;
 		if (frameidx < 0 || frameidx >= framecount)
-			return false;
+			continue;
 		auto& boxes = frameidx2boxes[frameidx];
 		auto& it = boxes.find(ObjID(classid, instanceid));
 		if (it == boxes.end())
