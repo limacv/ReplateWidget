@@ -13,7 +13,7 @@ GEffect::GEffect(const GPathTrackDataPtr &path)
     , trail_alpha_(1.0)
     , line_smooth_(10)
     , fade_level_(1)
-    , trans_level_(3)
+    , trans_level_(0)
     , marker_mode_(0)
 {
     setPath(path);

@@ -1,53 +1,73 @@
 #include "GResultDisplay.h"
 #include "MLDataManager.h"
 #include <qdialog.h>
+#include "ui_GResultWidget.h"
+#include "MLUtil.h"
 
-GResultDisplay::GResultDisplay(QWidget *parent)
-    : GBaseWidget(parent)
+GResultWidget::GResultWidget(QWidget* parent)
+    :QWidget(parent),
+    current_frame_id_(0),
+    duration(&MLDataManager::get().plates_cache.replate_duration),
+    ui(new Ui::GResultWidget()),
+    display_widget(nullptr)
 {
-    video_player_ = new GVideoPlayer(this);
-    const int framecount = MLDataManager::get().get_framecount();
-    video_player_->initialize(0, framecount, 30);
-    connect(video_player_, SIGNAL(playFrame(int)), this, SLOT(updateFrame(int)));
+    ui->setupUi(this);
+    display_widget = ui->widget;
+    ui->button->setIcon(MLUtil::getIcon(MLUtil::ICON_ID::STOP));
+    ui->widget->setparent(this);
+
+    timer.setInterval(33);
+    timer.setSingleShot(false);
+
+    connect(&timer, &QTimer::timeout, this, &GResultWidget::updateFrame);
+    connect(ui->button, &QPushButton::clicked, this, [this](bool checked) {
+        if (checked)
+        {
+            ui->button->setIcon(MLUtil::getIcon(MLUtil::ICON_ID::STOP));
+            play();
+        }
+        else
+        {
+            ui->button->setIcon(MLUtil::getIcon(MLUtil::ICON_ID::PLAY));
+            stop();
+        }
+        });
+    connect(ui->slider, &QSlider::valueChanged, this, [this](int value) { current_frame_id_ = value; });
+}
+    
+void GResultWidget::setStillState(bool b)
+{
+    ui->widget->setPathMode(b);
 }
 
-void GResultDisplay::setStillState(bool b)
+void GResultWidget::setInpaintState(bool b)
 {
-    setPathMode(b);
-//    show_mirror = b;
+    ui->widget->clearMouseSelection();
+    ui->widget->setPathMode(b);
 }
 
-void GResultDisplay::setInpaintState(bool b)
+void GResultWidget::play()
 {
-    clearMouseSelection();
-    setPathMode(b);
+    timer.start();
 }
 
-void GResultDisplay::clearCurrentSelection()
+void GResultWidget::stop()
 {
-    clearMouseSelection();
+    timer.stop();
 }
 
-void GResultDisplay::play()
+void GResultWidget::updateFrame()
 {
-    video_player_->Play();
+    if (*duration > 0)
+    {
+        current_frame_id_ = (current_frame_id_++) % (*duration);
+        ui->slider->setRange(0, (*duration) - 1);
+        ui->slider->setValue(current_frame_id_);
+        update();
+    }
 }
 
-void GResultDisplay::stop()
-{
-    video_player_->Stop();
-}
-
-void GResultDisplay::updateFrame(int id)
-{
-//    int duration = data_manager_->duration();
-    ++current_frame_id_;
-//    if (duration != 0)
-//        current_frame_id_ %= duration;
-    update();
-}
-
-void GResultDisplay::editFrameRate()
+void GResultWidget::editFrameRate()
 {
     QDialog *res = new QDialog(this);
     res->setWindowTitle("Frame Rate");
@@ -55,7 +75,7 @@ void GResultDisplay::editFrameRate()
     frame_rate_edit_ = new QLineEdit;
     frame_rate_edit_->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
     frame_rate_edit_->setValidator(new QIntValidator(1, 100, res));
-    frame_rate_edit_->setText(QString::number(video_player_->frameRate()));
+    frame_rate_edit_->setText(QString::number(timer.interval()));
 
     QDialogButtonBox *button_box = new QDialogButtonBox(QDialogButtonBox::Ok);
 
@@ -63,16 +83,21 @@ void GResultDisplay::editFrameRate()
     layout->addWidget(frame_rate_edit_);
     layout->addWidget(button_box);
 
-    connect(frame_rate_edit_, SIGNAL(editingFinished()), this, SLOT(changeFrameRate()));
-    connect(button_box, SIGNAL(accepted()), res, SLOT(accept()));
+    connect(frame_rate_edit_, &QLineEdit::editingFinished, this, &GResultWidget::changeFrameRate);
+    connect(button_box, &QDialogButtonBox::accepted, res, &QDialog::accept);
 
     res->exec();
 }
 
-void GResultDisplay::changeFrameRate()
+void GResultWidget::changeFrameRate()
 {
     int rate = frame_rate_edit_->text().toInt();
-    video_player_->setFrameRate(rate);
+    timer.setInterval(rate);
+}
+
+GResultDisplay::GResultDisplay(QWidget *parent)
+    : GBaseWidget(parent)
+{
 }
 
 QSize GResultDisplay::sizeHint() const
@@ -87,7 +112,7 @@ void GResultDisplay::paintEvent(QPaintEvent *event)
     const auto& global_data = MLDataManager::get();
     QPainter painter(this);
     painter.drawImage(painter.viewport(), global_data.getBackgroundQImg());
-    global_data.effect_manager_.drawEffects(painter, current_frame_id_);
-    //dataManager()->paintResultDisplay(painter, current_frame_id_);
+    global_data.effect_manager_.drawEffects(painter, parent_widget->current_frame_id_);
+
     paintMouseSelection(painter);
 }

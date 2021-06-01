@@ -1,5 +1,6 @@
 #include "GObjLayer.h"
 #include "MLDataManager.h"
+#include "MLUtil.h"
 
 GObjLayer::GObjLayer(QWidget *parent)
     : QWidget(parent)
@@ -38,7 +39,7 @@ void GObjLayer::initialize(GEffectPtr &effect, const std::string &name)
     picture_->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
     int start_frame = effect->startFrame();
     QRectF rectF = effect->path()->frameRoiRect(start_frame);
-    const QPixmap pic = QPixmap::fromImage(GUtil::mat2qimage(global_data.getRoiofFrame(start_frame, rectF)));
+    const QPixmap pic = QPixmap::fromImage(MLUtil::mat2qimage(global_data.getRoiofFrame(start_frame, rectF), QImage::Format_ARGB32_Premultiplied));
                 //GUtil::mat2qimage(video->getImage(start_frame, rectF)));
 
     picture_->setPixmap(pic);
@@ -52,9 +53,9 @@ void GObjLayer::initialize(GEffectPtr &effect, const std::string &name)
     delete_button_ = new QPushButton(this);
     delete_button_->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
 
-    QPixmap pixmap("../Replate/close_box_red.png");//TODO: change dir
+    QPixmap pixmap(":/ReplateWidget/images/delete_button_icon.png");
     QIcon buttonIcon(pixmap);
-    delete_button_->resize(50, 50);
+    delete_button_->resize(40, 40);
     delete_button_->setFlat(true);
     delete_button_->setIcon(buttonIcon);
     delete_button_->setIconSize(delete_button_->size());

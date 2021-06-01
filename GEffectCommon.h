@@ -39,10 +39,11 @@ static char G_EFFECT_STR[][20] = {
 };
 
 static const float G_TRANS_LEVEL[] = {
-    0.2f,
-    0.5f,
+    1.f,
     0.8f,
-    1
+    0.5f,
+    0.2f,
+    0.f
 };
 
 static const int FadeDuration[] = {
@@ -50,7 +51,7 @@ static const int FadeDuration[] = {
     5,
     10,
     15,
-    20
+    20,
 };
 
 #endif // GEFFECTCOMMON_H

@@ -2,6 +2,7 @@
 #include "MLDataManager.h"
 #include "MLConfigManager.h"
 #include <qdebug.h>
+#include "Step1Widget.h"
 
 ReplateWidget::ReplateWidget(QWidget *parent)
     : QMainWindow(parent),
@@ -31,9 +32,9 @@ ReplateWidget::ReplateWidget(QWidget *parent)
 
     // initialize index 0 layout
     setStepTo(current_step);
-
+    
     // for debug
-    //setStepTo(1);
+    ui.step1Widget->selectVideo();
 }
 
 void ReplateWidget::initConfig(const QString& cfgpath) const

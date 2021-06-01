@@ -18,7 +18,7 @@ public:
 	virtual void initState();
 	virtual void onWidgetShowup();
 
-private slots:
+public slots:
 	void selectVideo();
 	void selectProject();
 
@@ -29,10 +29,6 @@ private:
 	
 	// for display
 	QTimer display_timer;
-	bool display_showbox;
-	bool display_showname;
-	bool display_showtrace;
-	bool display_showmask;
 	int display_frameidx;
 	friend class Step1RenderArea;
 };

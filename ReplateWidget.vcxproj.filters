@@ -182,9 +182,6 @@
     </QtMoc>
   </ItemGroup>
   <ItemGroup>
-    <QtUic Include="QtStartSelector.ui">
-      <Filter>Form Files</Filter>
-    </QtUic>
     <QtUic Include="ReplateWidget.ui">
       <Filter>Form Files</Filter>
     </QtUic>
@@ -198,6 +195,12 @@
       <Filter>Form Files</Filter>
     </QtUic>
     <QtUic Include="Step4Widget.ui">
+      <Filter>Form Files</Filter>
+    </QtUic>
+    <QtUic Include="GControlWidget.ui">
+      <Filter>Form Files</Filter>
+    </QtUic>
+    <QtUic Include="GResultWidget.ui">
       <Filter>Form Files</Filter>
     </QtUic>
   </ItemGroup>

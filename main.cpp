@@ -1,5 +1,6 @@
 #include "ReplateWidget.h"
 #include <QtWidgets/QApplication>
+#include <qresource.h>
 
 int main(int argc, char *argv[])
 {

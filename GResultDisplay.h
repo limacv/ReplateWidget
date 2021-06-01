@@ -6,10 +6,45 @@
 #include <QBoxLayout>
 #include <QValidator>
 #include <QDialogButtonBox>
+#include <QTimer>
 
 #include "GBaseWidget.h"
-//#include "GDataManager.h"
 #include "GVideoPlayer.h"
+
+namespace Ui { class GResultWidget; };
+class GResultDisplay;
+
+class GResultWidget : public QWidget
+{
+    Q_OBJECT
+public:
+    explicit GResultWidget(QWidget* parent = 0);
+
+    void setStillState(bool b);
+    void setInpaintState(bool b);
+
+    
+
+public slots:
+    void play();
+    void stop();
+    void updateFrame();
+    void editFrameRate();
+    void changeFrameRate();
+
+private:
+    friend class GResultDisplay;
+    QTimer timer;
+    Ui::GResultWidget* ui;
+
+    int current_frame_id_;
+    
+    QLineEdit* frame_rate_edit_;
+    int* duration;
+public:
+    GResultDisplay* display_widget;
+};
+
 
 class GResultDisplay : public GBaseWidget
 {
@@ -17,30 +52,15 @@ class GResultDisplay : public GBaseWidget
 
 public:
     explicit GResultDisplay(QWidget *parent = 0);
-
-    void setStillState(bool b);
-    void setInpaintState(bool b);
-
-public slots:
-    virtual void clearCurrentSelection();
-    void play();
-    void stop();
-    void updateFrame(int id);
-    void editFrameRate();
-    void changeFrameRate();
+    void setparent(GResultWidget* parent) { parent_widget = parent; }
 
 protected:
     virtual QSize sizeHint() const;
     virtual QSize minimumSizeHint() const { return QSize(480, 200); }
     virtual void paintEvent(QPaintEvent *event);
-
-protected:
-    GVideoPlayer *video_player_;
-
-    // Not sure whether this design is good or not
-    int current_frame_id_;
-
-    QLineEdit *frame_rate_edit_;
+    
+private:
+    GResultWidget* parent_widget;
 };
 
 #endif // GRESULTDISPLAY_H

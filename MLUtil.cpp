@@ -57,4 +57,19 @@ namespace MLUtil
         cv::extractChannel(rgba, a, 3);
         cv::cvtColor(rgba, gray, cv::COLOR_RGBA2GRAY);
     }
+
+    QIcon getIcon(ICON_ID id)
+    {
+        static QIcon play_icon = QIcon(QPixmap(":/ReplateWidget/images/play_button_icon.png"));
+        static QIcon stop_icon = QIcon(QPixmap(":/ReplateWidget/images/stop_button_icon.png"));
+        switch (id)
+        {
+        case ICON_ID::PLAY:
+            return play_icon;
+        case ICON_ID::STOP:
+            return stop_icon;
+        default:
+            break;
+        }
+    }
 }

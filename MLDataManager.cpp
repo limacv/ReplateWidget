@@ -72,7 +72,7 @@ bool MLDataManager::load_raw_video(const QString& path)
 		raw_frames.push_back(frame.clone());
 	}
 	qDebug("successfully load %d frames of raw video", raw_frames.size());
-
+	
 	raw_video_cfg.filepath = path;
 	raw_video_cfg.framecount = raw_frames.size();
 	raw_video_cfg.fourcc = cap.get(cv::CAP_PROP_FOURCC);
@@ -192,6 +192,12 @@ QRectF MLDataManager::toPaintROI(const cv::Rect& rect_w, const QRect& viewport) 
 	return QRectF(left_norm * viewport.width(), top_norm * viewport.height(), wid_norm * viewport.width(), hei_norm * viewport.height());
 }
 
+void MLDataManager::paintRawFrames(QPainter& painter, int frameidx) const
+{
+	painter.drawImage(painter.viewport(),
+		MLUtil::mat2qimage(raw_frames[frameidx], QImage::Format_RGB888));
+}
+
 void MLDataManager::paintWarpedFrames(QPainter& painter, int frameidx, bool paintbg, bool paintfg) const
 {
 	auto viewport = painter.viewport();
@@ -203,6 +209,120 @@ void MLDataManager::paintWarpedFrames(QPainter& painter, int frameidx, bool pain
 			toPaintROI(stitch_cache.rois[frameidx], viewport), 
 			MLUtil::mat2qimage(stitch_cache.warped_frames[frameidx], QImage::Format_ARGB32_Premultiplied));
 	return;
+}
+
+void MLDataManager::paintWorldTrackBoxes(QPainter& painter, int frameidx, bool paint_name, bool paint_traj) const
+{
+	const auto& boxes = trajectories.frameidx2trackboxes[frameidx];
+	const auto viewport = painter.viewport();
+	const float scalex = (float)viewport.width() / VideoWidth();
+	const float scaley = (float)viewport.height() / VideoHeight();
+
+	/******************
+	* paint boxes and names
+	******************/
+	for (auto it = boxes.constKeyValueBegin(); it != boxes.constKeyValueEnd(); ++it)
+	{
+		const auto& color = trajectories.getColor(it->first);
+		const auto& box = it->second;
+		const auto& paint_roi = toPaintROI(box->rect_global, viewport);
+
+		// draw rectangles
+		painter.setPen(QPen(color, 2));
+		painter.drawRect(paint_roi);
+
+		// draw names
+		if (paint_name)
+		{
+			QString text;
+			text = QString("%1_%2").arg(MLCacheTrajectories::classid2name[box->classid], QString::number(box->instanceid));
+
+			painter.fillRect(
+				(int)paint_roi.x() - 1,
+				(int)paint_roi.y() - 10,
+				text.size() * 7,
+				10, color);
+			painter.setPen(QColor(255, 255, 255));
+			painter.drawText(
+				(int)paint_roi.x(),
+				(int)paint_roi.y() - 1, text);
+		}
+	}
+	if (paint_traj)
+	{
+		const auto& trace = trajectories.objid2trajectories;
+		const auto& framecount = get_framecount();
+		for (auto it = trace.constKeyValueBegin(); it != trace.constKeyValueEnd(); ++it)
+		{
+			const auto& color = trajectories.getColor(it->first);
+			const auto& boxes = it->second.boxes;
+			QPointF lastpt(-999, -999);
+			bool skip_flag = true;
+			for (const auto& pbox : boxes)
+			{
+				if (pbox == nullptr || pbox->empty())
+				{
+					skip_flag = true;
+					continue;
+				}
+
+				QPointF currpt = toPaintROI(pbox->rect_global, viewport).center();
+
+				if (lastpt.x() < 0)
+				{
+					lastpt = currpt;
+					skip_flag = false;
+					continue;
+				}
+				float width = 4 - qAbs<float>(pbox->frameidx - frameidx) / 5;
+				width = MAX(width, 0.2);
+				auto style = skip_flag ? Qt::PenStyle::DotLine : Qt::PenStyle::SolidLine;
+				painter.setPen(QPen(color, width, style));
+				painter.drawLine(lastpt, currpt);
+				lastpt = currpt;
+				skip_flag = false;
+			}
+		}
+	}
+}
+
+void MLDataManager::paintWorldDetectBoxes(QPainter& painter, int frameidx, bool paint_name) const
+{
+	const auto& boxes = trajectories.frameidx2detectboxes[frameidx];
+	const auto viewport = painter.viewport();
+	const float scalex = (float)viewport.width() / VideoWidth();
+	const float scaley = (float)viewport.height() / VideoHeight();
+
+	/******************
+	* paint boxes and names
+	******************/
+	for (auto it = boxes.constBegin(); it != boxes.constEnd(); ++it)
+	{
+		const auto& box = *it;
+		const auto& color = trajectories.getColor(ObjID(box->classid, box->instanceid));
+		const auto& paint_roi = toPaintROI(box->rect_global, viewport);
+
+		// draw rectangles
+		painter.setPen(QPen(color, 2));
+		painter.drawRect(paint_roi);
+
+		// draw names
+		if (paint_name)
+		{
+			QString text;
+			text = MLCacheTrajectories::classid2name[box->classid];
+
+			painter.fillRect(
+				(int)paint_roi.x() - 1,
+				(int)paint_roi.y() - 10,
+				text.size() * 7,
+				10, color);
+			painter.setPen(QColor(255, 255, 255));
+			painter.drawText(
+				(int)paint_roi.x(),
+				(int)paint_roi.y() - 1, text);
+		}
+	}
 }
 
 void MLDataManager::initMasks()

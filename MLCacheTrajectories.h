@@ -6,13 +6,14 @@
 #include <qcolor.h>
 #include <qhash.h>
 #include <opencv2/core.hpp>
+#include <fstream>
 #include "MLDataStructure.h"
 
 // A container that contains the trajp used in Step1Widget. All the trajp are in raw coordinates (before stitching)
 class MLCacheTrajectories
 {
 public:
-	MLCacheTrajectories() {}
+	MLCacheTrajectories();
 	virtual ~MLCacheTrajectories();
 	
 	// this will update detect_boxes_list
@@ -20,34 +21,42 @@ public:
 	// this will update track_boxes_list and frameidx/objid2trajectories
 	bool tryLoadTrackFromFile();
 	// this will update all global_rects
-	bool tryLoadGlobalBoxes();
+	bool tryLoadGlobalTrackBoxes();
+	bool tryLoadGlobalTrackBoxes_deprecated();
+	bool tryLoadGlobalDetectBoxes();
 
 	bool tryLoadAll()
 	{
 		if (!tryLoadDetectionFromFile()) return false;
 		if (!tryLoadTrackFromFile()) return false;
-		if (!tryLoadGlobalBoxes()) return false;
+		if (!tryLoadGlobalTrackBoxes()) return false;
+		if (!tryLoadGlobalDetectBoxes()) return false;
 		return true;
 	}
 
 	// this will save global_rects to files
-	bool saveGlobalBoxes() const;
+	bool saveGlobalTrackBoxes() const;
+	bool saveGlobalDetectBoxes() const;
 
 	bool isDetectOk() { return !detect_boxes_list.empty(); }
 	bool isTrackOk() { return !track_boxes_list.empty(); }
 
-	QColor getColor(const ObjID& id);
+	QColor getColor(const ObjID& id) const;
+
+private:
+	bool saveWorldRects(const QVector<BBox*>& boxes, const std::string& filepath) const;
+	bool loadWorldRects(QVector<BBox*>& boxes, const std::string& filepath) const;
 
 public:
 	static QVector<QString> classid2name;
+	static QHash<QString, int> name2classid;
+	static QHash<ObjID, QColor> colormap;
 
-	QVector<BBox> detect_boxes_list;
+	QVector<BBox*> detect_boxes_list;
+	QVector<QVector<BBox*>> frameidx2detectboxes;
 
 	QVector<BBox*> track_boxes_list;
-	QVector<QMap<ObjID, BBox*>> frameidx2boxes;
+	QVector<QMap<ObjID, BBox*>> frameidx2trackboxes;
 	QMap<ObjID, Traject> objid2trajectories;
-
-private:
-	QHash<ObjID, QColor> colormap;
 };
 

@@ -43,6 +43,8 @@ private:
 	bool display_showbackground;
 	bool display_showwarped;
 	bool display_showbox;
+	bool display_showtraj;
+	bool display_showtrack;
 	int display_frameidx;
 	
 	friend class Step2RenderArea;

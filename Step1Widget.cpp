@@ -13,10 +13,6 @@
 
 Step1Widget::Step1Widget(QWidget* parent)
 	: StepWidgetBase(parent),
-	display_showbox(false),
-	display_showname(false),
-	display_showtrace(false),
-	display_showmask(false),
 	display_frameidx(0)
 {
 	ui = new Ui::Step1Widget();
@@ -125,113 +121,7 @@ void Step1RenderArea::paintEvent(QPaintEvent* event)
 {
 	if (MLDataManager::get().get_framecount() == 0)
 		return;
-	const auto& raw_frames = MLDataManager::get().raw_frames;
-	const auto& masks = MLDataManager::get().masks;
 
 	QPainter paint(this);
-	auto viewport = paint.viewport();
-
-	/******************
-	* paint image
-	********************/
-	if (step1widget->display_showmask)
-	{
-		paint.drawImage(viewport,
-			MLUtil::mat2qimage(masks[step1widget->display_frameidx], QImage::Format_RGB888));
-	}
-	else
-	{
-		paint.drawImage(viewport, 
-			MLUtil::mat2qimage(raw_frames[step1widget->display_frameidx], QImage::Format_RGB888));
-		//paint.drawPixmap(paint.viewport(), 
-		//	MLUtil::mat2qpixmap(raw_frames[step1widget->display_frameidx], QImage::Format_RGB888));
-	}
-
-	//const float scalex = (float)viewport.width() / raw_frames[0].cols;
-	//const float scaley = (float)viewport.height() / raw_frames[0].rows;
-	///******************
-	//* paint box and name
-	//********************/
-	//if (step1widget->display_showbox)
-	//{
-	//	const auto& boxes = step1widget->trajp->frameidx2boxes[step1widget->display_frameidx];
-	//	for (auto it = boxes.constKeyValueBegin(); it != boxes.constKeyValueEnd(); ++it)
-	//	{
-	//		const auto& color = step1widget->trajp->getColor(it->first);
-	//		const auto& box = it->second;
-
-	//		paint.setPen(QPen(color, 2));
-	//		paint.drawRect(
-	//			(int)(box->rect.x * scalex),
-	//			(int)(box->rect.y * scaley),
-	//			(int)(box->rect.width * scalex),
-	//			(int)(box->rect.height * scaley));
-	//	}
-	//}
-
-	///******************
-	//* paint name
-	//******************/
-	//if (step1widget->display_showname)
-	//{
-	//	const auto& boxes = step1widget->trajp->frameidx2boxes[step1widget->display_frameidx];
-	//	for (auto it = boxes.constKeyValueBegin(); it != boxes.constKeyValueEnd(); ++it)
-	//	{
-	//		const auto& color = step1widget->trajp->getColor(it->first);
-	//		const auto& box = it->second;
-
-	//		QString text = QString("%1_%2").arg(MLCacheTrajectories::classid2name[box->classid], QString::number(box->instanceid));
-	//		paint.fillRect(
-	//			(int)(box->rect.x * scalex) - 1,
-	//			(int)(box->rect.y * scaley) - 10,
-	//			text.size() * 7,
-	//			10, color);
-	//		paint.setPen(QColor(255, 255, 255));
-	//		paint.drawText(
-	//			(int)(box->rect.x * scalex),
-	//			(int)(box->rect.y * scaley) - 1, text);
-	//	}
-	//}
-
-	///******************
-	//* paint name
-	//******************/
-	//if (step1widget->display_showtrace)
-	//{
-	//	const auto& trajectories = step1widget->trajp->objid2trajectories;
-	//	const auto& frameidx = step1widget->display_frameidx;
-	//	const auto& framecount = MLDataManager::get().get_framecount();
-	//	for (auto it = trajectories.constKeyValueBegin(); it != trajectories.constKeyValueEnd(); ++it)
-	//	{
-	//		const auto& color = step1widget->trajp->getColor(it->first);
-	//		const auto& boxes = it->second.boxes;
-	//		QPoint lastpt(-999, -999);
-	//		bool skip_flag = true;
-	//		for (const auto& pbox : boxes)
-	//		{
-	//			if (pbox == nullptr || pbox->empty())
-	//			{
-	//				skip_flag = true;
-	//				continue;
-	//			}
-
-	//			QPoint currpt(scalex * (pbox->rect.x + pbox->rect.width / 2),
-	//				scaley * (pbox->rect.y + pbox->rect.height / 2));
-
-	//			if (lastpt.x() < 0)
-	//			{
-	//				lastpt = currpt;
-	//				skip_flag = false;
-	//				continue;
-	//			}
-	//			float width = 4 - qAbs<float>(pbox->frameidx - frameidx) / 5;
-	//			width = MAX(width, 0.2);
-	//			auto style = skip_flag ? Qt::PenStyle::DotLine : Qt::PenStyle::SolidLine;
-	//			paint.setPen(QPen(color, width, style));
-	//			paint.drawLine(lastpt, currpt);
-	//			lastpt = currpt;
-	//			skip_flag = false;
-	//		}
-	//	}
-	//}
+	MLDataManager::get().paintRawFrames(paint, step1widget->display_frameidx);
 }

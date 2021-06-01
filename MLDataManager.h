@@ -56,8 +56,12 @@ public:
 	int VideoWidth() const { return stitch_cache.background.cols; }
 
 	// painting function
+	// convert world coordinate to the paint coordinate
 	QRectF toPaintROI(const cv::Rect& rect_w, const QRect& rect_painter) const;
+	void paintRawFrames(QPainter& painter, int frameidx) const;
 	void paintWarpedFrames(QPainter& painter, int frameidx, bool paintbg = true, bool paintfg = true) const;
+	void paintWorldTrackBoxes(QPainter& painter, int frameidx, bool paint_name = true, bool paint_traj = true) const;
+	void paintWorldDetectBoxes(QPainter& painter, int frameidx, bool paint_name = true) const;
 
 	// step1 <-> step2
 	void initMasks();
@@ -66,6 +70,7 @@ public:
 
 public:
 	VideoConfig raw_video_cfg;
+	VideoConfig out_video_cfg;
 	QVector<cv::Mat> raw_frames;
 
 	MLCacheTrajectories trajectories;
@@ -75,7 +80,6 @@ public:
 
 	GEffectManager effect_manager_;
 	MLCachePlatesConfig plates_cache;
-	VideoConfig out_video_cfg;
 	QVector<cv::Mat> replate_video;
 
 private:

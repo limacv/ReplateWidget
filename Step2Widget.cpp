@@ -20,8 +20,10 @@ Step2Widget::Step2Widget(QWidget* parent)
 	: StepWidgetBase(parent),
 	display_frameidx(0),
 	display_showbackground(false),
-	display_showwarped(true),
+	display_showwarped(false),
 	display_showbox(false),
+	display_showtrack(false),
+	display_showtraj(false),
 	stitchdatap(&MLDataManager::get().stitch_cache),
 	flowdatap(&MLDataManager::get().flow_cache),
 	trajp(&MLDataManager::get().trajectories)
@@ -34,16 +36,30 @@ Step2Widget::Step2Widget(QWidget* parent)
 	connect(ui->buttonStitchBg, &QPushButton::clicked, this, &Step2Widget::runStitching);
 	connect(ui->buttonInpaintBg, &QPushButton::clicked, this, &Step2Widget::runInpainting);
 
+	display_showbackground = ui->checkShowBg->isChecked();
 	connect(ui->checkShowBg, &QCheckBox::stateChanged, this, [this](int state) {
 		this->display_showbackground = (state == Qt::Checked);
 		this->ui->imageWidget->update();
 		});
+	display_showwarped = ui->checkShowFrames->isChecked();
 	connect(ui->checkShowFrames, &QCheckBox::stateChanged, this, [this](int state) {
 		this->display_showwarped = (state == Qt::Checked);
 		this->ui->imageWidget->update();
 		});
+	display_showbox = ui->checkShowBox->isChecked();
 	connect(ui->checkShowBox, &QCheckBox::stateChanged, this, [this](int state) {
 		this->display_showbox = (state == Qt::Checked);
+		this->ui->imageWidget->update();
+		});
+	display_showtraj = ui->checkShowTraj->isChecked();
+	connect(ui->checkShowTraj, &QCheckBox::stateChanged, this, [this](int state) {
+		this->display_showtraj = (state == Qt::Checked);
+		this->ui->imageWidget->update();
+		});
+	display_showtrack = ui->checkShowTrack->isChecked();
+	connect(ui->checkShowTrack, &QCheckBox::stateChanged, this, [this](int state) {
+		this->display_showtrack = (state == Qt::Checked);
+		this->ui->checkShowTraj->setEnabled(this->display_showtrack);
 		this->ui->imageWidget->update();
 		});
 
@@ -67,7 +83,9 @@ void Step2Widget::onWidgetShowup()
 	if (!trajp->tryLoadTrackFromFile())
 		runTrack();
 
-	if (!trajp->tryLoadGlobalBoxes() || !stitchdatap->tryLoadAllFromFiles())
+	if (!trajp->tryLoadGlobalTrackBoxes() 
+		|| !trajp->tryLoadGlobalDetectBoxes()
+		|| !stitchdatap->tryLoadAllFromFiles())
 	{
 		global_data.initMasks();
 		runSegmentation();
@@ -175,7 +193,7 @@ void Step2Widget::runSegmentation()
 	for (int i = 0; i < framecount; ++i)
 	{
 		auto& mask = globaldata.masks[i];
-		for (auto pbox : trajp->frameidx2boxes[i])
+		for (auto pbox : trajp->frameidx2trackboxes[i])
 			mask(pbox->rect).setTo(0);
 	}
 	ui->imageWidget->update();
@@ -212,23 +230,39 @@ void Step2Widget::runStitching()
 	st->get_warped_frames(stitchdatap->warped_frames, stitchdatap->rois);
 	stitchdatap->background = st->get_stitched_image();
 	// warp rectangles
-	auto& trajectories = MLDataManager::get().trajectories;
 	for (int frameidx = 0; frameidx < rawframes.size(); ++frameidx)
 	{
-		auto& boxes = trajectories.frameidx2boxes[frameidx];
-		std::vector<cv::Rect> rects; rects.reserve(boxes.size());
-		for (auto& box : boxes)
-			rects.emplace_back(box->rect);
-		st->get_warped_rects(frameidx, rects);
+		{ // warp tracking boxes
+			auto& boxes = trajp->frameidx2trackboxes[frameidx];
+			std::vector<cv::Rect> rects; rects.reserve(boxes.size());
+			for (auto& box : boxes)
+				rects.emplace_back(box->rect);
+			st->get_warped_rects(frameidx, rects);
 
-		int i = 0;
-		for (auto& it = boxes.begin(); it != boxes.end(); ++it, ++i)
-			it.value()->rect_global = rects[i];
+			int i = 0;
+			for (auto& it = boxes.begin(); it != boxes.end(); ++it, ++i)
+				it.value()->rect_global = rects[i];
+		}
+		{ // warp detection boxes
+			auto& boxes = trajp->frameidx2detectboxes[frameidx];
+			std::vector<cv::Rect> rects; rects.reserve(boxes.size());
+			for (auto& box : boxes)
+				rects.emplace_back(box->rect);
+			st->get_warped_rects(frameidx, rects);
+
+			int i = 0;
+			for (auto it = boxes.begin(); it != boxes.end(); ++it, ++i)
+				(*it)->rect_global = rects[i];
+		}
 	}
 
 	if (!stitchdatap->saveAllToFiles())
 		qWarning("Step2Widge::error while save stitch to cache");
-	
+	if (!trajp->saveGlobalDetectBoxes())
+		qWarning("Step2Widge::error while save global detect boxes");
+	if (!trajp->saveGlobalTrackBoxes())
+		qWarning("Step2Widge::error while save global track boxes");
+
 	stitchdatap->update_global_roi();
 }
 
@@ -319,6 +353,7 @@ void Step2Widget::runInpainting()
 
 void Step2RenderArea::paintEvent(QPaintEvent* event)
 {
+	const auto& global_data = MLDataManager::get();
 	const auto& raw_frames = MLDataManager::get().raw_frames;
 	const auto& stitch_cache = MLDataManager::get().stitch_cache;
 	auto& trajectories = MLDataManager::get().trajectories;
@@ -328,45 +363,25 @@ void Step2RenderArea::paintEvent(QPaintEvent* event)
 	
 	QPainter paint(this);
 	auto viewport = paint.viewport();
-	
-	auto topaintroi = [&](const cv::Rect& rectin) -> QRectF {
-		float top_norm = ((float)rectin.y - stitch_cache.global_roi.y) / stitch_cache.global_roi.height,
-			left_norm = ((float)rectin.x - stitch_cache.global_roi.x) / stitch_cache.global_roi.width,
-			wid_norm = (float)rectin.width / stitch_cache.global_roi.width,
-			hei_norm = (float)rectin.height / stitch_cache.global_roi.height;
-		return QRectF(left_norm * viewport.width(), top_norm * viewport.height(), wid_norm * viewport.width(), hei_norm * viewport.height());
-	};
+	//auto topaintroi = [&](const cv::Rect& rectin) -> QRectF {
+	//	float top_norm = ((float)rectin.y - stitch_cache.global_roi.y) / stitch_cache.global_roi.height,
+	//		left_norm = ((float)rectin.x - stitch_cache.global_roi.x) / stitch_cache.global_roi.width,
+	//		wid_norm = (float)rectin.width / stitch_cache.global_roi.width,
+	//		hei_norm = (float)rectin.height / stitch_cache.global_roi.height;
+	//	return QRectF(left_norm * viewport.width(), top_norm * viewport.height(), wid_norm * viewport.width(), hei_norm * viewport.height());
+	//};
+	const float scalex = (float)viewport.width() / raw_frames[0].cols;
+	const float scaley = (float)viewport.height() / raw_frames[0].rows;
+	/******************
+	* paint background and foreground
+	******************/
+	global_data.paintWarpedFrames(paint, frameidx, step2widget->display_showbackground, step2widget->display_showwarped);
 
 	/******************
-	* paint background
+	* paint boxes and names
 	******************/
-	if (step2widget->display_showbackground)
-	{
-		paint.drawImage(viewport, MLUtil::mat2qimage(stitch_cache.background, QImage::Format_ARGB32_Premultiplied));
-	}
-
-	/******************
-	* paint each frame
-	******************/
-	if (step2widget->display_showwarped)
-	{
-		const auto& frame = stitch_cache.warped_frames[frameidx];
-		paint.drawImage(topaintroi(stitch_cache.rois[frameidx]), MLUtil::mat2qimage(frame, QImage::Format_ARGB32_Premultiplied));
-	}
-
-	/******************
-	* paint boxes
-	******************/
-	if (step2widget->display_showbox)
-	{
-		const auto& boxes = trajectories.frameidx2boxes[frameidx];
-		for (auto it = boxes.constKeyValueBegin(); it != boxes.constKeyValueEnd(); ++it)
-		{
-			const auto& color = trajectories.getColor(it->first);
-			const auto& box = it->second;
-
-			paint.setPen(QPen(color, 2));
-			paint.drawRect(topaintroi(box->rect_global));
-		}
-	}
+	if (step2widget->display_showbox && step2widget->display_showtrack)
+		global_data.paintWorldTrackBoxes(paint, frameidx, true, step2widget->display_showtraj);
+	else if (step2widget->display_showbox)
+		global_data.paintWorldDetectBoxes(paint, frameidx, true);
 }

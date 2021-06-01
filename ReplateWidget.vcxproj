@@ -138,10 +138,11 @@
     <ClCompile Include="StitcherSsfm.cpp" />
     <QtRcc Include="ReplateWidget.qrc" />
     <QtRcc Include="shared.qrc" />
-    <QtUic Include="QtStartSelector.ui" />
+    <QtUic Include="GControlWidget.ui" />
     <QtMoc Include="ReplateWidget.h" />
     <ClCompile Include="ReplateWidget.cpp" />
     <ClCompile Include="main.cpp" />
+    <QtUic Include="GResultWidget.ui" />
     <QtUic Include="ReplateWidget.ui" />
     <QtUic Include="Step1Widget.ui" />
     <QtUic Include="Step2Widget.ui" />

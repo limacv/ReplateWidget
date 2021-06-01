@@ -4,7 +4,6 @@
 #include <qmessagebox.h>
 #include <qtextstream.h>
 #include <qrandom.h>
-#include <fstream>
 
 QVector<QString> MLCacheTrajectories::classid2name = {
 	"person", "bicycle", "car", "motorcycle", "airplane", 
@@ -25,9 +24,23 @@ QVector<QString> MLCacheTrajectories::classid2name = {
 	"vase", "scissors", "teddy bear", "hair drier", "toothbrush"
 };
 
+QHash<QString, int> MLCacheTrajectories::name2classid;
+QHash<ObjID, QColor> MLCacheTrajectories::colormap;
+
+MLCacheTrajectories::MLCacheTrajectories()
+{
+	if (name2classid.isEmpty())
+	{
+		for (int i = 0; i < classid2name.size(); ++i)
+			name2classid[classid2name[i]] = i;
+	}
+}
+
 MLCacheTrajectories::~MLCacheTrajectories()
 {
 	for (auto& pbox : track_boxes_list)
+		delete pbox;
+	for (auto& pbox : detect_boxes_list)
 		delete pbox;
 }
 
@@ -35,8 +48,9 @@ bool MLCacheTrajectories::tryLoadDetectionFromFile()
 {
 	const auto& pathcfg = MLConfigManager::get();
 	const auto& globaldata = MLDataManager::get();
-
-	for (int i = 0; i < globaldata.get_framecount(); ++i)
+	const int framecount = globaldata.get_framecount();
+	frameidx2detectboxes.resize(framecount);
+	for (int i = 0; i < framecount; ++i)
 	{
 		QFile file(pathcfg.get_detect_result_cache(i));
 		if (!file.open(QIODevice::ReadOnly))
@@ -60,9 +74,9 @@ bool MLCacheTrajectories::tryLoadDetectionFromFile()
 			height = (int)(lines.at(3).toFloat() * globaldata.raw_video_cfg.size.height);
 			confidence = lines.at(4).toFloat();
 			classid = lines.at(5).toInt();
-			detect_boxes_list.push_back(
-				BBox(i, classid, -1, centery - height / 2, centerx - width / 2, width, height)
-			);
+			BBox* pbox = new BBox(i, classid, -1, centery - height / 2, centerx - width / 2, width, height);
+			detect_boxes_list.push_back(pbox);
+			frameidx2detectboxes[i].push_back(pbox);
 		}
 	}
 	return true;
@@ -74,10 +88,10 @@ bool MLCacheTrajectories::tryLoadTrackFromFile()
 	const auto& globaldata = MLDataManager::get();
 	
 	//QVector<BBox> track_boxes_list;
-	//QVector<QVector<BBox*>> frameidx2boxes;
+	//QVector<QVector<BBox*>> frameidx2trackboxes;
 	//QMap<int, QVector<BBox*>> objid2trajectories;
 	const int framecount = globaldata.get_framecount();
-	frameidx2boxes.resize(framecount);
+	frameidx2trackboxes.resize(framecount);
 	{
 		QFile file(pathcfg.get_track_result_cache());
 		if (!file.open(QIODevice::ReadOnly))
@@ -103,7 +117,7 @@ bool MLCacheTrajectories::tryLoadTrackFromFile()
 			
 			BBox* pbox = new BBox(frameidx, classid, instanceid, top, left, width, height);
 			track_boxes_list.push_back(pbox);
-			frameidx2boxes[frameidx].insert(ObjID(classid, instanceid), pbox);
+			frameidx2trackboxes[frameidx].insert(ObjID(classid, instanceid), pbox);
 			if (objid2trajectories.find(ObjID(classid, instanceid)) == objid2trajectories.end())
 				objid2trajectories[ObjID(classid, instanceid)] = Traject(framecount);
 			objid2trajectories[ObjID(classid, instanceid)].insert(frameidx, pbox);
@@ -112,13 +126,13 @@ bool MLCacheTrajectories::tryLoadTrackFromFile()
 	return true;
 }
 
-bool MLCacheTrajectories::tryLoadGlobalBoxes()
+bool MLCacheTrajectories::tryLoadGlobalTrackBoxes_deprecated()
 {
 	const auto& pathcfg = MLConfigManager::get();
 	const auto& globaldata = MLDataManager::get();
 	const int framecount = globaldata.get_framecount();
 	// read track file
-	std::ifstream rectfile(pathcfg.get_stitch_bboxes_path().toStdString());
+	std::ifstream rectfile(pathcfg.get_stitch_track_bboxes_path().toStdString());
 	if (!rectfile.is_open())
 	{
 		qWarning("MLCacheStitching::failed to open stitch track file");
@@ -132,7 +146,7 @@ bool MLCacheTrajectories::tryLoadGlobalBoxes()
 		rectfile >> frameidx >> classid >> instanceid >> x >> y >> wid >> hei;
 		if (frameidx < 0 || frameidx >= framecount)
 			continue;
-		auto& boxes = frameidx2boxes[frameidx];
+		auto& boxes = frameidx2trackboxes[frameidx];
 		auto& it = boxes.find(ObjID(classid, instanceid));
 		if (it == boxes.end())
 			return false;
@@ -144,27 +158,31 @@ bool MLCacheTrajectories::tryLoadGlobalBoxes()
 	return true;
 }
 
-
-bool MLCacheTrajectories::saveGlobalBoxes() const
+bool MLCacheTrajectories::tryLoadGlobalDetectBoxes()
 {
 	const auto& pathcfg = MLConfigManager::get();
-	std::ofstream file(pathcfg.get_stitch_bboxes_path().toStdString());
-	if (!file.is_open()) return false;
-
-	file << "# frameidx, classid, instanceid, rect.x, rect.y, rect.wid, rect.hei" << std::endl;
-	const auto& boxes = track_boxes_list;
-	for (const auto& box : boxes)
-		file << box->frameidx << " "
-		<< box->classid << " "
-		<< box->instanceid << " "
-		<< box->rect_global.x << " "
-		<< box->rect_global.y << " "
-		<< box->rect_global.width << " "
-		<< box->rect_global.height << std::endl;
-	return true;
+	return loadWorldRects(detect_boxes_list, pathcfg.get_stitch_detect_bboxes_path().toStdString());
 }
 
-QColor MLCacheTrajectories::getColor(const ObjID& id)
+bool MLCacheTrajectories::saveGlobalDetectBoxes() const
+{
+	const auto& pathcfg = MLConfigManager::get();
+	return saveWorldRects(detect_boxes_list, pathcfg.get_stitch_detect_bboxes_path().toStdString());
+}
+
+bool MLCacheTrajectories::tryLoadGlobalTrackBoxes()
+{
+	const auto& pathcfg = MLConfigManager::get();
+	return loadWorldRects(track_boxes_list, pathcfg.get_stitch_track_bboxes_path().toStdString());
+}
+
+bool MLCacheTrajectories::saveGlobalTrackBoxes() const
+{
+	const auto& pathcfg = MLConfigManager::get();
+	return saveWorldRects(track_boxes_list, pathcfg.get_stitch_track_bboxes_path().toStdString());
+}
+
+QColor MLCacheTrajectories::getColor(const ObjID& id) const
 {
 	if (colormap.contains(id))
 		return colormap.value(id);
@@ -177,3 +195,58 @@ QColor MLCacheTrajectories::getColor(const ObjID& id)
 	}
 }
 
+bool MLCacheTrajectories::saveWorldRects(const QVector<BBox*>& boxes, const std::string& filepath) const
+{
+	std::ofstream file(filepath);
+	if (!file.is_open()) return false;
+
+	file << "# frameidx, classid, instanceid, rect.x, rect.y, rect.wid, rect.hei" << std::endl;
+	for (const auto& box : boxes)
+		file << box->frameidx << " "
+		<< box->classid << " "
+		<< box->instanceid << " "
+		<< box->rect_global.x << " "
+		<< box->rect_global.y << " "
+		<< box->rect_global.width << " "
+		<< box->rect_global.height << std::endl;
+	return true;
+}
+
+bool MLCacheTrajectories::loadWorldRects(QVector<BBox*>& boxes, const std::string& filepath) const
+{
+	const auto& globaldata = MLDataManager::get();
+	const int framecount = globaldata.get_framecount();
+	// read track file
+	std::ifstream rectfile(filepath);
+	if (!rectfile.is_open())
+	{
+		qWarning("MLCacheStitching::failed to open stitch track file");
+		return false;
+	}
+	if (boxes.empty())
+	{
+		qWarning("MLCacheStitching::try to load world rects before initializing the BBoxes");
+		return false;
+	}
+
+	rectfile.ignore(1024, '\n');
+	int rectcount = 0;
+	while (rectfile)
+	{
+		int frameidx = -1, classid, instanceid, x, y, wid, hei;
+		rectfile >> frameidx >> classid >> instanceid >> x >> y >> wid >> hei;
+		if (frameidx < 0 || frameidx >= framecount)
+			continue;
+		auto& pbox = boxes[rectcount];
+		if (pbox->frameidx != frameidx
+			|| pbox->classid != classid
+			|| pbox->instanceid != instanceid)
+			break;
+		
+		pbox->rect_global = cv::Rect(x, y, wid, hei);
+		++rectcount;
+	}
+	if (rectcount != boxes.size())
+		return false;
+	return true;
+}

@@ -1,4 +1,7 @@
 <RCC>
-    <qresource prefix="ReplateWidget">
+    <qresource prefix="/ReplateWidget">
+        <file>images/delete_button_icon.png</file>
+        <file>images/play_button_icon.png</file>
+        <file>images/stop_button_icon.png</file>
     </qresource>
 </RCC>
