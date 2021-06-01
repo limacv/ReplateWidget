@@ -19,11 +19,6 @@
 Step2Widget::Step2Widget(QWidget* parent)
 	: StepWidgetBase(parent),
 	display_frameidx(0),
-	display_showbackground(false),
-	display_showwarped(false),
-	display_showbox(false),
-	display_showtrack(false),
-	display_showtraj(false),
 	stitchdatap(&MLDataManager::get().stitch_cache),
 	flowdatap(&MLDataManager::get().flow_cache),
 	trajp(&MLDataManager::get().trajectories)
@@ -35,31 +30,13 @@ Step2Widget::Step2Widget(QWidget* parent)
 
 	connect(ui->buttonStitchBg, &QPushButton::clicked, this, &Step2Widget::runStitching);
 	connect(ui->buttonInpaintBg, &QPushButton::clicked, this, &Step2Widget::runInpainting);
-
-	display_showbackground = ui->checkShowBg->isChecked();
-	connect(ui->checkShowBg, &QCheckBox::stateChanged, this, [this](int state) {
-		this->display_showbackground = (state == Qt::Checked);
-		this->ui->imageWidget->update();
-		});
-	display_showwarped = ui->checkShowFrames->isChecked();
-	connect(ui->checkShowFrames, &QCheckBox::stateChanged, this, [this](int state) {
-		this->display_showwarped = (state == Qt::Checked);
-		this->ui->imageWidget->update();
-		});
-	display_showbox = ui->checkShowBox->isChecked();
-	connect(ui->checkShowBox, &QCheckBox::stateChanged, this, [this](int state) {
-		this->display_showbox = (state == Qt::Checked);
-		this->ui->imageWidget->update();
-		});
-	display_showtraj = ui->checkShowTraj->isChecked();
-	connect(ui->checkShowTraj, &QCheckBox::stateChanged, this, [this](int state) {
-		this->display_showtraj = (state == Qt::Checked);
-		this->ui->imageWidget->update();
-		});
-	display_showtrack = ui->checkShowTrack->isChecked();
+	
+	connect(ui->checkShowBg, SIGNAL(stateChanged(int)), this->ui->imageWidget, SLOT(update()));
+	connect(ui->checkShowFrames, SIGNAL(stateChanged(int)), this->ui->imageWidget, SLOT(update()));
+	connect(ui->checkShowBox, SIGNAL(stateChanged(int)), this->ui->imageWidget, SLOT(update()));
+	connect(ui->checkShowTraj, SIGNAL(stateChanged(int)), this->ui->imageWidget, SLOT(update()));
 	connect(ui->checkShowTrack, &QCheckBox::stateChanged, this, [this](int state) {
-		this->display_showtrack = (state == Qt::Checked);
-		this->ui->checkShowTraj->setEnabled(this->display_showtrack);
+		this->ui->checkShowTraj->setEnabled(this->display_showtrack());
 		this->ui->imageWidget->update();
 		});
 
@@ -103,6 +80,16 @@ void Step2Widget::updateFrameidx(int frameidx)
 	display_frameidx = frameidx;
 	ui->imageWidget->update();
 }
+
+inline bool Step2Widget::display_showbackground() { return ui->checkShowBg->isChecked(); }
+
+inline bool Step2Widget::display_showwarped() { return ui->checkShowFrames->isChecked(); }
+
+inline bool Step2Widget::display_showbox() { return ui->checkShowBox->isChecked(); }
+
+inline bool Step2Widget::display_showtraj() { return ui->checkShowTraj->isChecked(); }
+
+inline bool Step2Widget::display_showtrack() { return ui->checkShowTrack->isChecked(); }
 
 void Step2Widget::runDetect()
 {
@@ -375,13 +362,13 @@ void Step2RenderArea::paintEvent(QPaintEvent* event)
 	/******************
 	* paint background and foreground
 	******************/
-	global_data.paintWarpedFrames(paint, frameidx, step2widget->display_showbackground, step2widget->display_showwarped);
+	global_data.paintWarpedFrames(paint, frameidx, step2widget->display_showbackground(), step2widget->display_showwarped());
 
 	/******************
 	* paint boxes and names
 	******************/
-	if (step2widget->display_showbox && step2widget->display_showtrack)
-		global_data.paintWorldTrackBoxes(paint, frameidx, true, step2widget->display_showtraj);
-	else if (step2widget->display_showbox)
+	if (step2widget->display_showbox() && step2widget->display_showtrack())
+		global_data.paintWorldTrackBoxes(paint, frameidx, true, step2widget->display_showtraj());
+	else if (step2widget->display_showbox())
 		global_data.paintWorldDetectBoxes(paint, frameidx, true);
 }

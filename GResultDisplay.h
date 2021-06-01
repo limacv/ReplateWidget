@@ -20,7 +20,7 @@ class GResultWidget : public QWidget
 public:
     explicit GResultWidget(QWidget* parent = 0);
 
-    void setStillState(bool b);
+    void setPathSelectModel(bool b);
     void setInpaintState(bool b);
 
     

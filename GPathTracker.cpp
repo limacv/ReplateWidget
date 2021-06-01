@@ -132,69 +132,6 @@ void GPathTracker::updateTrack(GPath* path_data)
     }
 }
 
-GPath* GPathTracker::staticPath(int start_frame, QRectF start_rectF,
-    int end_frame, QRectF end_rectF)
-{
-    if (start_frame < 0 || end_frame < 0) {
-        qWarning() << "Invalid range! " << "A: " << start_frame
-            << " B " << end_frame;
-        return 0;
-    }
-    if (start_frame >= end_frame) {
-        qWarning() << "Invalid Tracking Range. " << "A: "
-            << start_frame << "B: " << end_frame;
-        exit(-1);
-    }
-
-    qDebug() << "Track Path." << "A" << start_frame << start_rectF
-        << "B" << end_frame << end_rectF;
-
-    // initiate path
-    GPath* path_data = new GPath(false);
-    GPath& path = *path_data;
-    path.setStartFrame(start_frame);
-    int number_frames = end_frame - start_frame + 1;
-    path.resize(number_frames);
-
-    for (int i = start_frame; i < end_frame; ++i)
-    {
-        int curIdx = (path.isBackward() ? end_frame - i : i - start_frame);
-        int cur_frame = curIdx + start_frame;
-
-        path.roi_rect_[curIdx] = (path.isBackward() ? end_rectF : start_rectF);
-        //        path.roi_fg_mat_[curIdx] = video_->getForeground(
-        //                    cur_frame, path.frameRoiRect(cur_frame));
-    }
-    return path_data;
-}
-
-void GPathTracker::updateStatic(GPath* path_data)
-{
-    if (path_data == NULL) {
-        qDebug() << "Update track path failed. path_data is NULL";
-        return;
-    }
-    GPath& path = *path_data;
-    int start_frame = path.startFrame();
-    int end_frame = path.endFrame();
-
-    // find last frame with manual adjust
-    for (int p = 0; p < path.length(); ++p) {
-        if (path.manual_adjust_[p])
-            start_frame = path.startFrame() + p;
-    }
-
-    QRectF rectF = path.frameRoiRect(start_frame);
-    for (int i = start_frame; i <= end_frame; ++i) {
-        int curIdx = i - path.startFrame();
-        path.roi_rect_[curIdx] = rectF;
-        //        path.roi_fg_mat_[curIdx] = video_->getForeground(i, rectF);
-        path.number_flow_points_[curIdx] = 0;
-        delete[] path.flow_points_[curIdx];
-        path.flow_points_[curIdx] = 0;
-    }
-}
-
 void GPathTracker::boundRectF(QRectF& src) const
 {
     QPointF off(0, 0);

@@ -13,7 +13,7 @@ bool GBaseWidget::pathMode() const
     return select_path_mode_;
 }
 
-void GBaseWidget::setPathMode(bool b)
+void GBaseWidget::setPathSelectionMode(bool b)
 {
     select_path_mode_ = b;
     updateCursor();
@@ -49,9 +49,9 @@ void GBaseWidget::mousePressEvent(QMouseEvent *event)
         if (!pathMode()) {
             clearMouseSelection();
 
-            rect_select_.setTopLeft(mouse_pos_);
-            rect_select_.setBottomRight(mouse_pos_);
-            rect_select_ = rect_select_.normalized();
+            rect_pre_select_.setTopLeft(mouse_pos_);
+            rect_pre_select_.setBottomRight(mouse_pos_);
+            rect_pre_select_ = rect_pre_select_.normalized();
         }
     }
     else if (event->button() == Qt::RightButton) {
@@ -72,7 +72,7 @@ void GBaseWidget::mouseMoveEvent(QMouseEvent *event)
 
     if (mouse_select_start_) {
         if(!pathMode())
-            rect_select_.setBottomRight(mouse_pos_);
+            rect_pre_select_.setBottomRight(mouse_pos_);
     }
 
     update();
@@ -81,7 +81,6 @@ void GBaseWidget::mouseMoveEvent(QMouseEvent *event)
 void GBaseWidget::mouseReleaseEvent(QMouseEvent *event)
 {
     mouse_pos_ = getMousePosNorm(event->pos());
-//    qDebug() << "Mouse Release." << event->pos() << "norm:" << mouse_pos_;
 
     // TODO: add check for pos outside of rect
     if (mouse_select_start_) {
@@ -95,7 +94,7 @@ void GBaseWidget::mouseReleaseEvent(QMouseEvent *event)
                 path_select_.lineTo(mouse_pos_);
         }
         else {
-            rect_select_ = rect_select_.normalized();
+            rect_select_ = rect_pre_select_.normalized();
         }
         mouse_select_start_ = false;
     }
@@ -148,8 +147,12 @@ void GBaseWidget::paintMouseSelection(QPainter &painter)
         painter.setBrush(QBrush(Qt::NoBrush));
     }
     else {
-        QRectF rect = transMat().mapRect(rect_select_);
-        painter.setPen(QPen(Qt::black, 1, Qt::DashLine));
+        QRectF rect = transMat().mapRect(rect_pre_select_);
+        painter.setPen(QPen(Qt::gray, 1, Qt::DashLine));
+        painter.drawRect(rect);
+
+        rect = transMat().mapRect(rect_select_);
+        painter.setPen(QPen(Qt::red, 1, Qt::SolidLine));
         painter.drawRect(rect);
     }
 }
@@ -165,6 +168,7 @@ void GBaseWidget::clearMouseSelection()
 {
     path_start_pos_ = QPoint();
     rect_select_ = QRect();
+    rect_pre_select_ = QRect();
     path_select_ = QPainterPath();
     update();
 }

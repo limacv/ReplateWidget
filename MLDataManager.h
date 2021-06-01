@@ -37,9 +37,11 @@ public:
 	bool load_raw_video(const QString& path);
 	int get_framecount() const { return raw_frames.size(); }
 
-	// getImage stitched data coordinate convertion
+	// data coordinate convertion
 	QRect imageRect(const QRectF& rectf) const;
 	QMatrix imageScale() const;
+	// convert rect from world coordinate to paint coordinate (if return normalized rect, the rect_painter is not needed)
+	QRectF toPaintROI(const cv::Rect& rect_w, const QRect& rect_painter=QRect(), bool ret_norm=false) const;
 
 	// get images
 	cv::Mat4b getRoiofFrame(int frameidx, const QRectF& rectF) const;
@@ -50,6 +52,9 @@ public:
 	cv::Mat4b getForeground(int i, const GRoiPtr& roi) const;
 	QImage getBackgroundQImg() const;
 	
+	// query bounding boxes
+	QVector<BBox*> queryBoxes(int frameidx, const QPointF& pt_norm, bool use_track=false) const;
+
 	//QImage getForegroundQImg(int iFrame, QRect rect, int slow) const; // alias for loadOtherImageFg
 
 	int VideoHeight() const { return stitch_cache.background.rows; }
@@ -57,7 +62,6 @@ public:
 
 	// painting function
 	// convert world coordinate to the paint coordinate
-	QRectF toPaintROI(const cv::Rect& rect_w, const QRect& rect_painter) const;
 	void paintRawFrames(QPainter& painter, int frameidx) const;
 	void paintWarpedFrames(QPainter& painter, int frameidx, bool paintbg = true, bool paintfg = true) const;
 	void paintWorldTrackBoxes(QPainter& painter, int frameidx, bool paint_name = true, bool paint_traj = true) const;

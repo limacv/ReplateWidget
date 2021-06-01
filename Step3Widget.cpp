@@ -40,11 +40,11 @@ Step3Widget::~Step3Widget()
 void Step3Widget::ApplyStyleSheet()
 {
     control_widget_ui_->control_play_slider_->setStyle(new ArthurStyle);
-    control_widget_ui_->control_add_still_button_->setStyleSheet(button_style_[6]);
     control_widget_ui_->control_add_inpaint_button_->setStyleSheet(button_style_[6]);
     //control_widget_ui_->control_add_black_button_->setStyleSheet(button_style_[6]);
-    control_widget_ui_->control_add_motion_button_->setStyleSheet(button_style_[2]);
-    control_widget_ui_->control_add_trail_button_->setStyleSheet(button_style_[2]);
+    //control_widget_ui_->control_add_still_button_->setStyleSheet(button_style_[6]);
+    //control_widget_ui_->control_add_motion_button_->setStyleSheet(button_style_[2]);
+    //control_widget_ui_->control_add_trail_button_->setStyleSheet(button_style_[2]);
     control_widget_ui_->control_modify_path_button_->setStyleSheet(button_style_[0]);
     //control_widget_ui_->control_add_object_button_->setStyleSheet(button_style_[1]);
     //control_widget_ui_->control_set_A_button_->setStyleSheet(button_style_[3]);
@@ -62,6 +62,7 @@ void Step3Widget::initState()
 {
     control_widget_ui_->control_edit_priority_->setValidator(new QIntValidator(0, 80, control_widget_ui_->control_edit_priority_));
     control_widget_ui_->control_edit_speed_->setValidator(new QIntValidator(1, 3, control_widget_ui_->control_edit_speed_));
+    display_widget_->setMouseTracking(true);
 }
 
 void Step3Widget::onWidgetShowup()
@@ -103,18 +104,35 @@ void Step3Widget::CreateConnections()
     connect(control_widget_ui_->control_edit_priority_, &QLineEdit::editingFinished, this, &Step3Widget::changePriority);
     connect(control_widget_ui_->control_edit_speed_, &QLineEdit::editingFinished, this, &Step3Widget::changeSpeed);
 
-    connect(control_widget_ui_->control_add_still_button_, &QPushButton::toggled, this, &Step3Widget::toggleStill);
     connect(control_widget_ui_->control_add_inpaint_button_, &QPushButton::toggled, this, &Step3Widget::toggleInpaint);
     //connect(control_widget_ui_->control_add_black_button_, &QPushButton::toggled, this, &Step3Widget::toggleBlack);
-    connect(control_widget_ui_->control_add_motion_button_, &QPushButton::toggled, this, &Step3Widget::toggleMotion);
-    connect(control_widget_ui_->control_add_trail_button_, &QPushButton::toggled, this, &Step3Widget::toggleTrail);
+    //connect(control_widget_ui_->control_add_still_button_, &QPushButton::toggled, this, &Step3Widget::toggleStill);
+    //connect(control_widget_ui_->control_add_motion_button_, &QPushButton::toggled, this, &Step3Widget::toggleMotion);
+    //connect(control_widget_ui_->control_add_trail_button_, &QPushButton::toggled, this, &Step3Widget::toggleTrail);
     connect(control_widget_ui_->control_modify_path_button_, &QPushButton::toggled, this, &Step3Widget::toggleModify);
-
+    
     connect(timeline_widget_, &GTimelineWidget::currentEffectChanged, this, &Step3Widget::onCurrentEffectChanged);
     connect(this, &Step3Widget::frameChanged, timeline_widget_, &GTimelineWidget::updateFrameId);
-
+    
     //connect(dock_export_, SIGNAL(visibilityChanged(bool)), this, SLOT(ExportFinished(bool)));
+
+    connect(control_widget_ui_->button_autoselection, &QPushButton::clicked, [this](bool checked) {
+        control_widget_ui_->button_autoselection->setText(checked ? "AutoSelect" : "ManualSelect");
+        display_widget_->setMouseTracking(checked);
+        });
+    connect(control_widget_ui_->button_manual_add, &QPushButton::clicked, this, &Step3Widget::onManualAddPressed);
+    connect(control_widget_ui_->button_auto_add, &QPushButton::clicked, this, &Step3Widget::onAutoAddPressed);
 }
+
+bool Step3Widget::is_auto_selection() const { return control_widget_ui_->button_autoselection->isChecked(); }
+
+inline G_EFFECT_ID Step3Widget::selected_efx_type() const
+{
+    G_EFFECT_ID idx[3] = { EFX_ID_STILL, EFX_ID_MOTION, EFX_ID_TRAIL };
+    return idx[control_widget_ui_->comboMode->currentIndex()];
+}
+
+inline bool Step3Widget::is_singleframe_efx() const { return selected_efx_type() == EFX_ID_STILL; }
 
 void Step3Widget::setPathRoi(const GRoiPtr& roi)
 {
@@ -482,46 +500,6 @@ bool Step3Widget::setB()
     return true;
 }
 
-void Step3Widget::toggleStill(bool checked)
-{
-    if (checked) 
-    {
-        display_widget_->clearCurrentSelection();
-        display_widget_->setPathMode(true);
-        result_widget_->setStillState(true);
-        control_widget_ui_->control_add_still_button_->setText("Apply");
-        return;
-    }
-
-    QRectF select_rect;
-    QPainterPath select_path;
-    if (!display_widget_->curSelectRectF().isEmpty()) {
-        select_rect = display_widget_->curSelectRectF();
-        select_path = display_widget_->curSelectPath();
-    }
-    else if (!result_widget_display_->curSelectRectF().isEmpty()) {
-        select_rect = result_widget_display_->curSelectRectF();
-        select_path = result_widget_display_->curSelectPath();
-    }
-    else {
-        control_widget_ui_->control_add_still_button_->setChecked(true);
-        return;
-    }
-    GPathTrackDataPtr path = GPathTrackDataPtr(new GPath(cur_frameidx, select_rect, select_path));
-    GEffectPtr efx = createEffectFromPath(path, EFX_ID_STILL);
-
-    result_widget_->update();
-    // Create UI for effect
-    qDebug() << "Add UI" << G_EFFECT_STR[efx->type()];
-    timeline_widget_->addTimeline(efx);
-
-    control_widget_ui_->control_add_still_button_->setText("Still");
-    display_widget_->setPathMode(false);
-    result_widget_->setStillState(false);
-    display_widget_->clearMouseSelection();
-    onCurrentEffectChanged();
-}
-
 void Step3Widget::toggleInpaint(bool checked)
 {
     if (checked) {
@@ -550,86 +528,57 @@ void Step3Widget::toggleInpaint(bool checked)
     onCurrentEffectChanged();
 }
 
-//void Step3Widget::toggleBlack(bool checked)
-//{
-//    qDebug() << "toggleBlack" << checked;
-//    if (checked) {
-//        result_widget_->setInpaintState(true);
-//        control_widget_ui_->control_add_black_button_->setText("Apply");
-//        return;
-//    }
-//    
-//    QRectF select_rect;
-//    QPainterPath select_path;
-//    if (!result_widget_display_->curSelectRectF().isEmpty()) {
-//        select_rect = result_widget_display_->curSelectRectF();
-//        select_path = result_widget_display_->curSelectPath();
-//    }
-//    else {
-//        control_widget_ui_->control_add_inpaint_button_->setChecked(true);
-//        return;
-//    }
-//    GPathTrackDataPtr path = GPathTrackDataPtr(new GPath(0, select_rect, select_path));
-//    GEffectPtr efx = createEffectFromPath(path, EFX_ID_BLACK);
-//
-//    result_widget_->update();
-//    control_widget_ui_->control_add_black_button_->setText("Black");
-//    result_widget_->setInpaintState(false);
-//    display_widget_->clearMouseSelection();
-//    onCurrentEffectChanged();
-//}
-
-void Step3Widget::toggleTrail(bool checked)
+void Step3Widget::onAutoAddPressed(bool checked)
 {
-    if (checked) {
-        if (!setA()) {
-            control_widget_ui_->control_add_trail_button_->setChecked(false);
-            return;
-        }
 
-        display_widget_->clearCurrentSelection();
-        control_widget_ui_->control_add_trail_button_->setText("Add");
-    }
-    else {
-        control_widget_ui_->control_add_trail_button_->setText("Trail");
-
-        if (!setB()) return;
-
-        GEffectPtr efx = createEffectFromPath(cur_tracked_path, EFX_ID_TRAIL);
-        // Create UI for effect
-        qDebug() << "Add UI" << G_EFFECT_STR[efx->type()];
-        timeline_widget_->addTimeline(efx);
-
-        display_widget_->clearMouseSelection();
-        result_widget_->update();
-        onCurrentEffectChanged();
-    }
 }
 
-void Step3Widget::toggleMotion(bool checked)
+void Step3Widget::onManualAddPressed(bool checked)
 {
-    if (checked) {
-        if (!setA()) {
-            control_widget_ui_->control_add_motion_button_->setChecked(false);
+    GEffectPtr efx;
+    // single frame effect
+    if (is_singleframe_efx())
+    {
+        QRectF select_rect;
+        QPainterPath select_path;
+        if (!display_widget_->curSelectRectF().isEmpty()) {
+            select_rect = display_widget_->curSelectRectF();
+            select_path = display_widget_->curSelectPath();
+        }
+        else if (!result_widget_display_->curSelectRectF().isEmpty()) {
+            select_rect = result_widget_display_->curSelectRectF();
+            select_path = result_widget_display_->curSelectPath();
+        }
+        else {
+            control_widget_ui_->button_manual_add->setChecked(false);
             return;
         }
-
-        control_widget_ui_->control_add_motion_button_->setText("Add");
+        cur_tracked_path = GPathTrackDataPtr(new GPath(cur_frameidx, select_rect, select_path));
+        control_widget_ui_->button_manual_add->setChecked(false);
+    }
+    // not single frame effect
+    else if (checked) {
+        if (!setA()) {
+            control_widget_ui_->button_manual_add->setChecked(false);
+            return;
+        }
+        control_widget_ui_->button_manual_add->setText("Add");
+        control_widget_ui_->button_auto_add->setEnabled(false);
         display_widget_->clearCurrentSelection();
+        return;
     }
     else {
-        control_widget_ui_->control_add_motion_button_->setText("Motion");
+        control_widget_ui_->button_manual_add->setText("Start");
+        control_widget_ui_->button_auto_add->setEnabled(false);
         if (!setB()) return;
-
-        GEffectPtr efx = createEffectFromPath(cur_tracked_path, EFX_ID_MOTION);
-        // Create UI for effect
-        qDebug() << "Add UI" << G_EFFECT_STR[efx->type()];
-        timeline_widget_->addTimeline(efx);
-
-        result_widget_->update();
-        display_widget_->clearMouseSelection();
-        onCurrentEffectChanged();
     }
+
+    efx = createEffectFromPath(cur_tracked_path, selected_efx_type());
+
+    timeline_widget_->addTimeline(efx);
+    result_widget_->update();
+    display_widget_->clearMouseSelection();
+    onCurrentEffectChanged();
 }
 
 void Step3Widget::toggleModify(bool checked)

@@ -18,7 +18,7 @@ public:
     explicit GBaseWidget(QWidget *parent = 0);
 
     bool pathMode() const;
-    void setPathMode(bool b);
+    void setPathSelectionMode(bool b);
 
     QRect curSelectRect() const;
     QRectF curSelectRectF() const;
@@ -47,6 +47,7 @@ protected:
     bool select_path_mode_;
 
     QPointF mouse_pos_;
+    QRectF rect_pre_select_;
     QRectF rect_select_;
 
     QPainterPath path_select_;

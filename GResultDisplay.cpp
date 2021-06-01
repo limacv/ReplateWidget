@@ -35,15 +35,15 @@ GResultWidget::GResultWidget(QWidget* parent)
     connect(ui->slider, &QSlider::valueChanged, this, [this](int value) { current_frame_id_ = value; });
 }
     
-void GResultWidget::setStillState(bool b)
+void GResultWidget::setPathSelectModel(bool b)
 {
-    ui->widget->setPathMode(b);
+    ui->widget->setPathSelectionMode(b);
 }
 
 void GResultWidget::setInpaintState(bool b)
 {
     ui->widget->clearMouseSelection();
-    ui->widget->setPathMode(b);
+    ui->widget->setPathSelectionMode(b);
 }
 
 void GResultWidget::play()

@@ -64,15 +64,10 @@ public slots:
 
     bool setA();
     bool setB();
-    //    void addMotion();
-    //    void addTrail();
-    //    void addEffect(G_EFFECT_ID type);
 
-    void toggleStill(bool checked);
+    void onAutoAddPressed(bool checked);
+    void onManualAddPressed(bool checked);
     void toggleInpaint(bool checked);
-    //void toggleBlack(bool checked);
-    void toggleTrail(bool checked);
-    void toggleMotion(bool checked);
 
     void toggleModify(bool checked);
 
@@ -80,30 +75,10 @@ private:
     void CreateConnections();
     void PrepStyleSheet();
     void ApplyStyleSheet();
-    //QGroupBox* CreateControlGroup(QWidget* parent);
-    //QGroupBox* CreateControlPathGroup(QWidget* parent);
-    //QGroupBox* CreateControlEffectGroup(QWidget* parent);
-    //QGroupBox* CreateControlResultGroup(QWidget* parent);
-    //QFrame* CreateControlFrame(QWidget* parent);
-    //QFrame* CreateBackgroundFrame(QWidget* parent);
-    //QFrame* CreatePathTrackFrame(QWidget* parent);
-    //QFrame* CreatePathEffectFrame(QWidget* parent);
-    //QFrame* CreateEffectPropertyFrame(QWidget* parent);
-    //QFrame* CreateResultControlFrame(QWidget* parent);
-
-    //QFrame* CreateButtonGroupFrame(QWidget* parent, const char name[], int num, QPushButton* button[],
-    //    QButtonGroup*& buttonGroup, int style);
-
-    //QFrame* CreatePriorityFrame(QWidget* parent, const char name[],
-    //    QLineEdit*& lineedit, int type = 0);
-
-    //QFrame* CreateSlowMotionFrame(QWidget* parent, const char name[],
-    //    QLineEdit*& lineedit, int type = 0);
-
-    //QFrame* CreateTransFrame(QWidget* parent);
-    //QFrame* CreateFadeFrame(QWidget* parent);
-
-    //QFrame* CreateSliderFrame(QWidget* parent, const char name[], QSlider*& slider, QLabel*& show_label, int min, int max);
+public:
+    bool is_auto_selection() const;
+    G_EFFECT_ID selected_efx_type() const;
+    bool is_singleframe_efx() const;
 
 public:
     //current states
@@ -119,7 +94,6 @@ public:
     QRectF tracker_rect_A_;
     int tracker_frame_B_;
     QRectF tracker_rect_B_;
-	
 private:
 	MLCacheTrajectories* trajp;
 	MLCachePlatesConfig* platesp;

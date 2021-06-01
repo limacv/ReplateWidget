@@ -40,12 +40,12 @@ private:
 
 	// for display
 	QTimer display_timer;
-	bool display_showbackground;
-	bool display_showwarped;
-	bool display_showbox;
-	bool display_showtraj;
-	bool display_showtrack;
 	int display_frameidx;
+	bool display_showbackground();
+	bool display_showwarped();
+	bool display_showbox();
+	bool display_showtraj();
+	bool display_showtrack();
 	
 	friend class Step2RenderArea;
 };

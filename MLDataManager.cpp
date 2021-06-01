@@ -173,6 +173,27 @@ QImage MLDataManager::getBackgroundQImg() const
 	return MLUtil::mat2qimage(stitch_cache.background, QImage::Format_ARGB32_Premultiplied);
 }
 
+QVector<BBox*> MLDataManager::queryBoxes(int frameidx, const QPointF& pt_norm, bool use_track) const
+{
+	QVector<BBox*> outboxes; outboxes.reserve(4);
+	cv::Point worldpt(pt_norm.x() * VideoWidth() + stitch_cache.global_roi.x, pt_norm.y() * VideoHeight() + stitch_cache.global_roi.y);
+	if (use_track)
+	{
+		const auto& boxes = trajectories.frameidx2trackboxes[frameidx];
+		for (const auto& pbox : boxes)
+			if (pbox->rect_global.contains(worldpt))
+				outboxes.push_back(pbox);
+	}
+	else
+	{
+		const auto& boxes = trajectories.frameidx2detectboxes[frameidx];
+		for (const auto& pbox : boxes)
+			if (pbox->rect_global.contains(worldpt))
+				outboxes.push_back(pbox);
+	}
+	return outboxes;
+}
+
 QRect MLDataManager::imageRect(const QRectF& rectf) const
 {
 	return imageScale().mapRect(rectf).toRect();
@@ -183,13 +204,16 @@ QMatrix MLDataManager::imageScale() const
 	return QMatrix().scale(stitch_cache.background.cols, stitch_cache.background.rows);
 }
 
-QRectF MLDataManager::toPaintROI(const cv::Rect& rect_w, const QRect& viewport) const
+QRectF MLDataManager::toPaintROI(const cv::Rect& rect_w, const QRect& viewport, bool ret_norm) const
 {
 	float top_norm = ((float)rect_w.y - stitch_cache.global_roi.y) / stitch_cache.global_roi.height,
 		left_norm = ((float)rect_w.x - stitch_cache.global_roi.x) / stitch_cache.global_roi.width,
 		wid_norm = (float)rect_w.width / stitch_cache.global_roi.width,
 		hei_norm = (float)rect_w.height / stitch_cache.global_roi.height;
-	return QRectF(left_norm * viewport.width(), top_norm * viewport.height(), wid_norm * viewport.width(), hei_norm * viewport.height());
+	if (ret_norm)
+		return QRectF(left_norm, top_norm, wid_norm, hei_norm);
+	else
+		return QRectF(left_norm * viewport.width(), top_norm * viewport.height(), wid_norm * viewport.width(), hei_norm * viewport.height());
 }
 
 void MLDataManager::paintRawFrames(QPainter& painter, int frameidx) const
