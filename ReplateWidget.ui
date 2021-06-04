@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1119</width>
-    <height>919</height>
+    <width>1214</width>
+    <height>864</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -232,7 +232,7 @@
        <number>1</number>
       </property>
       <property name="currentIndex">
-       <number>0</number>
+       <number>2</number>
       </property>
       <widget class="Step1Widget" name="step1Widget"/>
       <widget class="Step2Widget" name="step2Widget"/>
@@ -247,7 +247,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1119</width>
+     <width>1214</width>
      <height>26</height>
     </rect>
    </property>
@@ -255,6 +255,8 @@
     <property name="title">
      <string>File</string>
     </property>
+    <addaction name="actionSave_Proj"/>
+    <addaction name="actionLoad_Proj"/>
    </widget>
    <addaction name="menumeuns"/>
   </widget>
@@ -267,6 +269,16 @@
    </attribute>
   </widget>
   <widget class="QStatusBar" name="statusBar"/>
+  <action name="actionSave_Proj">
+   <property name="text">
+    <string>Save Proj</string>
+   </property>
+  </action>
+  <action name="actionLoad_Proj">
+   <property name="text">
+    <string>Load Proj</string>
+   </property>
+  </action>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
  <customwidgets>

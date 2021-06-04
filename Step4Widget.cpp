@@ -11,9 +11,10 @@
 #include <opencv2/stitching/detail/blenders.hpp>
 #include <opencv2/core.hpp>
 #include <opencv2/imgproc.hpp>
+#include <qevent.h>
 
 Step4Widget::Step4Widget(QWidget *parent)
-	: StepWidgetBase(parent)
+	: QWidget(parent)
 {
 	ui = new Ui::Step4Widget();
 	ui->setupUi(this);
@@ -165,11 +166,9 @@ void Step4Widget::setScalingy(float y)
 	ui->imageWidget->update();
 }
 
-void Step4Widget::initState()
-{}
-
-void Step4Widget::onWidgetShowup()
+void Step4Widget::showEvent(QShowEvent* event)
 {
+	if (event->spontaneous()) return;
 	const auto& globaldata = MLDataManager::get();
 
 	if (cfg->isempty())
@@ -268,6 +267,18 @@ bool Step4Widget::exportVideo()
 		warningbox.setStandardButtons(QMessageBox::Ok);
 		warningbox.exec();
 	}
+	if (QFile::exists(cfg->filepath))
+	{
+		QMessageBox warningbox;
+		warningbox.setText("File exists");
+		warningbox.setInformativeText("Do you want to overwrite the video?");
+		warningbox.setStandardButtons(QMessageBox::Ok | QMessageBox::No);
+		warningbox.setDefaultButton(QMessageBox::No);
+		auto ret = warningbox.exec();
+		if (ret == QMessageBox::No)
+			return false;
+	}
+
 	cv::VideoWriter writer(cfg->filepath.toStdString(), (int)cfg->fourcc, cfg->fps, cfg->size);
 	
 	if (!writer.isOpened())

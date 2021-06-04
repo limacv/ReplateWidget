@@ -103,8 +103,9 @@ GResultDisplay::GResultDisplay(QWidget *parent)
 
 QSize GResultDisplay::sizeHint() const
 {
-    const auto& size = MLDataManager::get().raw_video_cfg.size;
-    return QSize(size.width, size.height);
+    //const auto& size = MLDataManager::get().raw_video_cfg.size;
+    //return QSize(size.width, size.height);
+    return QWidget::sizeHint();
 }
 
 void GResultDisplay::paintEvent(QPaintEvent *event)

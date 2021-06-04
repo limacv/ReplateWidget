@@ -2,7 +2,6 @@
 
 #include <QtWidgets/QMainWindow>
 #include "ui_ReplateWidget.h"
-#include "StepWidgetBase.h"
 
 const int STEP_COUNT = 4;
 
@@ -28,6 +27,6 @@ private:
 private:
     Ui::ReplateWidgetClass ui;
     int current_step;
-    std::array<StepWidgetBase*, STEP_COUNT> stepwidgets;
+    std::array<QWidget*, STEP_COUNT> stepwidgets;
     std::array<QPushButton*, STEP_COUNT> stepbuttons;
 };

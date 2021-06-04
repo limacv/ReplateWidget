@@ -2,21 +2,19 @@
 
 #include <QWidget>
 #include <qtimer.h>
-#include "StepWidgetBase.h"
 
 namespace Ui { class Step1Widget; };
 
 class Step1RenderArea;
 
-class Step1Widget : public StepWidgetBase
+class Step1Widget: public QWidget
 {
 	Q_OBJECT
 
 public:
 	Step1Widget(QWidget *parent = Q_NULLPTR);
 	virtual ~Step1Widget();
-	virtual void initState();
-	virtual void onWidgetShowup();
+	virtual void showEvent(QShowEvent* event);
 
 public slots:
 	void selectVideo();

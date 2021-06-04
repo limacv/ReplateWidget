@@ -152,9 +152,9 @@
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="GInterval.h" />
-    <QtMoc Include="GBaseWidget.h" />
     <ClInclude Include="arthurstyle.h" />
     <QtMoc Include="arthurwidgets.h" />
+    <QtMoc Include="GBaseWidget.h" />
     <ClInclude Include="GEffect.h" />
     <ClInclude Include="GEffectCommon.h" />
     <ClInclude Include="GEffectManager.h" />
@@ -181,7 +181,6 @@
     <ClInclude Include="MLDataStructure.h" />
     <QtMoc Include="Step3Widget.h" />
     <QtMoc Include="Step4Widget.h" />
-    <QtMoc Include="StepWidgetBase.h" />
     <ClInclude Include="MLTracking.h" />
     <ClInclude Include="StitcherBase.h" />
     <ClInclude Include="StitcherCV2.h" />

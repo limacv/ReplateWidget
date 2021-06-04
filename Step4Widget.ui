@@ -6,14 +6,14 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1506</width>
-    <height>680</height>
+    <width>913</width>
+    <height>611</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Step4Widget</string>
   </property>
-  <layout class="QGridLayout" name="gridLayout_4" columnstretch="7,0,0,0,0,0,0,0,0,0">
+  <layout class="QGridLayout" name="gridLayout_4" columnstretch="7,0,0,0">
    <item row="0" column="0">
     <widget class="QGroupBox" name="groupBox">
      <property name="title">
@@ -264,6 +264,12 @@
        </item>
        <item row="5" column="1">
         <widget class="QLineEdit" name="rotationLineEdit">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
          <property name="maximumSize">
           <size>
            <width>16777215</width>
@@ -385,10 +391,22 @@
       <layout class="QHBoxLayout" name="horizontalLayout_2">
        <item>
         <widget class="QPushButton" name="buttonRender">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
          <property name="minimumSize">
           <size>
-           <width>50</width>
-           <height>50</height>
+           <width>0</width>
+           <height>0</height>
+          </size>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>200</width>
+           <height>40</height>
           </size>
          </property>
          <property name="text">
@@ -414,10 +432,22 @@
        </item>
        <item>
         <widget class="QPushButton" name="buttonExport">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
          <property name="minimumSize">
           <size>
-           <width>50</width>
-           <height>50</height>
+           <width>0</width>
+           <height>0</height>
+          </size>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>200</width>
+           <height>40</height>
           </size>
          </property>
          <property name="text">

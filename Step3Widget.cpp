@@ -6,9 +6,10 @@
 #include "GTimelineWidget.h"
 #include "GMainDisplay.h"
 #include "ui_GControlWidget.h"
+#include <qevent.h>
 
 Step3Widget::Step3Widget(QWidget *parent)
-	: StepWidgetBase(parent)
+	: QMainWindow(parent)
 {
 	ui = new Ui::Step3Widget();
 	ui->setupUi(this);
@@ -56,17 +57,14 @@ void Step3Widget::ApplyStyleSheet()
     //control_widget_ui_->control_clear_show_button_->setStyleSheet(button_style_[8]);
     control_widget_ui_->path_line_button_->setStyleSheet(button_style_[7]);
     //render_order_button_->setStyleSheet(button_style_[7]);
-}
-
-void Step3Widget::initState()
-{
     control_widget_ui_->control_edit_priority_->setValidator(new QIntValidator(0, 80, control_widget_ui_->control_edit_priority_));
     control_widget_ui_->control_edit_speed_->setValidator(new QIntValidator(1, 3, control_widget_ui_->control_edit_speed_));
     display_widget_->setMouseTracking(true);
 }
 
-void Step3Widget::onWidgetShowup()
+void Step3Widget::showEvent(QShowEvent* event)
 {
+    if (event->spontaneous()) return;
     auto& globaldata = MLDataManager::get();
     trajp = &globaldata.trajectories;
     platesp = &globaldata.plates_cache;
@@ -122,6 +120,7 @@ void Step3Widget::CreateConnections()
         });
     connect(control_widget_ui_->button_manual_add, &QPushButton::clicked, this, &Step3Widget::onManualAddPressed);
     connect(control_widget_ui_->button_auto_add, &QPushButton::clicked, this, &Step3Widget::onAutoAddPressed);
+    //connect(ui->dockMain, &QDockWidget::destroyed)
 }
 
 bool Step3Widget::is_auto_selection() const { return control_widget_ui_->button_autoselection->isChecked(); }

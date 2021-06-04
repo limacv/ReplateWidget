@@ -26,7 +26,6 @@ ReplateWidget::ReplateWidget(QWidget *parent)
     // initialize the StepXWidget
     for (int i = 0; i < STEP_COUNT; ++i)
     {
-        stepwidgets[i]->initState();
         stepwidgets[i]->hide();
     }
 
@@ -48,7 +47,6 @@ void ReplateWidget::setStepTo(int step)
     stepwidgets[current_step]->hide();
     ui.pipelineWidget->setCurrentIndex(step);
     stepwidgets[current_step]->show();
-    stepwidgets[step]->onWidgetShowup();
     current_step = step;
 
     if (step == 0)

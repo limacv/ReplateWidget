@@ -165,9 +165,6 @@
     <QtMoc Include="GResultDisplay.h">
       <Filter>Header Files</Filter>
     </QtMoc>
-    <QtMoc Include="GBaseWidget.h">
-      <Filter>Header Files</Filter>
-    </QtMoc>
     <QtMoc Include="GVideoPlayer.h">
       <Filter>Header Files</Filter>
     </QtMoc>
@@ -180,7 +177,7 @@
     <QtMoc Include="GMainDisplay.h">
       <Filter>Header Files</Filter>
     </QtMoc>
-    <QtMoc Include="StepWidgetBase.h">
+    <QtMoc Include="GBaseWidget.h">
       <Filter>Header Files</Filter>
     </QtMoc>
   </ItemGroup>
@@ -194,9 +191,6 @@
     <QtUic Include="Step2Widget.ui">
       <Filter>Form Files</Filter>
     </QtUic>
-    <QtUic Include="Step3Widget.ui">
-      <Filter>Form Files</Filter>
-    </QtUic>
     <QtUic Include="Step4Widget.ui">
       <Filter>Form Files</Filter>
     </QtUic>
@@ -204,6 +198,9 @@
       <Filter>Form Files</Filter>
     </QtUic>
     <QtUic Include="GResultWidget.ui">
+      <Filter>Form Files</Filter>
+    </QtUic>
+    <QtUic Include="Step3Widget.ui">
       <Filter>Form Files</Filter>
     </QtUic>
   </ItemGroup>

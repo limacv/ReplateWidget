@@ -3,10 +3,10 @@
 #include <QWidget>
 #include <qgroupbox.h>
 #include <qdockwidget.h>
+#include <qmainwindow.h>
 #include <qslider.h>
 #include "GPathTracker.h"
 #include "GObjLayer.h"
-#include "StepWidgetBase.h"
 namespace Ui { class Step3Widget; class GControlWidget; };
 
 class MLCachePlatesConfig;
@@ -17,15 +17,14 @@ class GResultWidget;
 class GResultDisplay;
 class GTimelineWidget;
 
-class Step3Widget : public StepWidgetBase
+class Step3Widget : public QMainWindow
 {
 	Q_OBJECT
 
 public:
 	Step3Widget(QWidget *parent = Q_NULLPTR);
     virtual ~Step3Widget();
-    virtual void initState();
-    virtual void onWidgetShowup();
+    virtual void showEvent(QShowEvent* event);
 
     void setCurrentEffect(const GEffectPtr& efx);
     GEffectPtr createEffectFromPath(const GPathPtr& path, G_EFFECT_ID type);

@@ -8,7 +8,7 @@ GTimelineWidget::GTimelineWidget(Step3Widget* step3p, QWidget *parent)
     step3widget(step3p)
 {
     setMinimumHeight(200);
-    setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Preferred);
+    setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
 
     main_layout_ = new QVBoxLayout(this);
     main_layout_->setAlignment(Qt::AlignTop);

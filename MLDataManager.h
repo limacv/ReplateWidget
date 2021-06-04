@@ -79,7 +79,6 @@ public:
 
 public:
 	VideoConfig raw_video_cfg;
-	VideoConfig out_video_cfg;
 	QVector<cv::Mat> raw_frames;
 
 	MLCacheTrajectories trajectories;
@@ -90,6 +89,8 @@ public:
 	GEffectManager effect_manager_;
 	MLCachePlatesConfig plates_cache;
 	QVector<cv::Mat> replate_video;
+
+	VideoConfig out_video_cfg;
 
 private:
 	bool flag_israwok;

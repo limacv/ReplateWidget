@@ -24,8 +24,9 @@ bool GMainDisplay::toggleModifyMode()
 
 QSize GMainDisplay::sizeHint() const
 {
-    const auto& global_data = MLDataManager::get();
-    return QSize(global_data.VideoWidth(), global_data.VideoHeight());
+    //const auto& global_data = MLDataManager::get();
+    //return QSize(global_data.VideoWidth(), global_data.VideoHeight());
+    return QWidget::sizeHint();
 }
 
 QSize GMainDisplay::minimumSizeHint() const

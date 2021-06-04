@@ -3,6 +3,7 @@
 #include <qpainter.h>
 #include <qprogressbar.h>
 #include <opencv2/photo.hpp>
+#include <qevent.h>
 #include <opencv2/xphoto/inpainting.hpp>
 #include "ui_Step2Widget.h"
 #include "Step2Widget.h"
@@ -17,7 +18,7 @@
 #include "MLPythonWarpper.h"
 
 Step2Widget::Step2Widget(QWidget* parent)
-	: StepWidgetBase(parent),
+	: QWidget(parent),
 	display_frameidx(0),
 	stitchdatap(&MLDataManager::get().stitch_cache),
 	flowdatap(&MLDataManager::get().flow_cache),
@@ -48,11 +49,9 @@ Step2Widget::~Step2Widget()
 	delete ui;
 }
 
-void Step2Widget::initState()
-{}
-
-void Step2Widget::onWidgetShowup()
+void Step2Widget::showEvent(QShowEvent* event)
 {
+	if (event->spontaneous()) return;
 	auto& global_data = MLDataManager::get();
 
 	if (!trajp->tryLoadDetectionFromFile())
@@ -181,7 +180,7 @@ void Step2Widget::runSegmentation()
 	{
 		auto& mask = globaldata.masks[i];
 		for (auto pbox : trajp->frameidx2detectboxes[i])
-			mask(pbox->rect).setTo(0);
+			mask(pbox->rect & cv::Rect(cv::Point(0, 0), mask.size())).setTo(0);
 		//for (auto pbox : trajp->frameidx2trackboxes[i])
 			//mask(pbox->rect).setTo(0);
 	}

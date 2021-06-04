@@ -3,7 +3,6 @@
 #include <QWidget>
 #include <qtimer.h>
 #include <qpalette.h>
-#include "StepWidgetBase.h"
 
 namespace Ui { class Step2Widget; };
 
@@ -12,15 +11,14 @@ class MLCacheFlow;
 class MLCacheTrajectories;
 class Step2RenderArea;
 
-class Step2Widget : public StepWidgetBase
+class Step2Widget : public QWidget
 {
 	Q_OBJECT
 
 public:
 	Step2Widget(QWidget *parent = Q_NULLPTR);
 	virtual ~Step2Widget();
-	virtual void initState();
-	virtual void onWidgetShowup();
+	virtual void showEvent(QShowEvent* event);
 
 private slots:
 	void runStitching();

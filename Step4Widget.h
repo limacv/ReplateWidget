@@ -3,20 +3,18 @@
 #include <QWidget>
 #include <qpainter>
 #include <qtimer.h>
-#include "StepWidgetBase.h"
 #include "MLDataStructure.h"
 
 namespace Ui { class Step4Widget; };
 
-class Step4Widget : public StepWidgetBase
+class Step4Widget : public QWidget
 {
 	Q_OBJECT
 
 public:
 	Step4Widget(QWidget *parent = Q_NULLPTR);
 	virtual ~Step4Widget();
-	virtual void initState();
-	virtual void onWidgetShowup();
+	virtual void showEvent(QShowEvent* event);
 
 public slots:
 	//bool renderReplates();

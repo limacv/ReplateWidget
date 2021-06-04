@@ -5,6 +5,7 @@
 #include <qdialog.h>
 #include <qfiledialog.h>
 #include <qmath.h>
+#include <qevent.h>
 #include "Step1Widget.h"
 #include "ui_Step1Widget.h"
 #include "MLDataManager.h"
@@ -12,7 +13,7 @@
 #include "MLUtil.h"
 
 Step1Widget::Step1Widget(QWidget* parent)
-	: StepWidgetBase(parent),
+	: QWidget(parent),
 	display_frameidx(0)
 {
 	ui = new Ui::Step1Widget();
@@ -35,52 +36,10 @@ Step1Widget::~Step1Widget()
 	delete ui;
 }
 
-void Step1Widget::initState()
+void Step1Widget::showEvent(QShowEvent* event)
 {
-	//trajp = &MLDataManager::get().trajectories;
-	// init the slider
-	
-	//updateFrameidx(0);
-	
-	//connect(ui->buttonDetect, SIGNAL(clicked()), this, SLOT(runDetect()));
-	//connect(ui->buttonTrack, SIGNAL(clicked()), this, SLOT(runTrack()));
-	//connect(ui->buttonGenmask, SIGNAL(clicked()), this, SLOT(runSegmentation()));
-
-	//connect(ui->checkShowBox, &QCheckBox::stateChanged, this, [this](int state) {
-	//	this->display_showbox = (state == Qt::Checked);
-	//	this->ui->imageLabel->update();
-	//	});
-	//connect(ui->checkShowName, &QCheckBox::stateChanged, this, [this](int state) {
-	//	this->display_showname = (state == Qt::Checked);
-	//	this->ui->imageLabel->update();
-	//	});
-	//connect(ui->checkShowTrace, &QCheckBox::stateChanged, this, [this](int state) {
-	//	this->display_showtrace = (state == Qt::Checked);
-	//	this->ui->imageLabel->update();
-	//	});
-	//connect(ui->buttonShowMask, &QPushButton::clicked, this, [this] {
-	//	if (this->display_showmask == true)
-	//	{
-	//		this->ui->buttonShowMask->setText("Show Mask");
-	//		display_showmask = false;
-	//		this->ui->imageLabel->update();
-	//	}
-	//	else
-	//	{
-	//		this->ui->buttonShowMask->setText("Show Image");
-	//		display_showmask = true;
-	//		this->ui->imageLabel->update();
-	//	}
-	//	});
-	
-	// TODO initialize timer for video playing
-	//display_timer.setInterval(33);
-	//display_timer.start();
-}
-
-void Step1Widget::onWidgetShowup()
-{
-
+	if (event->spontaneous()) return;
+	std::cout << "mmp" << std::endl;
 }
 
 void Step1Widget::selectVideo()
