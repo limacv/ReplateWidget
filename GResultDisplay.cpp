@@ -13,6 +13,7 @@ GResultWidget::GResultWidget(QWidget* parent)
 {
     ui->setupUi(this);
     display_widget = ui->widget;
+    ui->button->setFlat(true);
     ui->button->setIcon(MLUtil::getIcon(MLUtil::ICON_ID::STOP));
     ui->widget->setparent(this);
 
@@ -111,8 +112,7 @@ void GResultDisplay::paintEvent(QPaintEvent *event)
     if (NULL == event) return;
     const auto& global_data = MLDataManager::get();
     QPainter painter(this);
-    painter.drawImage(painter.viewport(), global_data.getBackgroundQImg());
-    global_data.effect_manager_.drawEffects(painter, parent_widget->current_frame_id_);
+    global_data.paintReplateFrame(painter, parent_widget->current_frame_id_);
 
     paintMouseSelection(painter);
 }

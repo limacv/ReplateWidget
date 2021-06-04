@@ -70,7 +70,7 @@ void ReplateWidget::setStepTo(int step)
     int i = 0;
     for (; i < step; ++i)
         setButtonValid(*stepbuttons[i]);
-    setButtonActive(*stepbuttons[i]);
+    setButtonActive(*stepbuttons[i++]);
     for (; i < STEP_COUNT; ++i)
         setButtonInvalid(*stepbuttons[i]);
 }

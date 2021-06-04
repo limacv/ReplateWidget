@@ -1,8 +1,10 @@
 #pragma once
 
 #include <QWidget>
+#include <qpainter>
 #include <qtimer.h>
 #include "StepWidgetBase.h"
+#include "MLDataStructure.h"
 
 namespace Ui { class Step4Widget; };
 
@@ -17,12 +19,23 @@ public:
 	virtual void onWidgetShowup();
 
 public slots:
-	bool renderReplates();
+	//bool renderReplates();
+	bool render();
 	bool exportVideo();
 
 private:
-	Ui::Step4Widget *ui;
+	void updateUIfromcfg() const;
+	void setSizeHeight(int y);
+	void setSizeWidth(int x);
+	void setRotation(float rot);
+	void setTranslationx(int dx);
+	void setTranslationy(int dy);
+	void setScalingx(float s);
+	void setScalingy(float s);
 
+private:
+	Ui::Step4Widget *ui;
+	VideoConfig* cfg;
 };
 
 
@@ -34,19 +47,20 @@ class Step4RenderArea : public QWidget
 
 public:
 	Step4RenderArea(QWidget* parent = Q_NULLPTR)
-		:QWidget(parent), step4widget(nullptr),
+		:QWidget(parent), cfg(nullptr),
 		display_frameidx(0)
 	{}
 
 	~Step4RenderArea() {};
-	void setStep4Widget(Step4Widget* p) { step4widget = p; }
+	void setVideoConfig(VideoConfig* p) { cfg = p; }
 
 protected:
 	virtual void paintEvent(QPaintEvent* event);
 
 private:
 	friend class Step4Widget;
-	Step4Widget* step4widget;
+	//Step4Widget* step4widget;
+	VideoConfig* cfg;
 	int display_frameidx;
 	QTimer display_timer;
 };

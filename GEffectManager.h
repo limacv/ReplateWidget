@@ -34,14 +34,14 @@ public:
 public:
     GEffectManager();
 
-    void applyTrash(const GPathTrackDataPtr &path);
-    void applyStill(const GPathTrackDataPtr &path);
-    void applyBlack(const GPathTrackDataPtr &path);
+    void applyTrash(const GPathPtr &path);
+    void applyStill(const GPathPtr &path);
+    void applyBlack(const GPathPtr &path);
 
-//    void cvtPathData(GPathTrackDataPtr &path) const;
-    GEffectPtr addEffect(const GPathTrackDataPtr &path, G_EFFECT_ID type);
+//    void cvtPathData(GPathPtr &path) const;
+    GEffectPtr addEffect(const GPathPtr &path, G_EFFECT_ID type);
 
-    GEffectPtr addPathEffect(GPathTrackDataPtr &path, G_EFFECT_ID type, const YAML::Node &node);
+    GEffectPtr addPathEffect(GPathPtr &path, G_EFFECT_ID type, const YAML::Node &node);
     GEffectPtr addBubble(QPoint pos);
 //    void changeBackground(QRect wnd_rect, QImage background, GVideoContent *video);
     void updateForeground(QRect wnd_rect);
@@ -53,11 +53,11 @@ public:
     void readOld(const YAML::Node &doc);
     void write(YAML::Emitter &out);
 
-    void loadOldPathData(const YAML::Node &node, GPathTrackDataPtr &path);
+    void loadOldPathData(const YAML::Node &node, GPathPtr &path);
 
     friend YAML::Emitter& operator << (YAML::Emitter& out,
-                                       const GPathTrackDataPtr &path);
-    friend void operator >> (const YAML::Node &node, GPathTrackDataPtr &path);
+                                       const GPathPtr &path);
+    friend void operator >> (const YAML::Node &node, GPathPtr &path);
 
     friend YAML::Emitter &operator << (YAML::Emitter& out,
                                        const QPainterPath &painter_path);
@@ -88,7 +88,7 @@ public:
     friend YAML::Emitter& operator << (YAML::Emitter& out, const QSize &size);
     friend void operator >> (const YAML::Node &node, QSize &size);
 
-//    void restoreForegroundImage(GPathTrackDataPtr &path, GVideoContent *video_);
+//    void restoreForegroundImage(GPathPtr &path, GVideoContent *video_);
 
 //    int pathId(std::vector<const GPathTrackData *> &paths, G_EFX *efx) const;
 
@@ -131,7 +131,7 @@ private:
     std::vector<GEffectPtr> still_trash_effects_;
     std::vector<GEffectPtr> recent_effects_;
 
-    GEffectPtr createEffect(const GPathTrackDataPtr &path, G_EFFECT_ID type);
+    GEffectPtr createEffect(const GPathPtr &path, G_EFFECT_ID type);
 };
 
 #endif // GEFFECTMANAGER_H

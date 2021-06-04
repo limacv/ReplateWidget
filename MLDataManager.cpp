@@ -78,7 +78,6 @@ bool MLDataManager::load_raw_video(const QString& path)
 	raw_video_cfg.fourcc = cap.get(cv::CAP_PROP_FOURCC);
 	raw_video_cfg.fps = cap.get(cv::CAP_PROP_FPS);
 	raw_video_cfg.size = raw_frames[0].size();
-	out_video_cfg = raw_video_cfg;
 	// update globalconfig
 	MLConfigManager::get().update_videopath(path);
 	return true;
@@ -206,14 +205,22 @@ QMatrix MLDataManager::imageScale() const
 
 QRectF MLDataManager::toPaintROI(const cv::Rect& rect_w, const QRect& viewport, bool ret_norm) const
 {
-	float top_norm = ((float)rect_w.y - stitch_cache.global_roi.y) / stitch_cache.global_roi.height,
-		left_norm = ((float)rect_w.x - stitch_cache.global_roi.x) / stitch_cache.global_roi.width,
-		wid_norm = (float)rect_w.width / stitch_cache.global_roi.width,
-		hei_norm = (float)rect_w.height / stitch_cache.global_roi.height;
+	float top_norm = ((float)rect_w.y - VideoTop()) / VideoHeight(),
+		left_norm = ((float)rect_w.x - VideoLeft()) / VideoWidth(),
+		wid_norm = (float)rect_w.width / VideoWidth(),
+		hei_norm = (float)rect_w.height / VideoHeight();
 	if (ret_norm)
 		return QRectF(left_norm, top_norm, wid_norm, hei_norm);
 	else
 		return QRectF(left_norm * viewport.width(), top_norm * viewport.height(), wid_norm * viewport.width(), hei_norm * viewport.height());
+}
+
+cv::Rect MLDataManager::toWorldROI(const QRectF& rect_norm) const
+{
+	return cv::Rect(rect_norm.x() * VideoWidth() + VideoLeft(), 
+		rect_norm.y() * VideoHeight() + VideoTop(),
+		rect_norm.width() * VideoWidth(),
+		rect_norm.height() * VideoHeight());
 }
 
 void MLDataManager::paintRawFrames(QPainter& painter, int frameidx) const
@@ -226,7 +233,7 @@ void MLDataManager::paintWarpedFrames(QPainter& painter, int frameidx, bool pain
 {
 	auto viewport = painter.viewport();
 	if (paintbg)
-		painter.drawImage(viewport, MLUtil::mat2qimage(stitch_cache.background, QImage::Format_ARGB32_Premultiplied));
+		painter.drawImage(viewport, getBackgroundQImg());
 
 	if (paintfg)
 		painter.drawImage(
@@ -347,6 +354,12 @@ void MLDataManager::paintWorldDetectBoxes(QPainter& painter, int frameidx, bool 
 				(int)paint_roi.y() - 1, text);
 		}
 	}
+}
+
+void MLDataManager::paintReplateFrame(QPainter& painter, int frameidx) const
+{
+	painter.drawImage(painter.viewport(), getBackgroundQImg());
+	effect_manager_.drawEffects(painter, frameidx);
 }
 
 void MLDataManager::initMasks()

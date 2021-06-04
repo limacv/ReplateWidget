@@ -15,9 +15,6 @@ public:
     explicit GMainDisplay(Step3Widget* step3widget, QWidget *parent = 0);
 
     bool toggleModifyMode();
-public slots:
-    virtual void clearCurrentSelection();
-
 protected:
     virtual QSize sizeHint() const;
     virtual QSize minimumSizeHint() const;

@@ -11,12 +11,6 @@ GMainDisplay::GMainDisplay(Step3Widget* step3widget, QWidget *parent)
 {
 }
 
-void GMainDisplay::clearCurrentSelection()
-{
-    clearMouseSelection();
-    step3widget->cur_tracked_path = nullptr;
-}
-
 bool GMainDisplay::toggleModifyMode()
 {
     is_modify_ = !is_modify_;
@@ -112,10 +106,10 @@ void GMainDisplay::mouseReleaseEvent(QMouseEvent *event)
         step3widget->trackPath();
     }
     else {
-        if(event->button() == Qt::LeftButton)
+        if (event->button() == Qt::LeftButton)
             GBaseWidget::mouseReleaseEvent(event);
         else
-            clearCurrentSelection();
+            clearMouseSelection();
     }
     update();
 }

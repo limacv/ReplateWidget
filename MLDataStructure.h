@@ -2,6 +2,7 @@
 #include <opencv2/core.hpp>
 #include <qpair.h>
 #include <qstring.h>
+#include <qpainter.h>
 #include <qvector>
 
 struct VideoConfig
@@ -10,14 +11,32 @@ struct VideoConfig
 		:framecount(-1),
 		fourcc(-1.),
 		fps(-1.),
-		size(-1, -1)
+		size(-1, -1),
+		translation(0, 0),
+		scaling(1, 1),
+		rotation(0)
 	{ }
 
+	bool isempty() const { return framecount <= 0; }
 	int framecount;
 	int fourcc;
 	double fps;
 	cv::Size size;
 	QString filepath;
+
+	cv::Point translation;
+	cv::Vec2f scaling;
+	float rotation;
+
+	void transformQPainter(QPainter& paint)
+	{
+		auto& viewport = paint.viewport();
+		paint.translate(translation.x, translation.y);
+		paint.scale(scaling[0], scaling[1]);
+		paint.translate(viewport.width() / 2, viewport.height() / 2);
+		paint.rotate(rotation);
+		paint.translate(-viewport.width() / 2, -viewport.height() / 2);
+	}
 };
 
 
@@ -51,10 +70,10 @@ using ObjID = QPair<int, int>;
 struct Traject
 {
 	Traject()
-		:beginidx(INT_MAX), endidx(0)
+		:beginidx(100000000), endidx(0)
 	{}
 	Traject(int totalframecount)
-		:beginidx(INT_MAX), endidx(0), boxes(totalframecount, nullptr)
+		:beginidx(100000000), endidx(0), boxes(totalframecount, nullptr)
 	{}
 
 	int beginidx;
@@ -64,6 +83,10 @@ struct Traject
 	BBox* operator[](const int idx) const
 	{
 		return boxes[idx];
+	}
+	int length() const
+	{
+		return endidx > beginidx ? endidx - beginidx + 1 : 0;
 	}
 	void insert(const int idx, BBox* boxp)
 	{

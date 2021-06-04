@@ -34,15 +34,15 @@ namespace MLUtil
         return QPixmap::fromImage(mat2qimage(src, format));
     }
 
-    cv::Mat qimage_to_mat_ref(QImage& img, int format)
+    cv::Mat qimage_to_mat_ref(QImage& img, int cv_format)
     {
         return cv::Mat(img.height(), img.width(),
-            format, img.bits(), img.bytesPerLine());
+            cv_format, img.bits(), img.bytesPerLine());
     }
 
-    cv::Mat qimage_to_mat_cpy(const QImage& img, int format)
+    cv::Mat qimage_to_mat_cpy(const QImage& img, int cv_format)
     {
-        return cv::Mat(img.height(), img.width(), format,
+        return cv::Mat(img.height(), img.width(), cv_format,
             const_cast<uchar*>(img.bits()),
             img.bytesPerLine()).clone();
     }

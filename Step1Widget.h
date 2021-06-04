@@ -48,7 +48,10 @@ public:
 
 protected:
 	virtual void paintEvent(QPaintEvent* event);
-
+	virtual QSize sizeHint();
+	virtual bool hasHeightForWidth();
+	virtual int heightForWidth(int w);
+	
 private:
 	Step1Widget* step1widget;
 };

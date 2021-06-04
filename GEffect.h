@@ -25,11 +25,11 @@ typedef std::shared_ptr<GEffect> GEffectPtr;
 class GEffect
 {
 public:
-    explicit GEffect(const GPathTrackDataPtr &path);
+    explicit GEffect(const GPathPtr &path);
     virtual ~GEffect() {this->release();}
 
-    GPathTrackDataPtr path() {return path_;}
-    const GPathTrackDataPtr path() const {return path_;}
+    GPathPtr path() {return path_;}
+    const GPathPtr path() const {return path_;}
 
     virtual void preRender(QPainter& painter, int frame_id, int duration) {};
     virtual void render(QPainter &painter, int frame_id, int duration, bool video = false) const = 0;
@@ -100,7 +100,7 @@ public:
     }
 
 protected:
-    void setPath(const GPathTrackDataPtr &path);
+    void setPath(const GPathPtr &path);
     int pathLength() const {return path()->length();}
     int pathStart() const {return path()->startFrame();}
 
@@ -120,7 +120,7 @@ protected:
 protected:
     static QMatrix scale_mat_;
 
-    GPathTrackDataPtr path_;
+    GPathPtr path_;
     G_EFFECT_ID effect_type_;
     int priority_level_;
     int start_frame_;
@@ -142,7 +142,7 @@ protected:
 class GEffectTrash : public GEffect
 {
 public:
-    explicit GEffectTrash(const GPathTrackDataPtr &path): GEffect(path){
+    explicit GEffectTrash(const GPathPtr &path): GEffect(path){
         effect_type_ = EFX_ID_TRASH;
         priority_level_ = G_EFX_PRIORITY[effect_type_] * G_EFX_PRIORITY_STEP;
     }
@@ -157,7 +157,7 @@ public:
 class GEffectStill : public GEffect
 {
 public:
-    explicit GEffectStill(const GPathTrackDataPtr &path): GEffect(path){
+    explicit GEffectStill(const GPathPtr &path): GEffect(path){
         effect_type_ = EFX_ID_STILL;
         priority_level_ = G_EFX_PRIORITY[effect_type_] * G_EFX_PRIORITY_STEP;
     }
@@ -171,7 +171,7 @@ public:
 class GEffectBlack : public GEffect
 {
 public:
-    explicit GEffectBlack (const GPathTrackDataPtr &path);
+    explicit GEffectBlack (const GPathPtr &path);
     virtual void release() {}
     virtual void render(QPainter &painter, int frame_id, int duration, bool video = false) const;
 
@@ -188,7 +188,7 @@ public:
     bool recache;
     int prev_length_;
 
-    explicit GEffectTrail(const GPathTrackDataPtr &path);
+    explicit GEffectTrail(const GPathPtr &path);
     virtual void release() {d_images.clear();}
 
     virtual void preRender(QPainter &painter, int frame_id, int duration);
@@ -220,7 +220,7 @@ class GEffectMotion : public GEffect
     std::vector<QPointF> trail_;
     std::vector<QPointF> marker_trail_;
 public:
-    explicit GEffectMotion(const GPathTrackDataPtr &path);
+    explicit GEffectMotion(const GPathPtr &path);
 
     virtual void renderSlowVideo(QPainter &painter, int frame_id, int duration) const;
 

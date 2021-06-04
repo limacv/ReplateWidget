@@ -125,3 +125,17 @@ void Step1RenderArea::paintEvent(QPaintEvent* event)
 	QPainter paint(this);
 	MLDataManager::get().paintRawFrames(paint, step1widget->display_frameidx);
 }
+
+QSize Step1RenderArea::sizeHint()
+{
+	const auto& global_data = MLDataManager::get();
+	if (!global_data.raw_video_cfg.isempty())
+		return QSize(global_data.raw_video_cfg.size.width, global_data.raw_video_cfg.size.height);
+	else
+		return QSize(0, 0);
+
+}
+
+inline bool Step1RenderArea::hasHeightForWidth() { return !MLDataManager::get().raw_video_cfg.isempty(); }
+
+inline int Step1RenderArea::heightForWidth(int w) { return w * MLDataManager::get().raw_video_cfg.size.height / MLDataManager::get().raw_video_cfg.size.width; }

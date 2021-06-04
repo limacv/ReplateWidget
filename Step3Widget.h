@@ -28,7 +28,7 @@ public:
     virtual void onWidgetShowup();
 
     void setCurrentEffect(const GEffectPtr& efx);
-    GEffectPtr createEffectFromPath(const GPathTrackDataPtr& path, G_EFFECT_ID type);
+    GEffectPtr createEffectFromPath(const GPathPtr& path, G_EFFECT_ID type);
     void trackPath();
 
 signals:
@@ -62,9 +62,6 @@ public slots:
 
     void onCurrentEffectChanged();
 
-    bool setA();
-    bool setB();
-
     void onAutoAddPressed(bool checked);
     void onManualAddPressed(bool checked);
     void toggleInpaint(bool checked);
@@ -75,6 +72,8 @@ private:
     void CreateConnections();
     void PrepStyleSheet();
     void ApplyStyleSheet();
+
+    void addSingleFramePath();
 public:
     bool is_auto_selection() const;
     G_EFFECT_ID selected_efx_type() const;
@@ -83,7 +82,7 @@ public:
 public:
     //current states
     GEffectPtr cur_effect;
-    GPathTrackDataPtr cur_tracked_path;
+    GPathPtr cur_tracked_path;
     int cur_frameidx;
     void setPathRoi(const GRoiPtr& roi);
 
@@ -111,61 +110,6 @@ private:
     // style sheet
     QString button_style_[9];
     QString trans_button_style_[3];
-
-    //QSlider* control_play_slider_;
-
-    // background widget
-    //QPushButton* control_add_still_button_;
-    //QPushButton* control_add_inpaint_button_;
-    //QPushButton* control_add_black_button_;
-    //    QCheckBox *control_trash_checkbox_;
-    //    QPushButton *control_add_border_button_;
-
-        // PathTrack widget
-    //QPushButton* control_add_object_button_;
-    //QPushButton* control_set_A_button_;
-    //QPushButton* control_set_B_button_;
-    //QPushButton* control_track_AB_button_;
-    //QPushButton* control_track_stable_button_;
-
-    // PathEffect widget
-    //QPushButton* control_add_multiple_button_;
-    //QPushButton* control_add_trail_button_;
-    //QPushButton* control_modify_path_button_;
-
-    // Result
-    //QPushButton* control_clear_show_button_;
-    //QPushButton* video_play_button_;
-    //QPushButton* video_stop_button_;
-
-    // effect property
-    //QSlider* anchor_slider_;
-    //QLabel* anchor_label_;
-    //QSlider* blur_alpha_slider_;
-    //QLabel* blur_alpha_label_;
-    //QSlider* trail_smooth_slider_;
-    //QLabel* trail_smooth_label_;
-    //QSlider* loop_slider_;
-    //QLabel* loop_label_;
-    //QPushButton* render_order_button_;
-    //QPushButton* marker_one_button_;
-    //QPushButton* marker_all_button_;
-    //QPushButton* path_line_button_;
-    //QPushButton* trans_level_button_[3];
-    //QButtonGroup* trans_button_group_;
-    //QPushButton* fade_level_button_[3];
-    //QButtonGroup* fade_button_group_;
-    //QLineEdit* control_edit_priority_;
-    //QLineEdit* control_edit_speed_;
-    //QFrame* loop_slider_frame_;
-    //QFrame* smooth_slider_frame_;
-    //QFrame* alpha_slider_frame_;
-
-    /*
-     * Export Widget
-     */
-    QDockWidget* dock_export_;
-    //GExportWidget* export_widget_;
 
     /*
      * Timeline Widget

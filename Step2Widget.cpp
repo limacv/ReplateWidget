@@ -180,8 +180,10 @@ void Step2Widget::runSegmentation()
 	for (int i = 0; i < framecount; ++i)
 	{
 		auto& mask = globaldata.masks[i];
-		for (auto pbox : trajp->frameidx2trackboxes[i])
+		for (auto pbox : trajp->frameidx2detectboxes[i])
 			mask(pbox->rect).setTo(0);
+		//for (auto pbox : trajp->frameidx2trackboxes[i])
+			//mask(pbox->rect).setTo(0);
 	}
 	ui->imageWidget->update();
 }

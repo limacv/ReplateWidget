@@ -20,7 +20,7 @@ GEffectManager::GEffectManager()
     //    m_effects.assign(EFX_NUMBER, std::vector<G_EFX*>());
 }
 
-void GEffectManager::applyTrash(const GPathTrackDataPtr &path)
+void GEffectManager::applyTrash(const GPathPtr &path)
 {
     QRectF rectF = path->frameRoiRect(path->startFrame());
     //video->inpaintBackground(rectF, path->painter_path_);
@@ -42,7 +42,7 @@ void GEffectManager::applyTrash(const GPathTrackDataPtr &path)
 //                    video->cvBackground(), QImage::Format_ARGB32_Premultiplied), video);
 }
 
-void GEffectManager::applyStill(const GPathTrackDataPtr &path)
+void GEffectManager::applyStill(const GPathPtr &path)
 {
 //    qDebug() << path->size() << path->painter_path_;
     QRectF rectF = path->frameRoiRect(path->startFrame());
@@ -50,20 +50,20 @@ void GEffectManager::applyStill(const GPathTrackDataPtr &path)
     path->roi_fg_mat_[0] = fg.clone();
 
     // overlayBackground
-    auto& global_data = MLDataManager::get();
-    cv::Mat1b mask = path->painter_path_.isEmpty() 
-        ? cv::Mat1b::ones(fg.size())
-        : GUtil::cvtPainterPath2Mask(global_data.imageScale().map(path->painter_path_));
+    //auto& global_data = MLDataManager::get();
+    //cv::Mat1b mask = path->painter_path_.isEmpty() 
+    //    ? cv::Mat1b::ones(fg.size())
+    //    : GUtil::cvtPainterPath2Mask(global_data.imageScale().map(path->painter_path_));
 
-    cv::Rect cvrect = GUtil::cvtRect(global_data.imageRect(rectF));
-    cv::Mat4b bg = global_data.stitch_cache.background(cvrect);
-    GUtil::overlayFeather(fg, mask, bg);
+    //cv::Rect cvrect = GUtil::cvtRect(global_data.imageRect(rectF));
+    //cv::Mat4b bg = global_data.stitch_cache.background(cvrect);
+    //GUtil::overlayFeather(fg, mask, bg);
 
     path->roi_fg_qimg_[0] = GUtil::mat2qimage(path->roi_fg_mat_[0],
             QImage::Format_ARGB32_Premultiplied).copy();
 }
 
-void GEffectManager::applyBlack(const GPathTrackDataPtr &path)
+void GEffectManager::applyBlack(const GPathPtr &path)
 {
     const auto& global_data = MLDataManager::get();
     QRectF rectF = path->frameRoiRect(path->startFrame());
@@ -81,7 +81,7 @@ void GEffectManager::applyBlack(const GPathTrackDataPtr &path)
 }
 
 
-GEffectPtr GEffectManager::addEffect(const GPathTrackDataPtr &path, G_EFFECT_ID type)
+GEffectPtr GEffectManager::addEffect(const GPathPtr &path, G_EFFECT_ID type)
 {
     if (!path) return NULL;
     GEffectPtr efx = createEffect(path, type);
@@ -97,7 +97,7 @@ GEffectPtr GEffectManager::addEffect(const GPathTrackDataPtr &path, G_EFFECT_ID 
     return efx;
 }
 
-GEffectPtr GEffectManager::addPathEffect(GPathTrackDataPtr &path, G_EFFECT_ID type, const YAML::Node &node)
+GEffectPtr GEffectManager::addPathEffect(GPathPtr &path, G_EFFECT_ID type, const YAML::Node &node)
 {
     if (!path) return NULL;
 
@@ -137,10 +137,10 @@ bool GEffectManager::undo()
 void GEffectManager::read(const YAML::Node &doc)
 {
     YAML::Node path_nodes = doc["Path"];
-    std::vector<GPathTrackDataPtr> paths(path_nodes.size());
+    std::vector<GPathPtr> paths(path_nodes.size());
     for (size_t i = 0; i < path_nodes.size(); ++i) {
         qDebug() << "Load path" << i;
-        GPathTrackDataPtr p(new GPath);
+        GPathPtr p(new GPath);
         path_nodes[i][i] >> p;
         paths[i] = p;
     }
@@ -151,7 +151,7 @@ void GEffectManager::read(const YAML::Node &doc)
         for (YAML::const_iterator it = efx_node.begin(); it != efx_node.end(); ++it) {
 //            if ((G_EFFECT_ID)i != EFX_ID_TRASH || (G_EFFECT_ID)i != EFX_ID_STILL) continue;
             int path_id = (*it)["PathId"].as<int>();
-            GPathTrackDataPtr path = paths[path_id];
+            GPathPtr path = paths[path_id];
             GEffectPtr efx = addPathEffect(path, (G_EFFECT_ID)i, (*it)["Property"]);
             effect_map_read_tmp.push_back(efx);
         }
@@ -161,10 +161,10 @@ void GEffectManager::read(const YAML::Node &doc)
 void GEffectManager::readOld(const YAML::Node &doc)
 {
     YAML::Node path_nodes = doc["Path"];
-    std::vector<GPathTrackDataPtr> paths(path_nodes.size());
+    std::vector<GPathPtr> paths(path_nodes.size());
     for (size_t i = 0; i < path_nodes.size(); ++i) {
         qDebug() << "Load path" << i;
-        GPathTrackDataPtr p(new GPath);
+        GPathPtr p(new GPath);
 //        path_nodes[i][i] >> p;
         loadOldPathData(path_nodes[i][i], p);
         paths[i] = p;
@@ -176,7 +176,7 @@ void GEffectManager::readOld(const YAML::Node &doc)
         for (YAML::const_iterator it = efx_node.begin(); it != efx_node.end(); ++it) {
 //            if ((G_EFFECT_ID)i != EFX_ID_TRASH || (G_EFFECT_ID)i != EFX_ID_STILL) continue;
             int path_id = (*it)["PathId"].as<int>();
-            GPathTrackDataPtr path = paths[path_id];
+            GPathPtr path = paths[path_id];
             G_EFFECT_ID id = (G_EFFECT_ID)i;
             if (id == EFX_ID_MULTIPLE) id = EFX_ID_MOTION;
             GEffectPtr efx = addPathEffect(path, id, (*it)["Property"]);
@@ -204,8 +204,8 @@ void GEffectManager::write(YAML::Emitter &out)
     }
 
     out << YAML::BeginMap; // effect map
-    std::map<GPathTrackDataPtr, int> path2id;
-    std::vector<GPathTrackDataPtr> id2path;
+    std::map<GPathPtr, int> path2id;
+    std::vector<GPathPtr> id2path;
     for (size_t i = 0; i < G_EFX_NUMBER; ++i) {
         out << YAML::Key << G_EFFECT_STR[i] << YAML::Value;
         out << YAML::BeginSeq;
@@ -257,7 +257,7 @@ void loadPainterPath(const YAML::Node &node, QPainterPath &painter_path)
     }
 }
 
-void GEffectManager::loadOldPathData(const YAML::Node &node, GPathTrackDataPtr &path)
+void GEffectManager::loadOldPathData(const YAML::Node &node, GPathPtr &path)
 {
     int size = node["Length"].as<int>();
     path->resize(size);
@@ -281,7 +281,7 @@ void GEffectManager::loadOldPathData(const YAML::Node &node, GPathTrackDataPtr &
     node["Manual"] >> path->manual_adjust_;
 }
 
-YAML::Emitter& operator <<(YAML::Emitter &out, const GPathTrackDataPtr &path)
+YAML::Emitter& operator <<(YAML::Emitter &out, const GPathPtr &path)
 {
     out << YAML::BeginMap;
     out << YAML::Key << "Length" << YAML::Value << path->length();
@@ -298,7 +298,7 @@ YAML::Emitter& operator <<(YAML::Emitter &out, const GPathTrackDataPtr &path)
     return out;
 }
 
-void operator >> (const YAML::Node &node, GPathTrackDataPtr &path)
+void operator >> (const YAML::Node &node, GPathPtr &path)
 {
     int size = node["Length"].as<int>();
     path->resize(size);
@@ -477,7 +477,7 @@ void operator >> (const YAML::Node &node, QSize &size)
     size = QSize(node[0].as<int>(), node[1].as<int>());
 }
 
-//void GEffectManager::restoreForegroundImage(GPathTrackDataPtr &path, GVideoContent *video_)
+//void GEffectManager::restoreForegroundImage(GPathPtr &path, GVideoContent *video_)
 //{
 //    qDebug() << path->length();
 //    for (size_t i = 0; i < path->length(); ++i) {
@@ -821,7 +821,7 @@ bool GEffectManager::popEffect(const GEffectPtr &efx)
     return res;
 }
 
-GEffectPtr GEffectManager::createEffect(const GPathTrackDataPtr &path, G_EFFECT_ID type)
+GEffectPtr GEffectManager::createEffect(const GPathPtr &path, G_EFFECT_ID type)
 {
     if (!path) return NULL;
 

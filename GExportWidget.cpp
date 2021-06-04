@@ -322,7 +322,7 @@ void GExportWidget::setLoopCount(int cnt)
 }
 
 void GExportWidget::exportVideo()
-{
+{ 
     std::string output_folder = MLConfigManager::get().get_raw_video_path().toStdString();
     std::string output_file = QFileDialog::getSaveFileName(
                 this, tr("Save File"), output_folder.c_str()).toStdString();

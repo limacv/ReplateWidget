@@ -42,6 +42,8 @@ public:
 	QMatrix imageScale() const;
 	// convert rect from world coordinate to paint coordinate (if return normalized rect, the rect_painter is not needed)
 	QRectF toPaintROI(const cv::Rect& rect_w, const QRect& rect_painter=QRect(), bool ret_norm=false) const;
+	// convert rect from normalized coordinate to world coordinate
+	cv::Rect toWorldROI(const QRectF& rect_norm) const;
 
 	// get images
 	cv::Mat4b getRoiofFrame(int frameidx, const QRectF& rectF) const;
@@ -59,6 +61,8 @@ public:
 
 	int VideoHeight() const { return stitch_cache.background.rows; }
 	int VideoWidth() const { return stitch_cache.background.cols; }
+	int VideoTop() const { return stitch_cache.global_roi.y; }
+	int VideoLeft() const { return stitch_cache.global_roi.x; }
 
 	// painting function
 	// convert world coordinate to the paint coordinate
@@ -66,6 +70,7 @@ public:
 	void paintWarpedFrames(QPainter& painter, int frameidx, bool paintbg = true, bool paintfg = true) const;
 	void paintWorldTrackBoxes(QPainter& painter, int frameidx, bool paint_name = true, bool paint_traj = true) const;
 	void paintWorldDetectBoxes(QPainter& painter, int frameidx, bool paint_name = true) const;
+	void paintReplateFrame(QPainter& painter, int frameidx) const;
 
 	// step1 <-> step2
 	void initMasks();

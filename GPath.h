@@ -11,7 +11,7 @@
 #endif // Q_MOC_RUN
 
 class GPath;
-typedef std::shared_ptr<GPath> GPathTrackDataPtr;
+typedef std::shared_ptr<GPath> GPathPtr;
 
 class GPath
 {

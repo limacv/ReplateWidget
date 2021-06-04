@@ -140,7 +140,7 @@ void Step3Widget::setPathRoi(const GRoiPtr& roi)
     cur_tracked_path->updateimages();
 }
 
-GEffectPtr Step3Widget::createEffectFromPath(const GPathTrackDataPtr& path, G_EFFECT_ID type)
+GEffectPtr Step3Widget::createEffectFromPath(const GPathPtr& path, G_EFFECT_ID type)
 {
     if (!path) return 0;
     auto& effect_manager = MLDataManager::get().effect_manager_;
@@ -241,12 +241,11 @@ void Step3Widget::trackPath()
         cur_tracked_path->updateimages();
     }
     else {
-        GPath* path = tracker->trackPath(tracker_frame_A_, tracker_rect_A_, tracker_frame_B_, tracker_rect_B_);
-        path->updateimages();
-        cur_tracked_path = GPathTrackDataPtr(path);
+        cur_tracked_path = tracker->trackPath(tracker_frame_A_, tracker_rect_A_, tracker_frame_B_, tracker_rect_B_);
+        if (cur_tracked_path != nullptr)
+            cur_tracked_path->updateimages();
     }
 }
-
 ///////////////////////
 // SLOTS
 ////////////////////////////
@@ -465,41 +464,6 @@ void Step3Widget::onCurrentEffectChanged()
         QString::number(cur_effect->speed()));
 }
 
-bool Step3Widget::setA()
-{
-    const QRectF& rectf = display_widget_->curSelectRectF();
-    if (rectf.isEmpty())
-        return false;
-
-    tracker_frame_A_ = cur_frameidx;
-    tracker_rect_A_ = rectf;
-    tracker_is_A_set_ = true;
-    return true;
-}
-
-bool Step3Widget::setB()
-{
-    if (!tracker_is_A_set_ || tracker_frame_A_ >= cur_frameidx) return false;
-
-    const QRectF& rectf = display_widget_->curSelectRectF();
-    tracker_frame_B_ = cur_frameidx;
-    tracker_rect_B_ = rectf;
-
-    // track path
-    if (cur_tracked_path) 
-    {
-        tracker->updateTrack(cur_tracked_path.get());
-        cur_tracked_path->updateimages();
-    }
-    else 
-    {
-        GPath* path = tracker->trackPath(tracker_frame_A_, tracker_rect_A_, tracker_frame_B_, tracker_rect_B_);
-        path->updateimages();
-        cur_tracked_path = GPathTrackDataPtr(path);
-    }
-    return true;
-}
-
 void Step3Widget::toggleInpaint(bool checked)
 {
     if (checked) {
@@ -518,7 +482,7 @@ void Step3Widget::toggleInpaint(bool checked)
         control_widget_ui_->control_add_inpaint_button_->setChecked(true);
         return;
     }
-    GPathTrackDataPtr path = GPathTrackDataPtr(new GPath(0, select_rect, select_path));
+    GPathPtr path = GPathPtr(new GPath(0, select_rect, select_path));
     GEffectPtr efx = createEffectFromPath(path, EFX_ID_TRASH);
 
     result_widget_->update();
@@ -528,52 +492,99 @@ void Step3Widget::toggleInpaint(bool checked)
     onCurrentEffectChanged();
 }
 
+void Step3Widget::addSingleFramePath()
+{
+    QRectF select_rect;
+    QPainterPath select_path;
+    if (!display_widget_->curSelectRectF().isEmpty()) {
+        select_rect = display_widget_->curSelectRectF();
+        select_path = display_widget_->curSelectPath();
+    }
+    else if (!result_widget_display_->curSelectRectF().isEmpty()) {
+        select_rect = result_widget_display_->curSelectRectF();
+        select_path = result_widget_display_->curSelectPath();
+    }
+    else {
+        cur_tracked_path = nullptr;
+        return;
+    }
+    cur_tracked_path = GPathPtr(new GPath(cur_frameidx, select_rect, select_path));
+}
+
 void Step3Widget::onAutoAddPressed(bool checked)
 {
+    if (is_singleframe_efx())
+    {
+        addSingleFramePath();
+    }
+    else
+    {
+        const QRectF& rectf = display_widget_->curSelectRectF();
+        if (rectf.isEmpty())
+            return;
 
+        tracker_frame_A_ = cur_frameidx;
+        tracker_rect_A_ = rectf;
+        tracker_frame_B_ = -1;
+        tracker_rect_B_ = rectf;
+        cur_tracked_path = nullptr;
+
+        // track path
+        trackPath();
+    }
+    if (cur_tracked_path == nullptr)
+        return;
+    GEffectPtr efx = createEffectFromPath(cur_tracked_path, selected_efx_type());
+
+    timeline_widget_->addTimeline(efx);
+    result_widget_->update();
+    display_widget_->clearMouseSelection();
+    onCurrentEffectChanged();
 }
 
 void Step3Widget::onManualAddPressed(bool checked)
 {
-    GEffectPtr efx;
     // single frame effect
     if (is_singleframe_efx())
     {
-        QRectF select_rect;
-        QPainterPath select_path;
-        if (!display_widget_->curSelectRectF().isEmpty()) {
-            select_rect = display_widget_->curSelectRectF();
-            select_path = display_widget_->curSelectPath();
-        }
-        else if (!result_widget_display_->curSelectRectF().isEmpty()) {
-            select_rect = result_widget_display_->curSelectRectF();
-            select_path = result_widget_display_->curSelectPath();
-        }
-        else {
-            control_widget_ui_->button_manual_add->setChecked(false);
-            return;
-        }
-        cur_tracked_path = GPathTrackDataPtr(new GPath(cur_frameidx, select_rect, select_path));
+        addSingleFramePath();
         control_widget_ui_->button_manual_add->setChecked(false);
     }
     // not single frame effect
-    else if (checked) {
-        if (!setA()) {
+    else if (checked) {  // first stage
+        const QRectF& rectf = display_widget_->curSelectRectF();
+        if (rectf.isEmpty())
+        {
             control_widget_ui_->button_manual_add->setChecked(false);
             return;
         }
+        tracker_frame_A_ = cur_frameidx;
+        tracker_rect_A_ = rectf;
+        tracker_is_A_set_ = true;
+
         control_widget_ui_->button_manual_add->setText("Add");
         control_widget_ui_->button_auto_add->setEnabled(false);
-        display_widget_->clearCurrentSelection();
+        display_widget_->clearMouseSelection();
+        cur_tracked_path = nullptr;
         return;
     }
     else {
+        if (!tracker_is_A_set_ || tracker_frame_A_ >= cur_frameidx)
+        {
+            return;
+        }
+
+        const QRectF& rectf = display_widget_->curSelectRectF();
+        tracker_frame_B_ = cur_frameidx;
+        tracker_rect_B_ = rectf;
+        // track path
+        trackPath();
+
         control_widget_ui_->button_manual_add->setText("Start");
         control_widget_ui_->button_auto_add->setEnabled(false);
-        if (!setB()) return;
     }
 
-    efx = createEffectFromPath(cur_tracked_path, selected_efx_type());
+    GEffectPtr efx = createEffectFromPath(cur_tracked_path, selected_efx_type());
 
     timeline_widget_->addTimeline(efx);
     result_widget_->update();

@@ -3,7 +3,7 @@
 #include <typeinfo>
 #include <MLDataManager.h>
 
-GEffect::GEffect(const GPathTrackDataPtr &path)
+GEffect::GEffect(const GPathPtr &path)
     : async_offset_(0)
     , render_order_(true)
     , line_color_(qRgba(23, 224, 135, 100))
@@ -167,7 +167,7 @@ void operator >> (const YAML::Node& out, GEffectPtr &efx) {
 void GEffect::release() {qDebug() << "Effect:" << G_EFFECT_STR[type()]
                                   << "released!";}
 
-void GEffect::setPath(const GPathTrackDataPtr &path)
+void GEffect::setPath(const GPathPtr &path)
 {
     path_ = path;
     start_frame_ = pathStart();
@@ -257,7 +257,8 @@ void GEffectStill::render(QPainter &painter, int frame_id, int duration, bool vi
                            //: renderImage(render_frame));
         QImage dst = renderImage(render_frame);
         QPainterPath pp = scaleMat().map(path()->painter_path_);
-        painter.setClipPath(pp);
+        if (!pp.isEmpty())
+            painter.setClipPath(pp);
         painter.drawImage(rect, dst);
         painter.setClipPath(QPainterPath(), Qt::NoClip);
 
@@ -277,7 +278,7 @@ void GEffectStill::read(const YAML::Node &node)
 }
 
 
-GEffectBlack::GEffectBlack(const GPathTrackDataPtr &path): GEffect(path){
+GEffectBlack::GEffectBlack(const GPathPtr &path): GEffect(path){
     effect_type_ = EFX_ID_BLACK;
     priority_level_ = G_EFX_PRIORITY[effect_type_] * G_EFX_PRIORITY_STEP;
 }
@@ -301,7 +302,7 @@ void GEffectBlack::read(const YAML::Node &node)
 }
 
 
-GEffectTrail::GEffectTrail(const GPathTrackDataPtr &path)
+GEffectTrail::GEffectTrail(const GPathPtr &path)
     : GEffect(path)
     , prev_length_(-1)
     , recache(false)
@@ -423,7 +424,7 @@ bool GEffectTrail::setSmooth(int s)
 
 int GEffectMotion::max_loop_num = 0;
 
-GEffectMotion::GEffectMotion(const GPathTrackDataPtr &path)
+GEffectMotion::GEffectMotion(const GPathPtr &path)
     : GEffect(path)
 {
     effect_type_ = EFX_ID_MOTION;
