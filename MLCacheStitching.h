@@ -3,6 +3,8 @@
 #include <opencv2/core.hpp>
 #include <vector>
 
+class MLProgressObserverBase;
+
 class MLCacheStitching
 {
 public:
@@ -11,13 +13,13 @@ public:
 	virtual ~MLCacheStitching() {};
 
 	bool tryLoadBackground();
-	bool tryLoadWarppedFrames();
+	bool tryLoadWarppedFrames(MLProgressObserverBase* observer = nullptr);
 	bool tryLoadRois();
-	bool tryLoadAllFromFiles()
+	bool tryLoadAllFromFiles(MLProgressObserverBase* observer = nullptr)
 	{
 		if (!tryLoadBackground())
 			return false;
-		if (!tryLoadWarppedFrames())
+		if (!tryLoadWarppedFrames(observer))
 			return false;
 		if (!tryLoadRois())
 			return false;
@@ -25,13 +27,13 @@ public:
 	}
 
 	bool saveBackground() const;
-	bool saveWarppedFrames() const;
+	bool saveWarppedFrames(MLProgressObserverBase* observer = nullptr) const;
 	bool saveRois() const;
-	bool saveAllToFiles() const
+	bool saveAllToFiles(MLProgressObserverBase* observer = nullptr) const
 	{
 		if (!saveBackground())
 			return false;
-		if (!saveWarppedFrames())
+		if (!saveWarppedFrames(observer))
 			return false;
 		if (!saveRois())
 			return false;

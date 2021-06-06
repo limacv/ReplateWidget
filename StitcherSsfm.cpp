@@ -6,23 +6,48 @@ using namespace std;
 using namespace cv;
 using namespace cv::detail;
 
-bool StitcherSsfm::get_warped_rects(const int frameidx, std::vector<cv::Rect>& inoutboxes) const
+int StitcherSsfm::warp_and_composite(const std::vector<cv::Mat>& frames, const std::vector<cv::Mat>& masks, 
+    std::vector<cv::Mat>& warped, std::vector<cv::Rect>& windows, cv::Mat& stitched)
+{
+    int ret;
+    std::vector<cv::Mat> images_warped;
+    std::vector<cv::Mat> masks_warped;
+    std::vector<cv::Size> sizes;
+    std::vector<cv::Point> corners;
+    if (blend_scheme == "seam")
+        ret = warp_and_compositebyseam(frames, masks, images_warped, masks_warped, sizes, corners, stitched);
+    else
+        ret = warp_and_compositebyblend(frames, masks, images_warped, masks_warped, sizes, corners, stitched);
+    
+    if (ret != 0) return ret;
+
+    const int num_img = images_warped.size();
+    warped.resize(num_img);
+    windows.resize(num_img);
+    for (int i = 0; i < images_warped.size(); ++i)
+    {
+        cv::merge(std::vector<cv::Mat>({ images_warped[i], masks_warped[i] }), warped[i]);
+        windows[i] = cv::Rect(corners[i], sizes[i]);
+    }
+    return 0;
+}
+
+int StitcherSsfm::warp_points(const int frameidx, std::vector<cv::Point>& inoutpoints) const
 {
     if (warper == nullptr)
         return false;
     
     Mat K;
     cameras[frameidx].K().convertTo(K, CV_32F);
-    for (auto& box : inoutboxes)
+    for (auto& point : inoutpoints)
     {
-        cv::Point tl = warper->warpPoint(box.tl(), K, cameras[frameidx].R);
-        cv::Point br = warper->warpPoint(box.br(), K, cameras[frameidx].R);
-        box = cv::Rect(tl, br);
+        cv::Point warp = warper->warpPoint(point, K, cameras[frameidx].R);
+        point = warp;
     }
     return true;
 }
 
-int StitcherSsfm::align(const std::vector<cv::Mat>& frames, const std::vector<cv::Mat>& masks)
+int StitcherSsfm::stitch(const std::vector<cv::Mat>& frames, const std::vector<cv::Mat>& masks)
 {
     Ssfm::SphericalSfm ssfm;
     ssfm.set_verbose(false);
@@ -30,6 +55,7 @@ int StitcherSsfm::align(const std::vector<cv::Mat>& frames, const std::vector<cv
     ssfm.set_allow_translation(false);
     ssfm.set_optimize_translation(false);
     ssfm.set_visualize_root(MLConfigManager::get().get_stitch_cache().toStdString());
+    ssfm.set_progress_observer(progress_reporter);
 
     ssfm.runSfM(frames, masks);
     Ssfm::SparseModel model;
@@ -42,7 +68,9 @@ int StitcherSsfm::align(const std::vector<cv::Mat>& frames, const std::vector<cv
 /// require: cameras
 /// write to: images_warped, masks_warped, sizes, corners
 /// </summary>
-int StitcherSsfm::warp_and_compositebyseam(const std::vector<cv::Mat>& frames, const std::vector<cv::Mat>& inmasks)
+int StitcherSsfm::warp_and_compositebyseam(const std::vector<cv::Mat>& frames, const std::vector<cv::Mat>& inmasks,
+    std::vector<cv::Mat>& images_warped, std::vector<cv::Mat>& masks_warped,
+    std::vector<cv::Size>& sizes, std::vector<cv::Point>& corners, cv::Mat& stitch_result)
 {
     const int num_images = frames.size();
     images_warped.resize(num_images);
@@ -170,9 +198,7 @@ int StitcherSsfm::warp_and_compositebyseam(const std::vector<cv::Mat>& frames, c
     images_warped.resize(num_images);
     masks_warped.resize(num_images);
     //double compose_seam_aspect = 1;
-    double compose_scale = 1;
     bool is_compose_scale_set = false;
-    double compose_work_aspect = 1;
     for (int img_idx = 0; img_idx < num_images; ++img_idx)
     {
         //LOGLN("Compositing image #" << indices[img_idx] + 1);
@@ -183,34 +209,19 @@ int StitcherSsfm::warp_and_compositebyseam(const std::vector<cv::Mat>& frames, c
             is_compose_scale_set = true;
             // Compute relative scales
             //compose_seam_aspect = compose_scale / seam_scale;
-            compose_work_aspect = compose_scale;
             // Update warped image scale
-            warped_image_scale *= static_cast<float>(compose_work_aspect);
             warper = warper_creator->create(warped_image_scale);
             // Update corners and sizes
             for (int i = 0; i < num_images; ++i)
             {
-                // Update intrinsics
-                cameras[i].focal *= compose_work_aspect;
-                cameras[i].ppx *= compose_work_aspect;
-                cameras[i].ppy *= compose_work_aspect;
                 // Update corner and size
                 Size sz = full_img.size();
-                if (std::abs(compose_scale - 1) > 1e-1)
-                {
-                    sz.width = cvRound(sz.width * compose_scale);
-                    sz.height = cvRound(sz.height * compose_scale);
-                }
                 Mat K;
                 cameras[i].K().convertTo(K, CV_32F);
                 Rect roi = warper->warpRoi(sz, K, cameras[i].R);
                 corners[i] = roi.tl();
                 sizes[i] = roi.size();
             }
-        }
-        if (abs(compose_scale - 1) > 1e-1)
-        {
-            resize(full_img, full_img, Size(), compose_scale, compose_scale, INTER_LINEAR_EXACT);
         }
 
         Size img_size = full_img.size();
@@ -273,8 +284,11 @@ int StitcherSsfm::warp_and_compositebyseam(const std::vector<cv::Mat>& frames, c
 /// require: cameras
 /// write to: images_warped, masks_warped, sizes, corners
 /// </summary>
-int StitcherSsfm::warp_and_compositebyblend(const std::vector<cv::Mat>& frames, const std::vector<cv::Mat>& inmasks)
+int StitcherSsfm::warp_and_compositebyblend(const std::vector<cv::Mat>& frames, const std::vector<cv::Mat>& inmasks,
+    std::vector<cv::Mat>& images_warped, std::vector<cv::Mat>& masks_warped,
+    std::vector<cv::Size>& sizes, std::vector<cv::Point>& corners, cv::Mat& stitch_result)
 {
+    if (progress_reporter) progress_reporter->beginStage("Warping and Composite");
     const int num_images = frames.size();
     images_warped.resize(num_images);
     masks_warped.resize(num_images);
@@ -333,6 +347,7 @@ int StitcherSsfm::warp_and_compositebyblend(const std::vector<cv::Mat>& frames, 
         vector<UMat> seammasks_warp(num_images);
         for (int i = 0; i < num_images; ++i)
         {
+            if (progress_reporter) progress_reporter->setValue(0.15 * i / num_images);
             Mat_<float> K;
             cameras[i].K().convertTo(K, CV_32F);
             K(0, 0) *= seam_scale; K(0, 2) *= seam_scale;
@@ -368,6 +383,7 @@ int StitcherSsfm::warp_and_compositebyblend(const std::vector<cv::Mat>& frames, 
             bcompensator->setBlockSize(expos_comp_block_size, expos_comp_block_size);
         }
         compensator->feed(corners, images_warp_4seam, seammasks_warp);
+        if (progress_reporter) progress_reporter->setValue(0.2);
     }
     
     //LOGLN("Compositing...");
@@ -378,6 +394,7 @@ int StitcherSsfm::warp_and_compositebyblend(const std::vector<cv::Mat>& frames, 
     masks_warped.resize(num_images);
     for (int img_idx = 0; img_idx < num_images; ++img_idx)
     {
+        if (progress_reporter) progress_reporter->setValue(0.2 + 0.7 * img_idx / num_images);
         //LOGLN("Compositing image #" << indices[img_idx] + 1);
         // Read image and resize it if necessary
         full_img = frames[img_idx];
@@ -446,6 +463,7 @@ int StitcherSsfm::warp_and_compositebyblend(const std::vector<cv::Mat>& frames, 
     result.convertTo(result, CV_8UC3);
     result_mask.convertTo(result_mask, CV_8UC1);
     cv::merge(std::vector<Mat>({ result, result_mask }), stitch_result);
+    if (progress_reporter) progress_reporter->setValue(1.f);
     //LOGLN("Compositing, time: " << ((getTickCount() - t) / getTickFrequency()) << " sec");
     //imwrite(result_name, result);
     return 0;

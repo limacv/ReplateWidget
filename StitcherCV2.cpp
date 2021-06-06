@@ -16,28 +16,6 @@ using namespace std;
 using namespace cv;
 using namespace cv::detail;
 
-bool StitcherCV2::get_warped_frames(std::vector<cv::Mat>& frames, std::vector<cv::Rect>& windows) const
-{
-    if (images_warped.empty()
-        || images_warped.size() != masks_warped.size()
-        || images_warped.size() != sizes.size()
-        || images_warped.size() != corners.size())
-        return false;
-    else
-    {
-        const int num_img = images_warped.size();
-        frames.resize(num_img); 
-        windows.resize(num_img);
-        for (int i = 0; i < images_warped.size(); ++i)
-        {
-            cv::merge(vector<UMat>({ images_warped[i], masks_warped[i] }), frames[i]);
-            windows[i] = cv::Rect(corners[i], sizes[i]);
-        }
-    }
-    return true;
-}
-
-
 void StitcherCV2::build_feature_matches(const std::vector<cv::Mat>& frames, const std::vector<cv::Mat>& inmasks)
 {
     const int num_images = frames.size();
@@ -204,13 +182,16 @@ int StitcherCV2::bundle_adjustment()
     return 0;
 }
 
-int StitcherCV2::warp_and_composite(const std::vector<cv::Mat>& frames, const std::vector<cv::Mat>& inmasks)
+int StitcherCV2::warp_and_composite(const std::vector<cv::Mat>& frames, const std::vector<cv::Mat>& inmasks,
+    std::vector<cv::Mat>& warped, std::vector<cv::Rect>& windows, cv::Mat& stitch_result)
 {
     const int num_images = frames.size();
-    images_warped.resize(num_images);
-    masks_warped.resize(num_images);
-    sizes.resize(num_images);
-    corners.resize(num_images);
+
+    std::vector<cv::UMat> images_warped(num_images);
+    std::vector<cv::UMat> masks_warped(num_images);
+    std::vector<cv::Size> sizes(num_images);
+    std::vector<cv::Point> corners(num_images);
+    std::vector<cv::detail::CameraParams> cameras_work = cameras;
 
     // Warp images and their masks
     Ptr<WarperCreator> warper_creator;
@@ -350,15 +331,15 @@ int StitcherCV2::warp_and_composite(const std::vector<cv::Mat>& frames, const st
             //compose_seam_aspect = compose_scale / seam_scale;
             compose_work_aspect = compose_scale / work_scale;
             // Update warped image scale
-            warped_image_scale *= static_cast<float>(compose_work_aspect);
-            warper = warper_creator->create(warped_image_scale);
+            auto warped_image_scale_work = warped_image_scale * static_cast<float>(compose_work_aspect);
+            warper = warper_creator->create(warped_image_scale_work);
             // Update corners and sizes
             for (int i = 0; i < num_images; ++i)
             {
                 // Update intrinsics
-                cameras[i].focal *= compose_work_aspect;
-                cameras[i].ppx *= compose_work_aspect;
-                cameras[i].ppy *= compose_work_aspect;
+                cameras_work[i].focal *= compose_work_aspect;
+                cameras_work[i].ppx *= compose_work_aspect;
+                cameras_work[i].ppy *= compose_work_aspect;
                 // Update corner and size
                 Size sz = full_img.size();
                 if (std::abs(compose_scale - 1) > 1e-1)
@@ -367,8 +348,8 @@ int StitcherCV2::warp_and_composite(const std::vector<cv::Mat>& frames, const st
                     sz.height = cvRound(sz.height * compose_scale);
                 }
                 Mat K;
-                cameras[i].K().convertTo(K, CV_32F);
-                Rect roi = warper->warpRoi(sz, K, cameras[i].R);
+                cameras_work[i].K().convertTo(K, CV_32F);
+                Rect roi = warper->warpRoi(sz, K, cameras_work[i].R);
                 corners[i] = roi.tl();
                 sizes[i] = roi.size();
             }
@@ -381,12 +362,12 @@ int StitcherCV2::warp_and_composite(const std::vector<cv::Mat>& frames, const st
         Size img_size = full_img.size();
         full_mask = cv::Mat(img_size, CV_8UC1, cv::Scalar(255));
         Mat K;
-        cameras[img_idx].K().convertTo(K, CV_32F);
+        cameras_work[img_idx].K().convertTo(K, CV_32F);
         UMat img_warped, mask_warped;
         // Warp the current image
-        warper->warp(full_img, K, cameras[img_idx].R, INTER_LINEAR, BORDER_REFLECT, img_warped);
+        warper->warp(full_img, K, cameras_work[img_idx].R, INTER_LINEAR, BORDER_REFLECT, img_warped);
         // Warp the current image mask
-        warper->warp(full_mask, K, cameras[img_idx].R, INTER_NEAREST, BORDER_CONSTANT, mask_warped);
+        warper->warp(full_mask, K, cameras_work[img_idx].R, INTER_NEAREST, BORDER_CONSTANT, mask_warped);
         // Compensate exposure
         compensator->apply(img_idx, corners[img_idx], img_warped, mask_warped);
         img_warped.convertTo(img_warped_s, CV_16S);
@@ -428,5 +409,20 @@ int StitcherCV2::warp_and_composite(const std::vector<cv::Mat>& frames, const st
     cv::merge(std::vector<Mat>({ result, result_mask }), stitch_result);
     //LOGLN("Compositing, time: " << ((getTickCount() - t) / getTickFrequency()) << " sec");
     //imwrite(result_name, result);
+
+    // output
+    warped.resize(num_images);
+    windows.resize(num_images);
+    for (int i = 0; i < images_warped.size(); ++i)
+    {
+        cv::merge(vector<UMat>({ images_warped[i], masks_warped[i] }), warped[i]);
+        windows[i] = cv::Rect(corners[i], sizes[i]);
+    }
+
     return 0;
+}
+
+int StitcherCV2::warp_points(const int frameidx, std::vector<cv::Point>& inoutpoints) const
+{
+    return -1;
 }

@@ -2,8 +2,12 @@
 #include <qmessagebox.h>
 #include <qpainter.h>
 #include <qprogressbar.h>
+#include <QtConcurrent/qtconcurrentrun.h>
 #include <opencv2/photo.hpp>
 #include <qevent.h>
+#include <qfuture.h>
+#include <qfuturewatcher.h>
+#include "MLProgressDialog.hpp"
 #include <opencv2/xphoto/inpainting.hpp>
 #include "ui_Step2Widget.h"
 #include "Step2Widget.h"
@@ -52,6 +56,7 @@ Step2Widget::~Step2Widget()
 void Step2Widget::showEvent(QShowEvent* event)
 {
 	if (event->spontaneous()) return;
+	QWidget::show();
 	auto& global_data = MLDataManager::get();
 
 	if (!trajp->tryLoadDetectionFromFile())
@@ -90,6 +95,12 @@ inline bool Step2Widget::display_showtraj() { return ui->checkShowTraj->isChecke
 
 inline bool Step2Widget::display_showtrack() { return ui->checkShowTrack->isChecked(); }
 
+
+void Step2Widget::tryRunDetect()
+{
+
+}
+
 void Step2Widget::runDetect()
 {
 	const auto& pathcfg = MLConfigManager::get();
@@ -115,9 +126,18 @@ void Step2Widget::runDetect()
 			return;
 	}
 
-	QProgressBar bar(this);
-	bar.setMinimum(0); bar.setMaximum(0);
-	int ret = callDetectPy();
+	QProgressDialog bar("Run Detection", "Cancel", 0, 1000, this);
+	QFuture<int> future_ret = QtConcurrent::run(callDetectPy);
+	while (!future_ret.isFinished())
+	{
+		QCoreApplication::processEvents();
+		if (bar.wasCanceled())
+			return;
+
+		bar.setValue(bar.value() >= 999 ? bar.value() : bar.value() + 1);
+		QThread::msleep(10);
+	}
+	int ret = future_ret.result();
 	if (ret != 0)
 	{
 		QMessageBox errorBox;
@@ -129,6 +149,9 @@ void Step2Widget::runDetect()
 	ui->imageWidget->update();
 }
 
+void Step2Widget::tryRunTrack()
+{
+}
 
 void Step2Widget::runTrack()
 {
@@ -147,7 +170,18 @@ void Step2Widget::runTrack()
 			return;
 	}
 
-	int ret = callTrackPy();
+	QProgressDialog bar("Run Tracking", "Cancel", 0, 1000, this);
+	QFuture<int> future_ret = QtConcurrent::run(callTrackPy);
+	while (!future_ret.isFinished())
+	{
+		QCoreApplication::processEvents();
+		if (bar.wasCanceled())
+			return;
+
+		bar.setValue(bar.value() >= 999 ? bar.value() : bar.value() + 1);
+		QThread::msleep(5);
+	}
+	int ret = future_ret.result();
 	if (ret != 0)
 	{
 		QMessageBox errorBox;
@@ -187,6 +221,10 @@ void Step2Widget::runSegmentation()
 	ui->imageWidget->update();
 }
 
+void Step2Widget::tryRunStitching()
+{
+
+}
 
 void Step2Widget::runStitching()
 {
@@ -211,40 +249,46 @@ void Step2Widget::runStitching()
 		st = std::make_unique<StitcherSsfm>();
 	else
 		st = std::make_unique<StitcherCV2>();
-	
-	QProgressBar bar(this);
-	bar.setMinimum(0); bar.setMaximum(0);
+
+	MLProgressDialog bar(this);
+	st->set_progress_observer(&bar);
 	st->stitch(rawframes, rawmasks);
-	st->get_warped_frames(stitchdatap->warped_frames, stitchdatap->rois);
-	stitchdatap->background = st->get_stitched_image();
+	st->warp_and_composite(rawframes, rawmasks,
+		stitchdatap->warped_frames, stitchdatap->rois, stitchdatap->background);
 	// warp rectangles
 	for (int frameidx = 0; frameidx < rawframes.size(); ++frameidx)
 	{
 		{ // warp tracking boxes
 			auto& boxes = trajp->frameidx2trackboxes[frameidx];
-			std::vector<cv::Rect> rects; rects.reserve(boxes.size());
+			std::vector<cv::Point> points; points.reserve(boxes.size() * 2);
 			for (auto& box : boxes)
-				rects.emplace_back(box->rect);
-			st->get_warped_rects(frameidx, rects);
+			{
+				points.emplace_back(box->rect.tl());
+				points.emplace_back(box->rect.br());
+			}
+			st->warp_points(frameidx, points);
 
 			int i = 0;
-			for (auto& it = boxes.begin(); it != boxes.end(); ++it, ++i)
-				it.value()->rect_global = rects[i];
+			for (auto& it = boxes.begin(); it != boxes.end(); ++it, i+=2)
+				it.value()->rect_global = cv::Rect(points[i], points[i + 1]);
 		}
 		{ // warp detection boxes
 			auto& boxes = trajp->frameidx2detectboxes[frameidx];
-			std::vector<cv::Rect> rects; rects.reserve(boxes.size());
+			std::vector<cv::Point> points; points.reserve(boxes.size() * 2);
 			for (auto& box : boxes)
-				rects.emplace_back(box->rect);
-			st->get_warped_rects(frameidx, rects);
+			{
+				points.emplace_back(box->rect.tl());
+				points.emplace_back(box->rect.br());
+			}
+			st->warp_points(frameidx, points);
 
 			int i = 0;
-			for (auto it = boxes.begin(); it != boxes.end(); ++it, ++i)
-				(*it)->rect_global = rects[i];
+			for (auto it = boxes.begin(); it != boxes.end(); ++it, i+=2)
+				(*it)->rect_global = cv::Rect(points[i], points[i + 1]);
 		}
 	}
 
-	if (!stitchdatap->saveAllToFiles())
+	if (!stitchdatap->saveAllToFiles(&bar))
 		qWarning("Step2Widge::error while save stitch to cache");
 	if (!trajp->saveGlobalDetectBoxes())
 		qWarning("Step2Widge::error while save global detect boxes");
@@ -252,6 +296,11 @@ void Step2Widget::runStitching()
 		qWarning("Step2Widge::error while save global track boxes");
 
 	stitchdatap->update_global_roi();
+}
+
+void Step2Widget::tryRunOpticalFlow()
+{
+
 }
 
 void Step2Widget::runOptflow()
@@ -262,7 +311,8 @@ void Step2Widget::runOptflow()
 	const int framecount = global_data.get_framecount();
 	const auto& rois = stitchdatap->rois;
 	flowdatap->flows.resize(framecount);
-
+	
+	QProgressDialog bar("Run Optical Flow", "Cancel", 0, framecount + 1, this);
 	for (int i = 0; i < framecount; ++i)
 	{
 		cv::Mat flowb, flowf;
@@ -315,8 +365,11 @@ void Step2Widget::runOptflow()
 		}
 		cv::merge(std::vector<cv::Mat>{flowf, flowb}, flowdatap->flows[i]);
 		flowf.release(); flowb.release();
+		bar.setValue(i);
 	}
+	bar.setLabelText("saving...");
 	flowdatap->saveFlows();
+	bar.setValue(framecount + 1);
 }
 
 void Step2Widget::runInpainting()

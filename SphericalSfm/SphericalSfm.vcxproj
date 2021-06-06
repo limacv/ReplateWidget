@@ -141,6 +141,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="EstimatorBase.h" />
+    <ClInclude Include="MLProgressObserverBase.h" />
     <ClInclude Include="Polynomial\Polynomial.hpp" />
     <ClInclude Include="Polynomial\PolynomialInternal.hpp" />
     <ClInclude Include="rotation_averaging.h" />

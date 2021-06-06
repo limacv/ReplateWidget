@@ -24,6 +24,10 @@ private:
     void setButtonInvalid(QPushButton& button);
     void setButtonValid(QPushButton& button);
 
+private slots:
+    void clearCache();
+    void clearAllCache();
+
 private:
     Ui::ReplateWidgetClass ui;
     int current_step;

@@ -8,6 +8,8 @@
 #include <fstream>
 #include <qvector.h>
 #include <qmap.h>
+#include <qprogressdialog.h>
+#include "SphericalSfm/MLProgressObserverBase.h"
 
 bool MLCacheStitching::tryLoadBackground()
 {
@@ -19,11 +21,13 @@ bool MLCacheStitching::tryLoadBackground()
 	return true;
 }
 
-bool MLCacheStitching::tryLoadWarppedFrames()
+bool MLCacheStitching::tryLoadWarppedFrames(MLProgressObserverBase* observer)
 {
 	const auto& pathcfg = MLConfigManager::get();
 	const int framecount = MLDataManager::get().get_framecount();
 	warped_frames.resize(framecount);
+	if (observer) observer->beginStage("Load Stitching");
+
 	for (int i = 0; i < framecount; ++i)
 	{
 		cv::Mat load = cv::imread(pathcfg.get_stitch_warpedimg_path(i).toStdString(), cv::IMREAD_UNCHANGED);
@@ -33,7 +37,9 @@ bool MLCacheStitching::tryLoadWarppedFrames()
 			return false;
 		}
 		warped_frames[i] = load;
+		if (observer) observer->setValue((float)i / framecount);
 	}
+	if (observer) observer->setValue(1.f);
 	return true;
 }
 
@@ -80,15 +86,20 @@ bool MLCacheStitching::saveBackground() const
 	return true;
 }
 
-bool MLCacheStitching::saveWarppedFrames() const
+bool MLCacheStitching::saveWarppedFrames(MLProgressObserverBase* observer) const
 {
 	const auto& pathcfg = MLConfigManager::get();
 	// save background
 	if (warped_frames.empty() || warped_frames.size() != MLDataManager::get().get_framecount())
 		return false;
 
+	if (observer) observer->beginStage("Save Stitching");
 	for (int i = 0; i < warped_frames.size(); ++i)
+	{
 		cv::imwrite(pathcfg.get_stitch_warpedimg_path(i).toStdString(), warped_frames[i]);
+		if (observer) observer->setValue((float)i / warped_frames.size());
+	}
+	if (observer) observer->setValue(1.f);
 	return true;
 }
 

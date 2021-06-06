@@ -35,6 +35,7 @@ CameraParams pose2camparam(const Pose& pose, const Intrinsics& intrin)
 void Ssfm::SphericalSfm::track_all_frames(const vector<cv::Mat>& frames, const vector<cv::Mat>& masks, SparseModel& outmodel)
 {
 	const int totalframecount = frames.size();
+	if (progress_observer) progress_observer->beginStage("Reconstruct remaining frames");
 
 	outmodel.points2d.resize(totalframecount);
 	outmodel.pointsid.resize(totalframecount);
@@ -67,6 +68,7 @@ void Ssfm::SphericalSfm::track_all_frames(const vector<cv::Mat>& frames, const v
 	
 	for (int frame_idx = 1; frame_idx < totalframecount; ++frame_idx)
 	{
+		if (progress_observer) progress_observer->setValue(frame_idx / totalframecount);
 		image = frames[frame_idx].clone();
 		if (image.channels() == 3) cv::cvtColor(image, image, cv::COLOR_BGR2GRAY);
 
@@ -350,7 +352,7 @@ void Ssfm::SphericalSfm::track_all_frames(const vector<cv::Mat>& frames, const v
 		auto& pt3d = allpt3dpos[i];
 		outmodel.points3d[allpt3did[i]] = Point3f(pt3d[0] / pt3d[3], pt3d[1] / pt3d[3], pt3d[2] / pt3d[3]);
 	}
-
+	if (progress_observer) progress_observer->setValue(1.f);
 }
 
 /// <summary>
@@ -363,7 +365,7 @@ void Ssfm::SphericalSfm::track_all_frames(const vector<cv::Mat>& frames, const v
 void SphericalSfm::build_feature_tracks(const vector<cv::Mat>& frames, const vector<cv::Mat>& masks)
 {
 	bool inward = false;
-
+	if (progress_observer) progress_observer->beginStage("Analyzing Frames");
 	const int totalframecount = frames.size();
 	Eigen::Matrix3d Kinv = init_intrinsic.getKinv();
 
@@ -402,6 +404,7 @@ void SphericalSfm::build_feature_tracks(const vector<cv::Mat>& frames, const vec
 	std::vector<uchar> status(features0.size(), 1); // initialize all status to successfully
 	for (int frameidx = 1; frameidx < totalframecount; ++frameidx)
 	{
+		if (progress_observer) progress_observer->setValue((float)frameidx / totalframecount);
 		if (frames[frameidx].channels() == 3) cv::cvtColor(frames[frameidx], image1, cv::COLOR_BGR2GRAY);
 		else image1 = frames[frameidx].clone();
 
@@ -520,6 +523,7 @@ void SphericalSfm::build_feature_tracks(const vector<cv::Mat>& frames, const vec
 	// collect garbage
 	for (auto& ep : estimators)
 		delete ep;
+	if (progress_observer) progress_observer->setValue(1.f);
 }
 
 
@@ -710,6 +714,8 @@ void SphericalSfm::refine_rotations()
 /// </summary>
 void SphericalSfm::bundle_adjustment()
 {
+	if (progress_observer) progress_observer->beginStage("Reconstruct Key Frames");
+
 	model3d = new SfM(init_intrinsic, optimizeFocal, notranslation, !dynamicFocal);
 	// buliding tracks
 	vector< vector<int> > tracks(keyframes.size());
@@ -750,6 +756,7 @@ void SphericalSfm::bundle_adjustment()
 	// ===========================================
 	for (int i = 0; i < image_matches.size(); i++)
 	{
+		if (progress_observer) progress_observer->setValue(0.2 * i / image_matches.size());
 		const Matches& m01 = image_matches[i].matches;
 
 		const int index0 = image_matches[i].index0;
@@ -822,10 +829,11 @@ void SphericalSfm::bundle_adjustment()
 
 	cout << "retriangulating...\n";
 	auto wrongpoints = model3d->Retriangulate();
+	if (progress_observer) progress_observer->setValue(0.3);
 
 	// Bundle Adjustment
 	model3d->Optimize();
-	
+	if (progress_observer) progress_observer->setValue(1.f);
 }
 
 void match(const Features& features0, const Features& features1, Matches& m01, double ratio)

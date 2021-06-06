@@ -139,6 +139,9 @@
     <ClCompile Include="MLTracking.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="MLProgressDialog.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="Step1Widget.h">
@@ -275,6 +278,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="MLTracking.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MLProgressDialog.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

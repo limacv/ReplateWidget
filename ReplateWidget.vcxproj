@@ -129,6 +129,7 @@
     <ClCompile Include="MLDataManager.cpp" />
     <ClCompile Include="MLCacheTrajectories.cpp" />
     <ClCompile Include="MLCacheStitching.cpp" />
+    <ClCompile Include="MLProgressDialog.cpp" />
     <ClCompile Include="MLTracking.cpp" />
     <ClCompile Include="Step3Widget.cpp" />
     <ClCompile Include="Step4Widget.cpp" />
@@ -175,6 +176,7 @@
     <ClInclude Include="MLCachePlatesConfig.h" />
     <ClInclude Include="MLConfigManager.h" />
     <ClInclude Include="MLDataManager.h" />
+    <ClInclude Include="MLProgressDialog.hpp" />
     <ClInclude Include="MLPythonWarpper.h" />
     <ClInclude Include="MLCacheTrajectories.h" />
     <ClInclude Include="MLCacheStitching.h" />

@@ -23,6 +23,14 @@ ReplateWidget::ReplateWidget(QWidget *parent)
     connect(ui.buttonNextStep, &QPushButton::clicked, this, &ReplateWidget::nextStep);
     connect(ui.buttonLastStep, &QPushButton::clicked, this, &ReplateWidget::lastStep);
 
+    connect(ui.actionClear_Cache, &QAction::toggled, this, &ReplateWidget::clearCache);
+    connect(ui.actionClear_All_Cache, &QAction::toggled, this, &ReplateWidget::clearAllCache);
+
+    ui.menuWindow->addAction(ui.step3Widget->showMainDisplayAction());
+    ui.menuWindow->addAction(ui.step3Widget->showResultAction());
+    ui.menuWindow->addAction(ui.step3Widget->showControlAction());
+    ui.menuWindow->addAction(ui.step3Widget->showTimeLineAction());
+
     // initialize the StepXWidget
     for (int i = 0; i < STEP_COUNT; ++i)
     {
@@ -31,9 +39,6 @@ ReplateWidget::ReplateWidget(QWidget *parent)
 
     // initialize index 0 layout
     setStepTo(current_step);
-    
-    // for debug
-    ui.step1Widget->selectVideo();
 }
 
 void ReplateWidget::initConfig(const QString& cfgpath) const
@@ -64,6 +69,12 @@ void ReplateWidget::setStepTo(int step)
         ui.buttonNextStep->show();
         ui.buttonLastStep->show();
     }
+
+    if (step == 2)
+        ui.menuWindow->setEnabled(true);
+    else
+        ui.menuWindow->setEnabled(false);
+
     // set button states
     int i = 0;
     for (; i < step; ++i)
@@ -105,6 +116,15 @@ void ReplateWidget::setButtonValid(QPushButton& button)
     font.setBold(false);
     button.setFont(font);
     button.setEnabled(true);
+}
+
+void ReplateWidget::clearCache()
+{
+
+}
+
+void ReplateWidget::clearAllCache()
+{
 }
 
 

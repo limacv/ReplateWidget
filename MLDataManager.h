@@ -15,12 +15,9 @@ class MLDataManager
 {
 private:
 	MLDataManager()
-		:flag_israwok(false),
-		flag_isstep1ok(false),
-		flag_isstep2ok(false),
-		flag_isstep3ok(false),
-		plates_cache(&stitch_cache, &trajectories),
-		flow_cache(stitch_cache.rois, stitch_cache.global_roi)
+		:plates_cache(&stitch_cache, &trajectories),
+		flow_cache(stitch_cache.rois, stitch_cache.global_roi),
+		dirty_flags({ false })
 	{}
 	MLDataManager(const MLDataManager& dm) = delete;
 
@@ -92,10 +89,19 @@ public:
 
 	VideoConfig out_video_cfg;
 
-private:
-	bool flag_israwok;
-	bool flag_isstep1ok;
-	bool flag_isstep2ok;
-	bool flag_isstep3ok;
+public:
+	
+	enum DataIndex
+	{
+		RAW = 0, DETECT, TRACK, STITCH, FLOW, EFFECT, RENDER
+	};
+	std::array<bool, 7> dirty_flags;
+	
+	// the data become dirty when it's modified or dependency is modified
+	// the data become clean when it's updated based on clean dependencies
+	void set_dirty(DataIndex idx) { for (int i = idx; i < 7; ++i) dirty_flags[i] = true; }
+	void set_clean(DataIndex idx) { dirty_flags[idx] = false; }
+	bool is_prepared(DataIndex idx) { for (int i = 0; i < idx; ++i) if (dirty_flags[i]) return false; return true; }
+	bool is_dirty(DataIndex idx) { return dirty_flags[idx]; }
 };
 

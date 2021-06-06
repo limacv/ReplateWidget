@@ -60,6 +60,9 @@
     <ClInclude Include="SfmIO.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="MLProgressObserverBase.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

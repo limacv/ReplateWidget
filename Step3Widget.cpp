@@ -610,3 +610,8 @@ void Step3Widget::toggleModify(bool checked)
         display_widget_->update();
     }
 }
+
+QAction* Step3Widget::showMainDisplayAction() const { return ui->dockMain->toggleViewAction(); }
+QAction* Step3Widget::showResultAction() const { return ui->dockResult->toggleViewAction();}
+QAction* Step3Widget::showControlAction() const { return ui->dockControl->toggleViewAction(); }
+QAction* Step3Widget::showTimeLineAction() const { return ui->dockTimeline->toggleViewAction(); }

@@ -14,7 +14,7 @@ public:
 		raw_video_path(),
 		yolov5_path("./YOLOv5"),
 		yolov5_weight("yolov5m.pt"),
-		python_path("python.exe")
+		python_path("pythonw.exe")
 	{}
 
 	~MLConfigManager() {}

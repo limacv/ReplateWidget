@@ -4,6 +4,8 @@
 #include "sfm.h"
 #include <map>
 #include <opencv2/stitching/detail/camera.hpp>
+#include <functional>
+#include "MLProgressObserverBase.h"
 
 namespace Ssfm {
 
@@ -24,7 +26,8 @@ namespace Ssfm {
 			optimizeFocal(true), softspherical(true), notranslation(false), dynamicFocal(true),
 			lc_bestonly(false), lc_numbegin(30), lc_numend(30), lc_mininlier(100),
 			init_intrinsic(0., 0., 0.),
-			verbose(false), model3d(nullptr)
+			verbose(false), model3d(nullptr),
+			progress_observer(nullptr)
 		{}
 
 		~SphericalSfm()
@@ -38,6 +41,7 @@ namespace Ssfm {
 		void set_visualize_root(const std::string& path) { visualize_root = path; }
 		void set_allow_translation(bool flag) { notranslation = !flag; }
 		void set_optimize_translation(bool flag) { softspherical = flag; }
+		void set_progress_observer(MLProgressObserverBase* func) { progress_observer = func; }
 		
 	public:
 		void runSfM(const vector<cv::Mat>& frames, const vector<cv::Mat>& masks)
@@ -94,5 +98,6 @@ namespace Ssfm {
 
 		bool verbose;
 		std::string visualize_root;
+		MLProgressObserverBase* progress_observer;
 	};
 }

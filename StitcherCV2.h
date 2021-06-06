@@ -51,17 +51,17 @@ public:
 	{
 		build_feature_matches(frames, masks);
 		int ret = bundle_adjustment();
-		ret = warp_and_composite(frames, masks);
 		return 0;
 	}
-	
-	virtual bool get_warped_frames(std::vector<cv::Mat>& frames, std::vector<cv::Rect>& windows) const ;
-	virtual cv::Mat get_stitched_image() const { return stitch_result; }
-	virtual bool get_warped_rects(const int frameidx, std::vector<cv::Rect>& inoutboxes) const { return false; }
+	virtual bool loadCameraParams(const std::string& path) { return false; }
+	virtual bool saveCameraParams(const std::string& path) { return false; }
+
+	virtual int warp_and_composite(const std::vector<cv::Mat>& frames, const std::vector<cv::Mat>& masks,
+		std::vector<cv::Mat>& warped, std::vector<cv::Rect>& windows, cv::Mat& stitched);
+	virtual int warp_points(const int frameidx, std::vector<cv::Point>& inoutpoints) const;
 private:
 	void build_feature_matches(const std::vector<cv::Mat>& frames, const std::vector<cv::Mat>& masks);
 	int bundle_adjustment();
-	int warp_and_composite(const std::vector<cv::Mat>& frames, const std::vector<cv::Mat>& masks);
 
 private:
 	// intermediate variable
@@ -73,13 +73,6 @@ private:
 	std::vector<cv::detail::ImageFeatures> features;
 	std::vector<cv::detail::MatchesInfo> pairwise_matches;
 	std::vector<cv::detail::CameraParams> cameras;
-
-	std::vector<cv::UMat> images_warped;
-	std::vector<cv::UMat> masks_warped;
-	std::vector<cv::Size> sizes;
-	std::vector<cv::Point> corners;
-
-	cv::Mat stitch_result;
 private:
 	// configures
 	bool try_cuda;

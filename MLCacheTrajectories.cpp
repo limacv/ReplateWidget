@@ -55,7 +55,6 @@ bool MLCacheTrajectories::tryLoadDetectionFromFile()
 		QFile file(pathcfg.get_detect_result_cache(i));
 		if (!file.open(QIODevice::ReadOnly))
 		{
-			QMessageBox::warning(nullptr, "Warning", file.errorString());
 			return false;
 		}
 		
@@ -96,7 +95,6 @@ bool MLCacheTrajectories::tryLoadTrackFromFile()
 		QFile file(pathcfg.get_track_result_cache());
 		if (!file.open(QIODevice::ReadOnly))
 		{
-			QMessageBox::warning(nullptr, "Warning", file.errorString());
 			return false;
 		}
 		QTextStream fs(&file);

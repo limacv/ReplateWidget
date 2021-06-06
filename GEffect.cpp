@@ -250,19 +250,16 @@ void GEffectTrash::read(const YAML::Node &node)
 
 void GEffectStill::render(QPainter &painter, int frame_id, int duration, bool video) const
 {
-    if (priority() != G_EFX_PRIORITY[effect_type_] * G_EFX_PRIORITY_STEP) {
-        int render_frame = startFrame();
-        QRect rect = renderLocation(render_frame);
-        //QImage dst = (video? MLDataManager::get().getRoiofFrame(render_frame, rect)
-                           //: renderImage(render_frame));
-        QImage dst = renderImage(render_frame);
-        QPainterPath pp = scaleMat().map(path()->painter_path_);
-        if (!pp.isEmpty())
-            painter.setClipPath(pp);
-        painter.drawImage(rect, dst);
-        painter.setClipPath(QPainterPath(), Qt::NoClip);
-
-    }
+    int render_frame = startFrame();
+    QRect rect = renderLocation(render_frame);
+    //QImage dst = (video? MLDataManager::get().getRoiofFrame(render_frame, rect)
+                        //: renderImage(render_frame));
+    QImage dst = renderImage(render_frame);
+    QPainterPath pp = scaleMat().map(path()->painter_path_);
+    if (!pp.isEmpty())
+        painter.setClipPath(pp);
+    painter.drawImage(rect, dst);
+    painter.setClipPath(QPainterPath(), Qt::NoClip);
 }
 
 void GEffectStill::write(YAML::Emitter &out) const

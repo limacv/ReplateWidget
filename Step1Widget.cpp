@@ -45,6 +45,7 @@ void Step1Widget::showEvent(QShowEvent* event)
 void Step1Widget::selectVideo()
 {
 	auto& global_data = MLDataManager::get();
+	global_data.set_dirty(MLDataManager::DataIndex::RAW);
 
 	QString filepath = QFileDialog::getOpenFileName(
 		this, tr("Open Video"), "D:/MSI_NB/source/data/",
@@ -57,6 +58,7 @@ void Step1Widget::selectVideo()
 		return;
 	}
 
+	global_data.set_clean(MLDataManager::DataIndex::RAW);
 	ui->frameSlider->setRange(0, global_data.get_framecount() - 1);
 }
 

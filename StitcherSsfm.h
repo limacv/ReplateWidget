@@ -31,44 +31,25 @@ public:
 	{}
 	virtual ~StitcherSsfm() {}
 
-	virtual int stitch(const std::vector<cv::Mat>& frames, const std::vector<cv::Mat>& masks)
-	{
-		int ret = align(frames, masks);
-		if (blend_scheme == "seam")
-			ret = warp_and_compositebyseam(frames, masks);
-		else
-			ret = warp_and_compositebyblend(frames, masks);
-		return 0;
-	}
+	// user either run stitch or load camera parameter directly. The camera parameter is then used to warp and compose frames
+	virtual int stitch(const std::vector<cv::Mat>& frames, const std::vector<cv::Mat>& masks);
+	virtual bool loadCameraParams(const std::string& path) { return false; } // TODO: not implemented
+	virtual bool saveCameraParams(const std::string& path) { return false; } // TODO: not implemented
 
-	virtual bool get_warped_frames(std::vector<cv::Mat>& frames, std::vector<cv::Rect>& windows) const
-	{
-		const int num_img = images_warped.size();
-		frames.resize(num_img);
-		windows.resize(num_img);
-		for (int i = 0; i < images_warped.size(); ++i)
-		{
-			cv::merge(std::vector<cv::Mat>({ images_warped[i], masks_warped[i] }), frames[i]);
-			windows[i] = cv::Rect(corners[i], sizes[i]);
-		}
-		return true;
-	}
-	virtual cv::Mat get_stitched_image() const { return stitch_result; }
-	virtual bool get_warped_rects(const int frameidx, std::vector<cv::Rect>& inoutboxes) const;
-
+	// after run stitch or laod camera parameters, run warping and composition
+	virtual int warp_and_composite(const std::vector<cv::Mat>& frames, const std::vector<cv::Mat>& masks,
+		std::vector<cv::Mat>& warped, std::vector<cv::Rect>& windows, cv::Mat& stitched);
+	virtual int warp_points(const int frameidx, std::vector<cv::Point>& inoutpoints) const;
 private:
-	int align(const std::vector<cv::Mat>& frames, const std::vector<cv::Mat>& masks);
-	int warp_and_compositebyseam(const std::vector<cv::Mat>& frames, const std::vector<cv::Mat>& masks);
-	int warp_and_compositebyblend(const std::vector<cv::Mat>& frames, const std::vector<cv::Mat>& masks);
+	int warp_and_compositebyseam(const std::vector<cv::Mat>& frames, const std::vector<cv::Mat>& masks, 
+		std::vector<cv::Mat>& images_warped, std::vector<cv::Mat>& masks_warped, 
+		std::vector<cv::Size>& sizes, std::vector<cv::Point>& corners, cv::Mat& stitch_result);
+	int warp_and_compositebyblend(const std::vector<cv::Mat>& frames, const std::vector<cv::Mat>& masks,
+		std::vector<cv::Mat>& images_warped, std::vector<cv::Mat>& masks_warped,
+		std::vector<cv::Size>& sizes, std::vector<cv::Point>& corners, cv::Mat& stitch_result);
 
 private:  // intermediate variables
-	std::vector<cv::Mat> images_warped;
-	std::vector<cv::Mat> masks_warped;
-	std::vector<cv::Size> sizes;
-	std::vector<cv::Point> corners;
-
 	std::vector<cv::detail::CameraParams> cameras;
-	cv::Mat stitch_result;
 	cv::Ptr<cv::detail::RotationWarper> warper;
 
 private:  // configures
@@ -84,5 +65,6 @@ private:  // configures
 	float blend_strength;
 	// float compose_scale == 1;
 	// float work_scale == 1;
+	
 };
 

@@ -67,6 +67,11 @@ public slots:
 
     void toggleModify(bool checked);
 
+    QAction* showMainDisplayAction() const;
+    QAction* showResultAction() const;
+    QAction* showControlAction() const;
+    QAction* showTimeLineAction() const;
+
 private:
     void CreateConnections();
     void PrepStyleSheet();
@@ -117,25 +122,4 @@ private:
     QVBoxLayout* dock_timeline_layout_vert_;
     QButtonGroup* dock_timeline_button_group_;
     QList<GObjLayer*> m_objects;
-
-    /*
-     * Menu and Acts
-     */
-    QAction* act_open_video_;
-    //    QAction* act_save_project_;
-    //    QAction* act_load_project_;
-    QAction* act_save_project2_;
-    QAction* act_load_project2_;
-    QAction* act_export_;
-    QAction* act_exit_;
-    QMenu* menu_file_;
-
-    QAction* act_show_timeline_;
-    QAction* act_show_control_;
-    QAction* act_show_result_;
-    QAction* act_show_export_;
-    QMenu* menu_window_;
-
-    QAction* act_set_fps_;
-    QMenu* menu_setting_;
 };

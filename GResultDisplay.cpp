@@ -33,7 +33,7 @@ GResultWidget::GResultWidget(QWidget* parent)
             stop();
         }
         });
-    connect(ui->slider, &QSlider::valueChanged, this, [this](int value) { current_frame_id_ = value; });
+    connect(ui->slider, &QSlider::valueChanged, this, [this](int value) { current_frame_id_ = value; update(); });
 }
     
 void GResultWidget::setPathSelectModel(bool b)

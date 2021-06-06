@@ -15,6 +15,18 @@
   </property>
   <widget class="QWidget" name="centralWidget">
    <layout class="QGridLayout" name="gridLayout">
+    <property name="leftMargin">
+     <number>9</number>
+    </property>
+    <property name="topMargin">
+     <number>9</number>
+    </property>
+    <property name="rightMargin">
+     <number>9</number>
+    </property>
+    <property name="bottomMargin">
+     <number>9</number>
+    </property>
     <item row="2" column="0">
      <layout class="QHBoxLayout" name="horizontalLayout_2">
       <item>
@@ -251,14 +263,23 @@
      <height>26</height>
     </rect>
    </property>
-   <widget class="QMenu" name="menumeuns">
+   <widget class="QMenu" name="menuFile">
     <property name="title">
      <string>File</string>
     </property>
     <addaction name="actionSave_Proj"/>
     <addaction name="actionLoad_Proj"/>
+    <addaction name="separator"/>
+    <addaction name="actionClear_Cache"/>
+    <addaction name="actionClear_All_Cache"/>
    </widget>
-   <addaction name="menumeuns"/>
+   <widget class="QMenu" name="menuWindow">
+    <property name="title">
+     <string>Window</string>
+    </property>
+   </widget>
+   <addaction name="menuFile"/>
+   <addaction name="menuWindow"/>
   </widget>
   <widget class="QToolBar" name="mainToolBar">
    <attribute name="toolBarArea">
@@ -277,6 +298,36 @@
   <action name="actionLoad_Proj">
    <property name="text">
     <string>Load Proj</string>
+   </property>
+  </action>
+  <action name="actionClear_Cache">
+   <property name="text">
+    <string>Clear Cache</string>
+   </property>
+  </action>
+  <action name="actionClear_All_Cache">
+   <property name="text">
+    <string>Clear All Cache</string>
+   </property>
+  </action>
+  <action name="actionMain_Display">
+   <property name="text">
+    <string>Main Display</string>
+   </property>
+  </action>
+  <action name="actionResult">
+   <property name="text">
+    <string>Result</string>
+   </property>
+  </action>
+  <action name="actionControl">
+   <property name="text">
+    <string>Control</string>
+   </property>
+  </action>
+  <action name="actionTimeline">
+   <property name="text">
+    <string>Timeline</string>
    </property>
   </action>
  </widget>

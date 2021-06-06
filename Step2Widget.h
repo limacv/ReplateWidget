@@ -21,13 +21,20 @@ public:
 	virtual void showEvent(QShowEvent* event);
 
 private slots:
+	// this set of funcs will block the main window and launch progress bar
+	void runDetect();
+	void runTrack();
 	void runStitching();
 	void runInpainting();
 	void runOptflow();
-	void runDetect();
-	void runTrack();
 	void runSegmentation();
 	void updateFrameidx(int frameidx);
+
+	// this set of funcs will check necessarities and then launch run***() 
+	void tryRunDetect();
+	void tryRunTrack();
+	void tryRunStitching();
+	void tryRunOpticalFlow();
 
 private:
 	Ui::Step2Widget *ui;
