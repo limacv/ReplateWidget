@@ -73,6 +73,7 @@ GTimelineEx::GTimelineEx(QWidget *parent)
 {
     //resize()
     setMaximumHeight(50);
+    setMinimumHeight(40);
 
     // set black background
     setStyleSheet("QPushButton { border-width: 1px;border-color: slategray;border-style: solid;"
@@ -232,7 +233,8 @@ void GTimelineEx::mousePressEvent(QMouseEvent *event)
     if (!isChecked()) {
         setChecked(true);
         toggled(true);
-        emit clearDisplay();
+        if (!intervals_.empty())
+            onPressEffect(intervals(0)->effect());
         QPushButton::mousePressEvent(event);
     }
 
@@ -329,7 +331,7 @@ void GTimelineEx::resizeEvent(QResizeEvent *)
 
 void GTimelineEx::addEffect(GEffectPtr &efx)
 {
-    if (efx->type() == EFX_ID_STILL) {
+    if (efx->type() == EFX_ID_STILL || efx->type() == EFX_ID_INPAINT) {
         addIntervalEx(efx, efx->startFrame());
     }
     else {
@@ -403,12 +405,6 @@ void GTimelineEx::setSync()
 //        p->deleteOpaque(frame_id);
 //    update();
 //}
-
-void GTimelineEx::receiveCurrentEffect(GEffectPtr &efx)
-{
-    //qDebug() << "Send path" << efx->path_->frame_id_start_;
-    changeCurrentEffect(efx);
-}
 
 void GTimelineEx::createActions()
 {
@@ -489,7 +485,7 @@ void GTimelineEx::addIntervalWidget(GEffectPtr &efx, int start_pos, int end_pos)
     in->move(rect.topLeft());
     in->resize(rect.size());
     intervals_.push_back(in);
-    connect(in, SIGNAL(changeCurrentEffect(GEffectPtr&)), this, SLOT(receiveCurrentEffect(GEffectPtr&)));
+    connect(in, SIGNAL(onPressInvervalofEffect(GEffectPtr&)), this, SIGNAL(onPressEffect(GEffectPtr&)));
     emit intervalAdded(intervals_.back());
     clearCurrent();
 }
@@ -550,7 +546,7 @@ void GTimelineEx::addIntervalEx(GEffectPtr &efx, int start_frame)
 //    in->move(rect.topLeft());
 //    in->resize(rect.size());
 //    m_pIntervals.push_back(in);
-//    connect(in, SIGNAL(changeCurrentEffect(GEffectPtr)), this,
+//    connect(in, SIGNAL(onPressInvervalofEffect(GEffectPtr)), this,
 //            SLOT(receiveCurrentEffect(GEffectPtr)));
 //    emit intervalAdded(m_pIntervals.back());
 //    clearCurrent();

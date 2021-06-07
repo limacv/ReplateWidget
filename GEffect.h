@@ -41,7 +41,7 @@ public:
     void writeBasic(YAML::Emitter &out) const;
 
     virtual void write(YAML::Emitter &out) const = 0;
-    virtual void read(const YAML::Node &node) = 0;
+    virtual void read(const YAML::Node& node) { readBasic(node); };
 
     friend YAML::Emitter& operator<< (YAML::Emitter& out, const GEffectPtr &efx);
     friend void operator>> (const YAML::Node& out, GEffectPtr &efx);
@@ -150,7 +150,7 @@ public:
     virtual void render(QPainter &painter, int frame_id, int duration, bool video = false) const {}
 
     virtual void write(YAML::Emitter &out) const;
-    virtual void read(const YAML::Node &node);
+    //virtual void read(const YAML::Node &node);
 };
 
 
@@ -165,7 +165,21 @@ public:
     virtual void render(QPainter &painter, int frame_id, int duration, bool video = false) const;
 
     virtual void write(YAML::Emitter &out) const;
-    virtual void read(const YAML::Node &node);
+    //virtual void read(const YAML::Node &node);
+};
+
+class GEffectInpaint : public GEffect
+{
+public:
+    explicit GEffectInpaint(const GPathPtr& path) : GEffect(path) {
+        effect_type_ = EFX_ID_INPAINT;
+        priority_level_ = G_EFX_PRIORITY[effect_type_] * G_EFX_PRIORITY_STEP;
+    }
+
+    virtual void render(QPainter& painter, int frame_id, int duration, bool video = false) const;
+
+    virtual void write(YAML::Emitter& out) const;
+    //virtual void read(const YAML::Node& node);
 };
 
 class GEffectBlack : public GEffect
@@ -176,7 +190,7 @@ public:
     virtual void render(QPainter &painter, int frame_id, int duration, bool video = false) const;
 
     virtual void write(YAML::Emitter &out) const;
-    virtual void read(const YAML::Node &node);
+    //virtual void read(const YAML::Node &node);
 };
 
 class GEffectTrail : public GEffect
@@ -204,7 +218,7 @@ public:
     void generateTrail(QPainter &painter);
 
     virtual void write(YAML::Emitter &out) const;
-    virtual void read(const YAML::Node &node);
+    //virtual void read(const YAML::Node &node);
 
     virtual bool setAlpha(float a) { recache = true; trail_alpha_ = a; return true; }
     virtual float getAlpha() const { return trail_alpha_;}
@@ -232,7 +246,7 @@ public:
     virtual void render(QPainter &painter, int frame_id, int duration, bool video = false) const;
 
     virtual void write(YAML::Emitter &out) const;
-    virtual void read(const YAML::Node &node);
+    //virtual void read(const YAML::Node &node);
 
     virtual bool setSmooth(int s);
     virtual int getSmooth() const {return line_smooth_;}

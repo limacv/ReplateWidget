@@ -52,8 +52,7 @@ protected:
 signals:
     void frameChanged(int iFrame);
     void intervalAdded(GInterval* interval);
-    void changeCurrentEffect(GEffectPtr &efx);
-    void clearDisplay();
+    void onPressEffect(GEffectPtr &efx);
 
 public slots:
 //    void setCurFrame(int iFrame);
@@ -65,7 +64,6 @@ public slots:
 //    void deleteKeypoint();
 //    void addOpaque();
 //    void deleteOpaque();
-    void receiveCurrentEffect(GEffectPtr &efx);
     bool updateFrameChange(int iFrame);
     void toggleShown(bool checked);
 

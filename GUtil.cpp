@@ -646,6 +646,11 @@ QImage GUtil::addHalo(const QImage &img, const std::set<int> &halo, int id,
     return img;
 }
 
+cv::Rect GUtil::addMarginToRect(const cv::Rect& rect, int margin)
+{
+    return cv::Rect(rect.x - margin, rect.y - margin, rect.width + 2 * margin, rect.height + 2 * margin);
+}
+
 cv::Mat1b GUtil::cvtPainterPath2Mask(const QPainterPath &path)
 {
     QRect rect = path.boundingRect().toRect();

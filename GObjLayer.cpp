@@ -21,8 +21,9 @@ GObjLayer::~GObjLayer()
 
 void GObjLayer::initialize(GEffectPtr &effect, const std::string &name)
 {
-    resize(1260, 100);
-    setMaximumHeight(50);
+    resize(1260, 45);
+    setMaximumHeight(45);
+    setMinimumHeight(25);
     const auto& global_data = MLDataManager::get();
     // name label
     name_label_ = new QLabel(name.c_str(), this);
@@ -41,8 +42,8 @@ void GObjLayer::initialize(GEffectPtr &effect, const std::string &name)
     QRectF rectF = effect->path()->frameRoiRect(start_frame);
     const QPixmap pic = QPixmap::fromImage(MLUtil::mat2qimage(global_data.getRoiofFrame(start_frame, rectF), QImage::Format_ARGB32_Premultiplied));
                 //GUtil::mat2qimage(video->getImage(start_frame, rectF)));
-
-    picture_->setPixmap(pic);
+    
+    picture_->setPixmap(pic.scaled(45, 45, Qt::KeepAspectRatio));
     picture_->setStyleSheet("QLabel {border-width: 1px;border-color: slategray;border-style: solid;}");
     picture_->setAutoFillBackground(true);
 
@@ -54,8 +55,8 @@ void GObjLayer::initialize(GEffectPtr &effect, const std::string &name)
     delete_button_->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
 
     QPixmap pixmap(":/ReplateWidget/images/delete_button_icon.png");
-    QIcon buttonIcon(pixmap);
-    delete_button_->resize(40, 40);
+    QIcon buttonIcon(pixmap.scaled(35, 35));
+    delete_button_->resize(35, 35);
     delete_button_->setFlat(true);
     delete_button_->setIcon(buttonIcon);
     delete_button_->setIconSize(delete_button_->size());

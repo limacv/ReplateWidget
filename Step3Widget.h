@@ -63,7 +63,6 @@ public slots:
 
     void onAutoAddPressed(bool checked);
     void onManualAddPressed(bool checked);
-    void toggleInpaint(bool checked);
 
     void toggleModify(bool checked);
 
@@ -79,6 +78,7 @@ private:
 
     void addSingleFramePath();
 public:
+    int get_selection_mode() const;
     bool is_auto_selection() const;
     G_EFFECT_ID selected_efx_type() const;
     bool is_singleframe_efx() const;

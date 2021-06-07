@@ -11,7 +11,7 @@ class GInterval: public QWidget
     Q_OBJECT
 
 signals:
-    void changeCurrentEffect(GEffectPtr &efx);
+    void onPressInvervalofEffect(GEffectPtr &efx);
     void releaseEffect(GEffectPtr &efx);
 
 public:

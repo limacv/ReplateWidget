@@ -44,7 +44,11 @@ public:
 
 	// get images
 	cv::Mat4b getRoiofFrame(int frameidx, const QRectF& rectF) const;
+	cv::Mat4b getRoiofFrame(int frameidx, const QRect& recF) const;
+	cv::Mat4b getRoiofFrame(int frameidx, const cv::Rect& rect) const;
 	cv::Mat3b getRoiofBackground(const QRectF& rectF) const;
+	cv::Mat3b getRoiofBackground(const QRect& rect) const;
+	cv::Mat3b getRoiofBackground(const cv::Rect& rect) const;
 	cv::Mat4b getFlowImage(int i, QRectF rectF = QRect()) const;
 	cv::Mat4b getForeground(int i, QRectF rectF, const cv::Mat1b mask = cv::Mat1b()) const;
 	cv::Mat4b getForeground(int i, const QPainterPath& painterpath) const;

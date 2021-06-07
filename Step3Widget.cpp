@@ -7,6 +7,7 @@
 #include "GMainDisplay.h"
 #include "ui_GControlWidget.h"
 #include <qevent.h>
+#include <qcombobox.h>
 
 Step3Widget::Step3Widget(QWidget *parent)
 	: QMainWindow(parent)
@@ -27,7 +28,9 @@ Step3Widget::Step3Widget(QWidget *parent)
     ui->dockMain->setWidget(display_widget_);
 	ui->dockResult->setWidget(result_widget_);
     ui->dockControl->setWidget(control_widget_);
-    ui->dockTimeline->setWidget(timeline_widget_);
+    //ui->dockTimeline->setWidget(timeline_widget_);
+    ui->scrollArea->setWidgetResizable(true);
+    ui->scrollArea->setWidget(timeline_widget_);
 
     ApplyStyleSheet();
     CreateConnections();
@@ -41,17 +44,7 @@ Step3Widget::~Step3Widget()
 void Step3Widget::ApplyStyleSheet()
 {
     control_widget_ui_->control_play_slider_->setStyle(new ArthurStyle);
-    control_widget_ui_->control_add_inpaint_button_->setStyleSheet(button_style_[6]);
-    //control_widget_ui_->control_add_black_button_->setStyleSheet(button_style_[6]);
-    //control_widget_ui_->control_add_still_button_->setStyleSheet(button_style_[6]);
-    //control_widget_ui_->control_add_motion_button_->setStyleSheet(button_style_[2]);
-    //control_widget_ui_->control_add_trail_button_->setStyleSheet(button_style_[2]);
     control_widget_ui_->control_modify_path_button_->setStyleSheet(button_style_[0]);
-    //control_widget_ui_->control_add_object_button_->setStyleSheet(button_style_[1]);
-    //control_widget_ui_->control_set_A_button_->setStyleSheet(button_style_[3]);
-    //control_widget_ui_->control_set_B_button_->setStyleSheet(button_style_[3]);
-    //control_widget_ui_->control_track_AB_button_->setStyleSheet(button_style_[0]);
-    //control_widget_ui_->control_track_stable_button_->setStyleSheet(button_style_[0]);
     control_widget_ui_->marker_one_button_->setStyleSheet(button_style_[7]);
     control_widget_ui_->marker_all_button_->setStyleSheet(button_style_[7]);
     //control_widget_ui_->control_clear_show_button_->setStyleSheet(button_style_[8]);
@@ -102,36 +95,33 @@ void Step3Widget::CreateConnections()
     connect(control_widget_ui_->control_edit_priority_, &QLineEdit::editingFinished, this, &Step3Widget::changePriority);
     connect(control_widget_ui_->control_edit_speed_, &QLineEdit::editingFinished, this, &Step3Widget::changeSpeed);
 
-    connect(control_widget_ui_->control_add_inpaint_button_, &QPushButton::toggled, this, &Step3Widget::toggleInpaint);
-    //connect(control_widget_ui_->control_add_black_button_, &QPushButton::toggled, this, &Step3Widget::toggleBlack);
-    //connect(control_widget_ui_->control_add_still_button_, &QPushButton::toggled, this, &Step3Widget::toggleStill);
-    //connect(control_widget_ui_->control_add_motion_button_, &QPushButton::toggled, this, &Step3Widget::toggleMotion);
-    //connect(control_widget_ui_->control_add_trail_button_, &QPushButton::toggled, this, &Step3Widget::toggleTrail);
     connect(control_widget_ui_->control_modify_path_button_, &QPushButton::toggled, this, &Step3Widget::toggleModify);
     
-    connect(timeline_widget_, &GTimelineWidget::currentEffectChanged, this, &Step3Widget::onCurrentEffectChanged);
     connect(this, &Step3Widget::frameChanged, timeline_widget_, &GTimelineWidget::updateFrameId);
     
     //connect(dock_export_, SIGNAL(visibilityChanged(bool)), this, SLOT(ExportFinished(bool)));
 
-    connect(control_widget_ui_->button_autoselection, &QPushButton::clicked, [this](bool checked) {
-        control_widget_ui_->button_autoselection->setText(checked ? "AutoSelect" : "ManualSelect");
-        display_widget_->setMouseTracking(checked);
+    connect(control_widget_ui_->combo_autoselection, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged), 
+        this, [this](int state) {
+        display_widget_->setMouseTracking(state == 0);
+        display_widget_->setPathSelectionMode(state == 2);
+        result_widget_->setPathSelectModel(state == 2);
         });
     connect(control_widget_ui_->button_manual_add, &QPushButton::clicked, this, &Step3Widget::onManualAddPressed);
     connect(control_widget_ui_->button_auto_add, &QPushButton::clicked, this, &Step3Widget::onAutoAddPressed);
     //connect(ui->dockMain, &QDockWidget::destroyed)
 }
 
-bool Step3Widget::is_auto_selection() const { return control_widget_ui_->button_autoselection->isChecked(); }
+int Step3Widget::get_selection_mode() const { return control_widget_ui_->combo_autoselection->currentIndex(); }
+bool Step3Widget::is_auto_selection() const { return control_widget_ui_->combo_autoselection->currentIndex() == 0; }
 
 inline G_EFFECT_ID Step3Widget::selected_efx_type() const
 {
-    G_EFFECT_ID idx[3] = { EFX_ID_STILL, EFX_ID_MOTION, EFX_ID_TRAIL };
+    G_EFFECT_ID idx[4] = { EFX_ID_MOTION, EFX_ID_TRAIL, EFX_ID_STILL, EFX_ID_INPAINT };
     return idx[control_widget_ui_->comboMode->currentIndex()];
 }
 
-inline bool Step3Widget::is_singleframe_efx() const { return selected_efx_type() == EFX_ID_STILL; }
+inline bool Step3Widget::is_singleframe_efx() const { return selected_efx_type() == EFX_ID_STILL || selected_efx_type() == EFX_ID_INPAINT; }
 
 void Step3Widget::setPathRoi(const GRoiPtr& roi)
 {
@@ -144,18 +134,20 @@ GEffectPtr Step3Widget::createEffectFromPath(const GPathPtr& path, G_EFFECT_ID t
     if (!path) return 0;
     auto& effect_manager = MLDataManager::get().effect_manager_;
     GEffectPtr efx = effect_manager.addEffect(path, type);
-    if (type != EFX_ID_BLACK && type != EFX_ID_TRASH)
+    if (type != EFX_ID_TRASH)
         setCurrentEffect(efx);
     return efx;
 }
 
 void Step3Widget::setCurrentEffect(const GEffectPtr& efx)
 {
-    if (efx != cur_effect) {
-        cur_effect = efx;
-    }
-    if (cur_tracked_path != efx->path())
+    cur_effect = efx;
+    if (efx)
         cur_tracked_path = efx->path();
+    else
+        cur_tracked_path = nullptr;
+
+    onCurrentEffectChanged();
 }
 
 void Step3Widget::PrepStyleSheet() {
@@ -283,7 +275,7 @@ void Step3Widget::loadUI(const GEffectManager* manager)
             iter != list.end(); ++iter) {
             GEffectPtr& effect = (*iter);
             G_EFFECT_ID type = effect->type();
-            if (type == EFX_ID_MOTION || type == EFX_ID_TRAIL || type == EFX_ID_STILL) {
+            if (type == EFX_ID_MOTION || type == EFX_ID_TRAIL || type == EFX_ID_STILL || type == EFX_ID_INPAINT) {
                 qDebug() << "Load" << G_EFFECT_STR[type];
                 timeline_widget_->addTimeline(effect);
                 //                QString name;// = QString("%1").arg(m_objects.size() + 1);
@@ -458,37 +450,12 @@ void Step3Widget::onCurrentEffectChanged()
     control_widget_ui_->control_edit_priority_->setEnabled(true);
     control_widget_ui_->control_edit_priority_->setText(
         QString::number(cur_effect->priority()));
-    control_widget_ui_->control_edit_speed_->setEnabled(true);
-    control_widget_ui_->control_edit_speed_->setText(
-        QString::number(cur_effect->speed()));
-}
 
-void Step3Widget::toggleInpaint(bool checked)
-{
-    if (checked) {
-        result_widget_->setInpaintState(true);
-        control_widget_ui_->control_add_inpaint_button_->setText("Apply");
-        return;
+    if (cur_effect->type() == EFX_ID_MOTION)
+    {
+        control_widget_ui_->control_edit_speed_->setEnabled(true);
+        control_widget_ui_->control_edit_speed_->setText(QString::number(cur_effect->speed()));
     }
-
-    QRectF select_rect;
-    QPainterPath select_path;
-    if (!result_widget_display_->curSelectRectF().isEmpty()) {
-        select_rect = result_widget_display_->curSelectRectF();
-        select_path = result_widget_display_->curSelectPath();
-    }
-    else {
-        control_widget_ui_->control_add_inpaint_button_->setChecked(true);
-        return;
-    }
-    GPathPtr path = GPathPtr(new GPath(0, select_rect, select_path));
-    GEffectPtr efx = createEffectFromPath(path, EFX_ID_TRASH);
-
-    result_widget_->update();
-    control_widget_ui_->control_add_inpaint_button_->setText("Inpaint");
-    result_widget_->setInpaintState(false);
-    display_widget_->clearMouseSelection();
-    onCurrentEffectChanged();
 }
 
 void Step3Widget::addSingleFramePath()
@@ -520,7 +487,10 @@ void Step3Widget::onAutoAddPressed(bool checked)
     {
         const QRectF& rectf = display_widget_->curSelectRectF();
         if (rectf.isEmpty())
+        {
+            result_widget_->clearMouseSelection();
             return;
+        }
 
         tracker_frame_A_ = cur_frameidx;
         tracker_rect_A_ = rectf;
@@ -531,13 +501,16 @@ void Step3Widget::onAutoAddPressed(bool checked)
         // track path
         trackPath();
     }
-    if (cur_tracked_path == nullptr)
-        return;
-    GEffectPtr efx = createEffectFromPath(cur_tracked_path, selected_efx_type());
 
-    timeline_widget_->addTimeline(efx);
-    result_widget_->update();
+    if (cur_tracked_path != nullptr)
+    {
+        GEffectPtr efx = createEffectFromPath(cur_tracked_path, selected_efx_type());
+        timeline_widget_->addTimeline(efx);
+    }
+
     display_widget_->clearMouseSelection();
+    result_widget_->clearMouseSelection();
+    result_widget_->update();
     onCurrentEffectChanged();
 }
 
@@ -555,6 +528,7 @@ void Step3Widget::onManualAddPressed(bool checked)
         if (rectf.isEmpty())
         {
             control_widget_ui_->button_manual_add->setChecked(false);
+            result_widget_->clearMouseSelection();
             return;
         }
         tracker_frame_A_ = cur_frameidx;
@@ -584,10 +558,11 @@ void Step3Widget::onManualAddPressed(bool checked)
     }
 
     GEffectPtr efx = createEffectFromPath(cur_tracked_path, selected_efx_type());
+    if (efx) timeline_widget_->addTimeline(efx);
 
-    timeline_widget_->addTimeline(efx);
-    result_widget_->update();
     display_widget_->clearMouseSelection();
+    result_widget_->clearMouseSelection();
+    result_widget_->update();
     onCurrentEffectChanged();
 }
 
@@ -600,9 +575,19 @@ void Step3Widget::toggleModify(bool checked)
             return;
         }
         display_widget_->toggleModifyMode();
+        
+        // set button
+        control_widget_ui_->combo_autoselection->setEnabled(false);
+        control_widget_ui_->comboMode->setEnabled(false);
+        control_widget_ui_->button_auto_add->setEnabled(false);
+        control_widget_ui_->button_manual_add->setEnabled(false);
         control_widget_ui_->control_modify_path_button_->setText("Apply");
     }
     else {
+        control_widget_ui_->combo_autoselection->setEnabled(true);
+        control_widget_ui_->comboMode->setEnabled(true);
+        control_widget_ui_->button_auto_add->setEnabled(true);
+        control_widget_ui_->button_manual_add->setEnabled(true);
         control_widget_ui_->control_modify_path_button_->setText("Modify");
         if (!cur_tracked_path) return;
 

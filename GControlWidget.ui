@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1141</width>
+    <width>1193</width>
     <height>141</height>
    </rect>
   </property>
@@ -153,35 +153,100 @@
           <item row="0" column="2">
            <layout class="QHBoxLayout" name="horizontalLayout_5">
             <item>
-             <widget class="QPushButton" name="button_autoselection">
-              <property name="text">
-               <string>AutoMode</string>
+             <widget class="QGroupBox" name="groupBox">
+              <property name="title">
+               <string>Select Mode</string>
               </property>
-              <property name="checkable">
-               <bool>true</bool>
-              </property>
-              <property name="checked">
-               <bool>true</bool>
-              </property>
+              <layout class="QGridLayout" name="gridLayout">
+               <property name="leftMargin">
+                <number>8</number>
+               </property>
+               <property name="topMargin">
+                <number>2</number>
+               </property>
+               <property name="rightMargin">
+                <number>8</number>
+               </property>
+               <property name="bottomMargin">
+                <number>2</number>
+               </property>
+               <item row="0" column="0">
+                <widget class="QComboBox" name="combo_autoselection">
+                 <property name="minimumSize">
+                  <size>
+                   <width>0</width>
+                   <height>25</height>
+                  </size>
+                 </property>
+                 <item>
+                  <property name="text">
+                   <string>AutoBox</string>
+                  </property>
+                 </item>
+                 <item>
+                  <property name="text">
+                   <string>Box</string>
+                  </property>
+                 </item>
+                 <item>
+                  <property name="text">
+                   <string>Polygon</string>
+                  </property>
+                 </item>
+                </widget>
+               </item>
+              </layout>
              </widget>
             </item>
             <item>
-             <widget class="QComboBox" name="comboMode">
-              <item>
-               <property name="text">
-                <string>Still</string>
+             <widget class="QGroupBox" name="groupBox_5">
+              <property name="title">
+               <string>Effect Type</string>
+              </property>
+              <layout class="QGridLayout" name="gridLayout_4">
+               <property name="leftMargin">
+                <number>8</number>
                </property>
-              </item>
-              <item>
-               <property name="text">
-                <string>Motion</string>
+               <property name="topMargin">
+                <number>2</number>
                </property>
-              </item>
-              <item>
-               <property name="text">
-                <string>Trail</string>
+               <property name="rightMargin">
+                <number>8</number>
                </property>
-              </item>
+               <property name="bottomMargin">
+                <number>2</number>
+               </property>
+               <item row="0" column="0">
+                <widget class="QComboBox" name="comboMode">
+                 <property name="minimumSize">
+                  <size>
+                   <width>0</width>
+                   <height>25</height>
+                  </size>
+                 </property>
+                 <item>
+                  <property name="text">
+                   <string>Motion</string>
+                  </property>
+                 </item>
+                 <item>
+                  <property name="text">
+                   <string>Trail</string>
+                  </property>
+                 </item>
+                 <item>
+                  <property name="text">
+                   <string>Still</string>
+                  </property>
+                 </item>
+                 <item>
+                  <property name="text">
+                   <string>Inpaint</string>
+                  </property>
+                 </item>
+                </widget>
+               </item>
+              </layout>
              </widget>
             </item>
             <item>
@@ -240,28 +305,6 @@
           </item>
           <item row="0" column="4">
            <layout class="QVBoxLayout" name="verticalLayout_12">
-            <item>
-             <widget class="QPushButton" name="control_add_inpaint_button_">
-              <property name="sizePolicy">
-               <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-                <horstretch>0</horstretch>
-                <verstretch>0</verstretch>
-               </sizepolicy>
-              </property>
-              <property name="minimumSize">
-               <size>
-                <width>70</width>
-                <height>0</height>
-               </size>
-              </property>
-              <property name="text">
-               <string>Inpaint</string>
-              </property>
-              <property name="checkable">
-               <bool>true</bool>
-              </property>
-             </widget>
-            </item>
             <item>
              <widget class="QPushButton" name="control_modify_path_button_">
               <property name="minimumSize">
@@ -386,6 +429,12 @@
                    <size>
                     <width>40</width>
                     <height>0</height>
+                   </size>
+                  </property>
+                  <property name="maximumSize">
+                   <size>
+                    <width>70</width>
+                    <height>16777215</height>
                    </size>
                   </property>
                   <property name="placeholderText">

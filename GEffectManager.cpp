@@ -2,6 +2,7 @@
 #include <QDebug>
 //#include "GDataManager.h"
 #include "MLDataManager.h"
+#include "InpainterCV.h"
 
 //qreal GEffectManager::M_STREAK_LENGTH = 3;
 qreal GEffectManager::M_BLEND_ALPHA = 0.5;
@@ -26,20 +27,39 @@ void GEffectManager::applyTrash(const GPathPtr &path)
     //video->inpaintBackground(rectF, path->painter_path_);
     qDebug("TODO::applyIntraining is not implemented");
     // TODO: add changebackground
+}
 
-//    cv::Size size  = video->cvBackground().size();
-//    QRect wnd_rect = path->getFrameRoiRect(path->startFrame());
-//    QSize wnd_size = path->window_size_;
-//    float w_r = size.width / (float)wnd_size.width();
-//    float h_r = size.height / (float)wnd_size.height();
-//    cv::Rect rect(wnd_rect.x()*w_r, wnd_rect.y()*h_r,
-//                  wnd_rect.width()*w_r, wnd_rect.height()*h_r);
-//    cv::Mat1b mask = cv::Mat1b::zeros(size);
-//    path->getPathMask(size).copyTo(mask(rect));
-//    video->inpaintBackground(mask);
-//    this->changeBackground(
-//                wnd_rect, GUtil::mat2qimage(
-//                    video->cvBackground(), QImage::Format_ARGB32_Premultiplied), video);
+void GEffectManager::applyInpaint(const GPathPtr& path)
+{
+    const auto& data = MLDataManager::get();
+    QRectF rectF = path->frameRoiRect(path->startFrame());
+    QRect rect = data.imageRect(rectF);
+    cv::Rect rectcv = GUtil::cvtRect(rect);
+    cv::Mat mask;
+    if (!path->painter_path_.isEmpty())
+    {
+        QPainterPath painter_path = data.imageScale().map(path->painter_path_);
+        mask = GUtil::cvtPainterPath2Mask(painter_path);
+    }
+    else
+        mask = cv::Mat(rectcv.size(), CV_8UC1, 255);
+    
+    // add context
+    InpainterCV inpainter(10);
+    cv::Rect dilate_rect = GUtil::addMarginToRect(rectcv, 10);
+    cv::Rect roi = dilate_rect & cv::Rect(0, 0, data.VideoWidth(), data.VideoHeight());
+    cv::Mat context = data.getRoiofFrame(path->startFrame(), roi);
+    cv::Mat context_mask;  cv::extractChannel(context, context_mask, 3);
+    cv::bitwise_not(context_mask, context_mask);
+    mask.copyTo(context_mask(rectcv - roi.tl()));
+
+    cv::Mat inpainted;
+    inpainter.inpaint(context, context_mask, inpainted);
+    cv::merge(std::vector<cv::Mat>({ inpainted(rectcv - roi.tl()), mask }), inpainted);
+
+    path->roi_fg_mat_[0] = inpainted.clone();
+    path->roi_fg_qimg_[0] = GUtil::mat2qimage(path->roi_fg_mat_[0],
+        QImage::Format_ARGB32_Premultiplied).copy();
 }
 
 void GEffectManager::applyStill(const GPathPtr &path)
@@ -48,17 +68,6 @@ void GEffectManager::applyStill(const GPathPtr &path)
     QRectF rectF = path->frameRoiRect(path->startFrame());
     cv::Mat4b fg = MLDataManager::get().getRoiofFrame(path->startFrame(), rectF);
     path->roi_fg_mat_[0] = fg.clone();
-
-    // overlayBackground
-    //auto& global_data = MLDataManager::get();
-    //cv::Mat1b mask = path->painter_path_.isEmpty() 
-    //    ? cv::Mat1b::ones(fg.size())
-    //    : GUtil::cvtPainterPath2Mask(global_data.imageScale().map(path->painter_path_));
-
-    //cv::Rect cvrect = GUtil::cvtRect(global_data.imageRect(rectF));
-    //cv::Mat4b bg = global_data.stitch_cache.background(cvrect);
-    //GUtil::overlayFeather(fg, mask, bg);
-
     path->roi_fg_qimg_[0] = GUtil::mat2qimage(path->roi_fg_mat_[0],
             QImage::Format_ARGB32_Premultiplied).copy();
 }
@@ -87,11 +96,15 @@ GEffectPtr GEffectManager::addEffect(const GPathPtr &path, G_EFFECT_ID type)
     GEffectPtr efx = createEffect(path, type);
 
     if (type == EFX_ID_STILL)
-        this->applyStill(path);
-    else if ( type == EFX_ID_TRASH)
-        this->applyTrash(path);
-    else if ( type == EFX_ID_BLACK)
-        this->applyBlack(path);
+        applyStill(path);
+    else if (type == EFX_ID_TRASH)
+        applyTrash(path);
+    else if (type == EFX_ID_BLACK)
+        applyBlack(path);
+    else if (type == EFX_ID_INPAINT)
+        applyInpaint(path);
+    else
+        qWarning("GEffectManager::addEffect: unrecognized effect type");
 
     pushEffect(efx);
     return efx;
@@ -109,11 +122,13 @@ GEffectPtr GEffectManager::addPathEffect(GPathPtr &path, G_EFFECT_ID type, const
     efx->read(node);
 
     if (type == EFX_ID_STILL)
-        this->applyStill(path);
-    else if ( type == EFX_ID_TRASH)
-        this->applyTrash(path);
-    else if ( type == EFX_ID_BLACK)
-        this->applyBlack(path);
+        applyStill(path);
+    else if (type == EFX_ID_TRASH)
+        applyTrash(path);
+    else if (type == EFX_ID_BLACK)
+        applyBlack(path);
+    else if (type == EFX_ID_INPAINT)
+        applyInpaint(path);
 
     pushEffect(efx);
     return efx;
@@ -842,6 +857,8 @@ GEffectPtr GEffectManager::createEffect(const GPathPtr &path, G_EFFECT_ID type)
     case EFX_ID_BLACK:
         efx = GEffectPtr(new GEffectBlack(path));
         break;
+    case EFX_ID_INPAINT:
+        efx = GEffectPtr(new GEffectInpaint(path));
     default:
         qDebug() << "Create effect failed!" << G_EFFECT_STR[type];
         break;

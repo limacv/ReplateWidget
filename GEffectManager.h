@@ -34,6 +34,7 @@ public:
 public:
     GEffectManager();
 
+    void applyInpaint(const GPathPtr& path);
     void applyTrash(const GPathPtr &path);
     void applyStill(const GPathPtr &path);
     void applyBlack(const GPathPtr &path);
@@ -42,7 +43,7 @@ public:
     GEffectPtr addEffect(const GPathPtr &path, G_EFFECT_ID type);
 
     GEffectPtr addPathEffect(GPathPtr &path, G_EFFECT_ID type, const YAML::Node &node);
-    GEffectPtr addBubble(QPoint pos);
+    //GEffectPtr addBubble(QPoint pos);
 //    void changeBackground(QRect wnd_rect, QImage background, GVideoContent *video);
     void updateForeground(QRect wnd_rect);
 

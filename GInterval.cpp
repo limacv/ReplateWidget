@@ -99,8 +99,6 @@ void GInterval::toggleShown(bool checked)
 
 void GInterval::mousePressEvent(QMouseEvent *event)
 {
-    changeCurrentEffect(effect_);
-
     if (event->button() == Qt::LeftButton) {
         if(isSide(event->pos().x(), &m_selectLeftStart, &m_selectRightStart))
             m_selectStartPos = event->pos().x();
@@ -297,6 +295,7 @@ void GInterval::presetColor()
     interval_colorset_[EFX_ID_TRAIL] = QColor(105, 131, 143, 255);
     interval_colorset_[EFX_ID_STILL] = Qt::yellow;
     interval_colorset_[EFX_ID_LOOP] = QColor(154, 130, 180, 255);
+    interval_colorset_[EFX_ID_INPAINT] = Qt::gray;
 
     for (int i = 0; i < 10; ++i) {
         interval_gradcolorset_[i][0] = interval_gradcolorset_[i][1] = interval_colorset_[i];

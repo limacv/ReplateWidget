@@ -86,10 +86,21 @@ bool MLDataManager::load_raw_video(const QString& path)
 cv::Mat4b MLDataManager::getRoiofFrame(int frameidx, const QRectF& rectF) const
 {
 	if (!stitch_cache.isprepared()) return cv::Mat4b();
+	return getRoiofFrame(frameidx, imageRect(rectF));
+}
+
+cv::Mat4b MLDataManager::getRoiofFrame(int frameidx, const QRect& rect) const
+{
+	if (!stitch_cache.isprepared()) return cv::Mat4b();
+	return getRoiofFrame(frameidx, GUtil::cvtRect(rect));
+}
+
+cv::Mat4b MLDataManager::getRoiofFrame(int frameidx, const cv::Rect& rect) const
+{
+	if (!stitch_cache.isprepared()) return cv::Mat4b();
 	const auto& video = stitch_cache.warped_frames;
-	if (rectF.isValid())
+	if (rect.area() > 0)
 	{
-		const cv::Rect rect = GUtil::cvtRect(imageRect(rectF));
 		cv::Mat4b img = stitch_cache.background(rect).clone();
 		cv::Rect frameroi = stitch_cache.rois[frameidx] - stitch_cache.global_roi.tl();
 		cv::Rect intersection = frameroi & rect;
@@ -106,20 +117,31 @@ cv::Mat4b MLDataManager::getRoiofFrame(int frameidx, const QRectF& rectF) const
 	}
 }
 
+
 cv::Mat3b MLDataManager::getRoiofBackground(const QRectF& rectF) const
 {
 	if (!stitch_cache.isprepared()) return cv::Mat3b();
+	return getRoiofBackground(imageRect(rectF));
+}
+
+cv::Mat3b MLDataManager::getRoiofBackground(const QRect& rect) const
+{
+	if (!stitch_cache.isprepared()) return cv::Mat3b();
+	return getRoiofBackground(GUtil::cvtRect(rect));
+}
+
+cv::Mat3b MLDataManager::getRoiofBackground(const cv::Rect& rect) const
+{
+	if (!stitch_cache.isprepared()) return cv::Mat3b();
 	cv::Mat3b ret;
-	if (rectF.isValid())
+	if (rect.area() > 0)
 	{
-		const cv::Rect rect = GUtil::cvtRect(imageRect(rectF));
 		cv::cvtColor(stitch_cache.background(rect), ret, cv::COLOR_RGBA2RGB);
 	}
 	else
 		cv::cvtColor(stitch_cache.background, ret, cv::COLOR_RGBA2RGB);
 	return ret;
 }
-
 
 cv::Mat4b MLDataManager::getFlowImage(int frameidx, QRectF rectF) const
 {

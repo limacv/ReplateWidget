@@ -52,16 +52,16 @@ void GMainDisplay::mousePressEvent(QMouseEvent *event)
 {
     mouse_pos_ = getMousePosNorm(event->pos());
 
-    if (step3widget->is_auto_selection())
-    {
-        rect_select_ = rect_pre_select_.normalized();
-    }
-    else if (!is_modify_ 
-        && step3widget->cur_tracked_path 
+    if (is_modify_
+        && step3widget->cur_tracked_path
         && step3widget->cur_tracked_path->checkInside(step3widget->cur_frameidx, mouse_pos_))
     {
         is_adjust_path_ = true;
         adjust_path_start_pos_ = mouse_pos_;
+    }
+    else if (step3widget->is_auto_selection())
+    {
+        rect_select_ = rect_pre_select_.normalized();
     }
     else
         GBaseWidget::mousePressEvent(event);
@@ -72,19 +72,21 @@ void GMainDisplay::mouseMoveEvent(QMouseEvent *event)
 {
     mouse_pos_ = getMousePosNorm(event->pos());
 
-    if (step3widget->is_auto_selection())
+    if (is_modify_)
+    {
+        if (is_adjust_path_)
+        {
+            QPointF off = mouse_pos_ - adjust_path_start_pos_;
+            adjust_path_start_pos_ = mouse_pos_;
+            step3widget->cur_tracked_path->translateRect(step3widget->cur_frameidx, off);
+        }
+    }
+    else if (step3widget->is_auto_selection())
     {
         const auto& global_data = MLDataManager::get();
         static unsigned int selection_count = 0;
         QVector<BBox*> boxes = global_data.queryBoxes(step3widget->cur_frameidx, mouse_pos_);
         rect_pre_select_ = boxes.empty() ? QRect() : global_data.toPaintROI(boxes[selection_count++ / 5 % boxes.size()]->rect_global, QRect(), true);
-    }
-    else if (is_adjust_path_) // function to drag box to modify
-    {
-        QPointF off = mouse_pos_ - adjust_path_start_pos_;
-        adjust_path_start_pos_ = mouse_pos_;
-        step3widget->cur_tracked_path->translateRect(step3widget->cur_frameidx, off);
-        //dataManager()->translatePathRect(off);
     }
     else
         GBaseWidget::mouseMoveEvent(event);
@@ -95,18 +97,20 @@ void GMainDisplay::mouseReleaseEvent(QMouseEvent *event)
 {
     mouse_pos_ = getMousePosNorm(event->pos());
 
-    if (step3widget->is_auto_selection())
+    if (is_modify_) 
+    {
+        is_adjust_path_ = false;
+        if (event->button() == Qt::RightButton)
+        {
+            step3widget->cur_tracked_path->moveRectCenter(step3widget->cur_frameidx, mouse_pos_);
+            step3widget->trackPath();
+        }
+    }
+    else if (step3widget->is_auto_selection())
     {
     }
-    else if (is_adjust_path_) {
-        is_adjust_path_ = false;
-        if (event->button() == Qt::RightButton) {
-            //dataManager()->movePathRectCenter(mouse_pos_);
-            step3widget->cur_tracked_path->moveRectCenter(step3widget->cur_frameidx, mouse_pos_);
-        }
-        step3widget->trackPath();
-    }
-    else {
+    else 
+    {
         if (event->button() == Qt::LeftButton)
             GBaseWidget::mouseReleaseEvent(event);
         else

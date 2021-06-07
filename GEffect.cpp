@@ -242,11 +242,6 @@ void GEffectTrash::write(YAML::Emitter &out) const
     out << YAML::EndMap;
 }
 
-void GEffectTrash::read(const YAML::Node &node)
-{
-    readBasic(node);
-}
-
 
 void GEffectStill::render(QPainter &painter, int frame_id, int duration, bool video) const
 {
@@ -269,11 +264,26 @@ void GEffectStill::write(YAML::Emitter &out) const
     out << YAML::EndMap;
 }
 
-void GEffectStill::read(const YAML::Node &node)
+void GEffectInpaint::render(QPainter& painter, int frame_idx, int duration, bool video) const
 {
-    readBasic(node);
+    int render_frame = startFrame();
+    QRect rect = renderLocation(render_frame);
+    //QImage dst = (video? MLDataManager::get().getRoiofFrame(render_frame, rect)
+                        //: renderImage(render_frame));
+    QImage dst = renderImage(render_frame);
+    QPainterPath pp = scaleMat().map(path()->painter_path_);
+    if (!pp.isEmpty())
+        painter.setClipPath(pp);
+    painter.drawImage(rect, dst);
+    painter.setClipPath(QPainterPath(), Qt::NoClip);
 }
 
+void GEffectInpaint::write(YAML::Emitter& out) const
+{
+    out << YAML::BeginMap;
+    writeBasic(out);
+    out << YAML::EndMap;
+}
 
 GEffectBlack::GEffectBlack(const GPathPtr &path): GEffect(path){
     effect_type_ = EFX_ID_BLACK;
@@ -292,12 +302,6 @@ void GEffectBlack::write(YAML::Emitter &out) const
     writeBasic(out);
     out << YAML::EndMap;
 }
-
-void GEffectBlack::read(const YAML::Node &node)
-{
-    readBasic(node);
-}
-
 
 GEffectTrail::GEffectTrail(const GPathPtr &path)
     : GEffect(path)
@@ -400,11 +404,6 @@ void GEffectTrail::write(YAML::Emitter &out) const
     out << YAML::BeginMap;
     writeBasic(out);
     out << YAML::EndMap;
-}
-
-void GEffectTrail::read(const YAML::Node &node)
-{
-    readBasic(node);
 }
 
 bool GEffectTrail::setSmooth(int s)
@@ -569,11 +568,6 @@ void GEffectMotion::write(YAML::Emitter &out) const
     out << YAML::BeginMap;
     writeBasic(out);
     out << YAML::EndMap;
-}
-
-void GEffectMotion::read(const YAML::Node &node)
-{
-    readBasic(node);
 }
 
 bool GEffectMotion::setSmooth(int s)

@@ -142,6 +142,9 @@
     <ClCompile Include="MLProgressDialog.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="InpainterCV.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="Step1Widget.h">
@@ -281,6 +284,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="MLProgressDialog.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="InpainterBase.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="InpainterCV.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -1,5 +1,4 @@
-#ifndef GRESULTDISPLAY_H
-#define GRESULTDISPLAY_H
+#pragma once
 
 #include <QWidget>
 #include <QLineEdit>
@@ -11,8 +10,8 @@
 #include "GBaseWidget.h"
 #include "GVideoPlayer.h"
 
-namespace Ui { class GResultWidget; };
 class GResultDisplay;
+namespace Ui { class GResultWidget; }
 
 class GResultWidget : public QWidget
 {
@@ -21,9 +20,9 @@ public:
     explicit GResultWidget(QWidget* parent = 0);
 
     void setPathSelectModel(bool b);
-    void setInpaintState(bool b);
+    void clearMouseSelection();
 
-    
+    void setInpaintState(bool b);
 
 public slots:
     void play();
@@ -62,5 +61,3 @@ protected:
 private:
     GResultWidget* parent_widget;
 };
-
-#endif // GRESULTDISPLAY_H

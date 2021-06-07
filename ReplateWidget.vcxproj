@@ -124,6 +124,7 @@
     <ClCompile Include="GTimelineWidget.cpp" />
     <ClCompile Include="GUtil.cpp" />
     <ClCompile Include="GVideoPlayer.cpp" />
+    <ClCompile Include="InpainterCV.cpp" />
     <ClCompile Include="MLCacheFlow.cpp" />
     <ClCompile Include="MLCachePlatesConfig.cpp" />
     <ClCompile Include="MLDataManager.cpp" />
@@ -172,6 +173,8 @@
     <ClInclude Include="GPictureLabel.h" />
     <ClInclude Include="GRoi.h" />
     <ClInclude Include="GUtil.h" />
+    <ClInclude Include="InpainterBase.h" />
+    <ClInclude Include="InpainterCV.h" />
     <ClInclude Include="MLCacheFlow.h" />
     <ClInclude Include="MLCachePlatesConfig.h" />
     <ClInclude Include="MLConfigManager.h" />

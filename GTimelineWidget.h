@@ -19,11 +19,8 @@ public:
     void addTimeline(GEffectPtr &effect, const std::string &name = "");
     void updateDuration();
 
-signals:
-    void currentEffectChanged();
-
 public slots:
-    void changeCurrentEffect(GEffectPtr &effect);
+    void changeCurrentEffectTo(GEffectPtr &effect);
     void updateFrameId(int frame_id);
     void deleteTimeline(GObjLayer *obj);
 

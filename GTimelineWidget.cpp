@@ -7,7 +7,6 @@ GTimelineWidget::GTimelineWidget(Step3Widget* step3p, QWidget *parent)
     : QWidget(parent),
     step3widget(step3p)
 {
-    setMinimumHeight(200);
     setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
 
     main_layout_ = new QVBoxLayout(this);
@@ -28,10 +27,8 @@ void GTimelineWidget::addTimeline(GEffectPtr &effect, const string &name)
 
     obj->timeline()->updateFrameChange(step3widget->cur_frameidx);
 
-    connect(obj->timeline(), SIGNAL(changeCurrentEffect(GEffectPtr&)),
-            this, SLOT(changeCurrentEffect(GEffectPtr&)));
-    connect(obj, SIGNAL(releaseObject(GObjLayer*)),
-            this, SLOT(deleteTimeline(GObjLayer*)));
+    connect(obj->timeline(), SIGNAL(onPressEffect(GEffectPtr&)), this, SLOT(changeCurrentEffectTo(GEffectPtr&)));
+    connect(obj, SIGNAL(releaseObject(GObjLayer*)), this, SLOT(deleteTimeline(GObjLayer*)));
     update();
 }
 
@@ -42,10 +39,9 @@ void GTimelineWidget::updateDuration()
         (*it)->update();
 }
 
-void GTimelineWidget::changeCurrentEffect(GEffectPtr &effect)
+void GTimelineWidget::changeCurrentEffectTo(GEffectPtr &effect)
 {
     step3widget->setCurrentEffect(effect);
-    currentEffectChanged();
 }
 
 void GTimelineWidget::updateFrameId(int frame_id)
@@ -63,6 +59,7 @@ void GTimelineWidget::deleteTimeline(GObjLayer *obj)
     button_group_->removeButton(obj->timeline());
     objects_.remove(obj);
     delete obj;
+    step3widget->setCurrentEffect(nullptr);
 }
 
 void GTimelineWidget::removeEffectFromManager(GObjLayer *obj)
