@@ -321,8 +321,8 @@ void GUtil::averageImages(const std::vector<cv::Mat4b> &matarray, cv::Mat4b &out
     //imwrite(QString("foreground.png").toStdString(), out);
 }
 
-void GUtil::adaptiveImages(const std::vector<cv::Mat4b> &matarray,
-                           std::vector<cv::Mat4b> &out)
+void GUtil::adaptiveImages(const std::vector<cv::Mat> &matarray,
+                           std::vector<cv::Mat> &out)
 {
     int n = matarray.size();
     if (n == 0) {

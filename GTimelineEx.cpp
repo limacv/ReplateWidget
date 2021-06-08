@@ -65,7 +65,7 @@ const YAML::Node& operator >>(const YAML::Node &node, GTimelineEx* timeline)
 GTimelineEx::GTimelineEx(QWidget *parent)
     : QPushButton(parent)
     , select_started_(false)
-    , align_started_(false)
+    //, align_started_(false)
     , move_stated_(false)
     , cur_frame_id_ (-1)
     , mouse_select_start_frame_(-1)
@@ -235,7 +235,6 @@ void GTimelineEx::mousePressEvent(QMouseEvent *event)
         toggled(true);
         if (!intervals_.empty())
             onPressEffect(intervals(0)->effect());
-        QPushButton::mousePressEvent(event);
     }
 
 //    if (event->button() == Qt::LeftButton) {
@@ -244,10 +243,16 @@ void GTimelineEx::mousePressEvent(QMouseEvent *event)
 //                getFrameId(event->pos().x());
 //        updateFrameChange(mouse_select_end_frame_);
 //    }
-    else if (event->button() == Qt::LeftButton) {
-        align_started_ = true;
-        align_start_pos_ = event->pos().x();
+    else
+    {
+        setChecked(false);
+        toggled(false);
     }
+    QPushButton::mousePressEvent(event);
+    //else if (event->button() == Qt::LeftButton) {
+        //align_started_ = true;
+        //align_start_pos_ = event->pos().x();
+    //}
     update();
 }
 
@@ -258,15 +263,15 @@ void GTimelineEx::mouseMoveEvent(QMouseEvent *event)
 //        mouse_select_end_frame_ = getFrameId(event->pos().x());
 //        updateFrameChange(mouse_select_end_frame_);
 //    }
-    if (align_started_) {
-        int pos = event->pos().x();
-        bool forward = (pos > align_start_pos_);
-        int abs_off = abs(pos - align_start_pos_) / frameStep() + 0.5;
-        int off = forward ? abs_off: -abs_off;
-        align_start_pos_ += off * frameStep();
+    //if (align_started_) {
+        //int pos = event->pos().x();
+        //bool forward = (pos > align_start_pos_);
+        //int abs_off = abs(pos - align_start_pos_) / frameStep() + 0.5;
+        //int off = forward ? abs_off: -abs_off;
+        //align_start_pos_ += off * frameStep();
         // TODO: add duration access
 //        intervals_[0]->adjustOffset(off);
-    }
+    //}
     update();
 }
 
@@ -278,9 +283,9 @@ void GTimelineEx::mouseReleaseEvent(QMouseEvent *event)
 //        select_started_ = false;
 //        updateFrameChange(mouse_select_end_frame_);
 //    }
-    if (align_started_) {
-        align_started_ = false;
-    }
+    //if (align_started_) {
+        //align_started_ = false;
+    //}
 }
 
 void GTimelineEx::contextMenuEvent(QContextMenuEvent *event)

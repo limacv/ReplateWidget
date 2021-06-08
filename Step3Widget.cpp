@@ -6,7 +6,6 @@
 #include "GTimelineWidget.h"
 #include "GMainDisplay.h"
 #include "ui_GControlWidget.h"
-#include "GPathTracker.h"
 #include "MLPathTracker.h"
 #include <qevent.h>
 #include <qcombobox.h>

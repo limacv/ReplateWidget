@@ -2,7 +2,6 @@
 #define GEFFECTMANAGER_H
 
 #include "GEffect.h"
-#include "GPathTracker.h"
 //#include "GVideoContent.h"
 #include "opencv2/stitching/detail/blenders.hpp"
 #include <vector>
@@ -43,9 +42,6 @@ public:
     GEffectPtr addEffect(const GPathPtr &path, G_EFFECT_ID type);
 
     GEffectPtr addPathEffect(GPathPtr &path, G_EFFECT_ID type, const YAML::Node &node);
-    //GEffectPtr addBubble(QPoint pos);
-//    void changeBackground(QRect wnd_rect, QImage background, GVideoContent *video);
-    void updateForeground(QRect wnd_rect);
 
     void reset();
     bool undo();

@@ -60,8 +60,8 @@ void GResultWidget::updateFrame()
 {
     if (*duration > 0)
     {
-        current_frame_id_ = (current_frame_id_++) % (*duration);
-        ui->slider->setRange(0, (*duration) - 1);
+        current_frame_id_ = (current_frame_id_++) % (*duration * 5);
+        ui->slider->setRange(0, (*duration) * 5 - 1);
         ui->slider->setValue(current_frame_id_);
         update();
     }

@@ -10,6 +10,7 @@
 #include "MLCachePlatesConfig.h"
 #include "MLCacheFlow.h"
 #include "GEffectManager.h"
+#include "GRoi.h"
 
 class MLDataManager
 {
@@ -35,12 +36,12 @@ public:
 	int get_framecount() const { return raw_frames.size(); }
 
 	// data coordinate convertion
-	QRect imageRect(const QRectF& rectf) const;
 	QMatrix imageScale() const;
 	// convert rect from world coordinate to paint coordinate (if return normalized rect, the rect_painter is not needed)
 	QRectF toPaintROI(const cv::Rect& rect_w, const QRect& rect_painter=QRect(), bool ret_norm=false) const;
 	// convert rect from normalized coordinate to world coordinate
 	cv::Rect toWorldROI(const QRectF& rect_norm) const;
+	cv::Rect toCropROI(const QRectF& rect_norm) const;
 
 	// get images
 	cv::Mat4b getRoiofFrame(int frameidx, const QRectF& rectF) const;

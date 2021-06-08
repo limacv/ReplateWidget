@@ -4,6 +4,8 @@
 #include <qprogressbar.h>
 #include <QtConcurrent/qtconcurrentrun.h>
 #include <opencv2/photo.hpp>
+#include <opencv2/imgproc.hpp>
+#include <opencv2/tracking.hpp>
 #include <qevent.h>
 #include <qfuture.h>
 #include <qfuturewatcher.h>

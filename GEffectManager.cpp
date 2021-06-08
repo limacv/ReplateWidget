@@ -3,6 +3,7 @@
 //#include "GDataManager.h"
 #include "MLDataManager.h"
 #include "InpainterCV.h"
+#include "GUtil.h"
 
 //qreal GEffectManager::M_STREAK_LENGTH = 3;
 qreal GEffectManager::M_BLEND_ALPHA = 0.5;
@@ -33,8 +34,7 @@ void GEffectManager::applyInpaint(const GPathPtr& path)
 {
     const auto& data = MLDataManager::get();
     QRectF rectF = path->frameRoiRect(path->startFrame());
-    QRect rect = data.imageRect(rectF);
-    cv::Rect rectcv = GUtil::cvtRect(rect);
+    cv::Rect rect = data.toCropROI(rectF);
     cv::Mat mask;
     if (!path->painter_path_.isEmpty())
     {
@@ -42,20 +42,20 @@ void GEffectManager::applyInpaint(const GPathPtr& path)
         mask = GUtil::cvtPainterPath2Mask(painter_path);
     }
     else
-        mask = cv::Mat(rectcv.size(), CV_8UC1, 255);
+        mask = cv::Mat(rect.size(), CV_8UC1, 255);
     
     // add context
     InpainterCV inpainter(10);
-    cv::Rect dilate_rect = GUtil::addMarginToRect(rectcv, 10);
+    cv::Rect dilate_rect = GUtil::addMarginToRect(rect, 10);
     cv::Rect roi = dilate_rect & cv::Rect(0, 0, data.VideoWidth(), data.VideoHeight());
     cv::Mat context = data.getRoiofFrame(path->startFrame(), roi);
     cv::Mat context_mask;  cv::extractChannel(context, context_mask, 3);
     cv::bitwise_not(context_mask, context_mask);
-    mask.copyTo(context_mask(rectcv - roi.tl()));
+    mask.copyTo(context_mask(rect - roi.tl()));
 
     cv::Mat inpainted;
     inpainter.inpaint(context, context_mask, inpainted);
-    cv::merge(std::vector<cv::Mat>({ inpainted(rectcv - roi.tl()), mask }), inpainted);
+    cv::merge(std::vector<cv::Mat>({ inpainted(rect - roi.tl()), mask }), inpainted);
 
     path->roi_fg_mat_[0] = inpainted.clone();
     path->roi_fg_qimg_[0] = GUtil::mat2qimage(path->roi_fg_mat_[0],
@@ -82,7 +82,7 @@ void GEffectManager::applyBlack(const GPathPtr &path)
     QPainterPath painterpath = mat.map(path->painter_path_);
     cv::Mat1b mask = GUtil::cvtPainterPath2Mask(painterpath);
     cv::Mat4b black(GUtil::cvtSize(rect.size()), cv::Vec4b(0,0,0,255));
-    path->roi_fg_mat_[0].create(mask.size());
+    path->roi_fg_mat_[0].create(mask.size(), CV_8UC4);
     path->roi_fg_mat_[0] = cv::Vec4b(0,0,0,0);
     black.copyTo(path->roi_fg_mat_[0], mask);
     path->roi_fg_qimg_[0] = GUtil::mat2qimage(path->roi_fg_mat_[0],

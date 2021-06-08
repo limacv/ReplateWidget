@@ -2,6 +2,9 @@
 #include <QColorDialog>
 #include <typeinfo>
 #include <MLDataManager.h>
+#include "GPath.h"
+#include "GUtil.h"
+#include "MLUtil.h"
 
 GEffect::GEffect(const GPathPtr &path)
     : async_offset_(0)
@@ -25,32 +28,32 @@ QMatrix GEffect::scale_mat_ = QMatrix();
 
 bool GEffect::adjustLeft(int step)
 {
-    int new_left = start_frame_ + step;
-    if (new_left < path()->startFrame() || new_left > end_frame_)
+    int new_left = startFrame() + step;
+    if (new_left < 0 || new_left >= path_->space())
         return false;
-    start_frame_ = new_left;
+    path_->setStartFrame(new_left);
     return true;
 }
 
 bool GEffect::adjustRight(int step)
 {
-    int new_right = end_frame_ + step;
-    if (new_right > path()->endFrame() || new_right < start_frame_ )
+    int new_right = endFrame() + step;
+    if (new_right >= path_->space() || new_right < 0 )
         return false;
-    end_frame_ = new_right;
+    path_->setEndFrame(new_right);
     return true;
 }
 
 bool GEffect::moveStart(int step)
 {
-    int new_left = start_frame_ + step;
-    int new_right = end_frame_ + step;
-    if (new_left < path()->startFrame() || new_left > end_frame_ )
+    int new_left = startFrame() + step;
+    int new_right = endFrame() + step;
+    if (new_left < 0 || new_left >= path_->space())
         return false;
-    if (new_right > path()->endFrame() || new_right < start_frame_ )
+    if (new_right >= path_->space() || new_right < 0)
         return false;
-    start_frame_ = new_left;
-    end_frame_ = new_right;
+    path_->setStartFrame(new_left);
+    path_->setEndFrame(new_right);
     return true;
 }
 
@@ -79,14 +82,10 @@ void GEffect::readBasic(const YAML::Node &node)
     if (node["Priority"]) priority_level_ = node["Priority"].as<int>();
 
     if (node["StartFrame"])
-        start_frame_ = node["StartFrame"].as<int>();
-    else
-        start_frame_ = pathStart();
+        path_->setStartFrame(node["StartFrame"].as<int>());
 
     if (node["EndFrame"])
-        end_frame_ = node["EndFrame"].as<int>();
-    else
-        end_frame_ = pathStart() + pathLength() - 1;
+        path_->setEndFrame(node["EndFrame"].as<int>());
 
     if (node["Async"])
         async_offset_ = node["Async"].as<int>();
@@ -135,8 +134,8 @@ void GEffect::writeBasic(YAML::Emitter &out) const
 {
     out << YAML::Key << "Type" << YAML::Value << type();
     out << YAML::Key << "Priority" << YAML::Value << priority_level_;
-    out << YAML::Key << "StartFrame" << YAML::Value << start_frame_;
-    out << YAML::Key << "EndFrame" << YAML::Value << end_frame_;
+    out << YAML::Key << "StartFrame" << YAML::Value << startFrame();
+    out << YAML::Key << "EndFrame" << YAML::Value << endFrame();
 
     out << YAML::Key << "Async" << YAML::Value << async_offset_;
     out << YAML::Key << "Order" << YAML::Value << render_order_;
@@ -170,8 +169,6 @@ void GEffect::release() {qDebug() << "Effect:" << G_EFFECT_STR[type()]
 void GEffect::setPath(const GPathPtr &path)
 {
     path_ = path;
-    start_frame_ = pathStart();
-    end_frame_ = start_frame_ + path->length() - 1;
 }
 
 int GEffect::getSyncLocalIndex(int frame_id, int start_id, int duration) const
@@ -314,10 +311,10 @@ GEffectTrail::GEffectTrail(const GPathPtr &path)
 //    for (int i = 0; i < path->size(); ++i)
 //        cv::imwrite(QString("%1.png").arg(i).toStdString(), path->roi_fg_mat_[i]);
 
-    std::vector<cv::Mat4b> blendImgs;
+    std::vector<cv::Mat> blendImgs;
     GUtil::adaptiveImages(path->roi_fg_mat_, blendImgs);
 
-    d_images.resize(path->length());
+    d_images.resize(path->space());
     for (size_t i = 0; i < d_images.size(); ++i) {
         d_images[i] = GUtil::mat2qimage(blendImgs[i], QImage::Format_ARGB32_Premultiplied).copy();
         qDebug() << i << d_images[i] << path->roi_fg_mat_[i].rows;
@@ -325,6 +322,8 @@ GEffectTrail::GEffectTrail(const GPathPtr &path)
 
     setSmooth(line_smooth_);
 }
+
+
 
 void GEffectTrail::preRender(QPainter &painter, int frame_id, int duration)
 {
@@ -336,11 +335,78 @@ void GEffectTrail::preRender(QPainter &painter, int frame_id, int duration)
     }
 }
 
+void GEffectTrail::generateTrail(QPainter& painter)
+{
+    const auto& global_data = MLDataManager::get();
+    // compute big rect
+    cv::Rect rect_union = global_data.toWorldROI(path_->roi_rect_[0]);
+    for (int i = 1; i < path_->space(); ++i)
+        rect_union = rect_union | global_data.toWorldROI(path_->roi_rect_[i]);
+    
+    cv::Mat img(rect_union.size(), CV_32FC4, cv::Scalar(0, 0, 0, 0));
+    cv::Mat sum(rect_union.size(), CV_32FC4, cv::Scalar(0.001));
+
+    for (int i = startFrame(); i <= endFrame(); ++i)
+    {
+        cv::Mat roi_img = path_->roi_fg_mat_[i];
+        cv::Mat roi_alpha4, roi_premultiplied;
+        roi_img.convertTo(roi_premultiplied, CV_32FC4);
+        cv::extractChannel(roi_img, roi_alpha4, 3);
+        cv::cvtColor(roi_alpha4, roi_alpha4, cv::COLOR_GRAY2RGBA);
+        roi_alpha4.convertTo(roi_alpha4, CV_32FC4);
+        cv::multiply(roi_alpha4, roi_premultiplied, roi_premultiplied);
+        
+        cv::Rect rectw = global_data.toWorldROI(path_->roi_rect_[i]);
+        
+        rectw -= rect_union.tl();
+        img(rectw) += roi_premultiplied;
+        sum(rectw) += roi_alpha4;
+    }
+    img /= sum;
+    img.convertTo(img, CV_8UC4);
+
+    if (cached_effect_.empty()) cached_effect_.resize(1);
+    cached_effect_[0] = GUtil::mat2qimage(img.clone(), QImage::Format_ARGB32_Premultiplied);
+    cached_roi_ = rect_union;
+    //cached_effect_.clear();
+    //
+    //QRect view_rect = painter.viewport();
+    //QImage img(view_rect.width(), view_rect.height(), QImage::Format_ARGB32_Premultiplied);
+    //img.fill(Qt::transparent);
+    //QPainter pt(&img);
+    //pt.setCompositionMode(QPainter::CompositionMode_SourceOver);
+    //size_t n = effectLength();
+
+    //// weight by motion vector
+    //std::vector<float> lens;
+    //getImageAlphaByVec(trail_, lens);
+
+    //std::vector<QImage> images(n);
+
+    //int efx_alpha = trail_alpha_ * 255;
+    //for (size_t i = 0; i < n; ++i) {
+    //    size_t curIdx = (render_order_ ? i : n - i - 1);
+    //    curIdx += startFrame();
+    //    QImage dst = d_images[curIdx];
+    //    QImage alpha(dst.size(), QImage::Format_Indexed8);
+    //    int alp = qMin((int)(efx_alpha * lens[curIdx] * 5), 255);
+    //    alpha.fill(alp);
+    //    dst.setAlphaChannel(alpha);
+    //    QRect rect = renderLocation(curIdx);
+    //    rect.moveCenter(trail_[i].toPoint());
+    //    pt.drawImage(rect, dst);
+    //    //            renderImage(curIdx).save(QString("_%1.png").arg(i));
+    //}
+
+    //cached_effect_.push_back(img);
+}
+
 void GEffectTrail::render(QPainter &painter, int frame_id, int duration, bool video) const
 {
 //    qDebug() << typeid(*this).name() << cached_effect_[0];
     painter.setCompositionMode(QPainter::CompositionMode_SourceOver);
-    painter.drawImage(painter.viewport(), cached_effect_[0]);
+    QRectF roi = MLDataManager::get().toPaintROI(cached_roi_, painter.viewport());
+    painter.drawImage(roi, cached_effect_[0]);
 }
 
 void GEffectTrail::getImageAlphaByVec(const std::vector<QPointF> &path, std::vector<float> &out) const
@@ -364,41 +430,6 @@ void GEffectTrail::getImageAlphaByVec(const std::vector<QPointF> &path, std::vec
     }
 }
 
-void GEffectTrail::generateTrail(QPainter &painter)
-{
-    cached_effect_.clear();
-
-    QRect view_rect = painter.viewport();
-    QImage img(view_rect.width(), view_rect.height(), QImage::Format_ARGB32_Premultiplied);
-    img.fill(Qt::transparent);
-    QPainter pt(&img);
-    pt.setCompositionMode(QPainter::CompositionMode_SourceOver);
-    size_t n = effectLength();
-
-    // weight by motion vector
-    std::vector<float> lens;
-    getImageAlphaByVec(trail_, lens);
-
-    std::vector<QImage> images(n);
-
-    int efx_alpha = trail_alpha_ * 255;
-    for (size_t i = 0; i < n; ++i) {
-        size_t curIdx = (render_order_ ? i : n - i - 1);
-        curIdx += (startFrame() - path()->startFrame());
-        QImage dst = renderImage(curIdx);
-        QImage alpha(dst.size(), QImage::Format_Indexed8);
-        int alp = qMin((int)(efx_alpha * lens[curIdx] * 5), 255);
-        alpha.fill(alp);
-        dst.setAlphaChannel(alpha);
-        QRect rect = renderLocation(path()->startFrame() + curIdx);
-        rect.moveCenter(trail_[i].toPoint());
-        pt.drawImage(rect, dst);
-//            renderImage(curIdx).save(QString("_%1.png").arg(i));
-    }
-
-    cached_effect_.push_back(img);
-}
-
 void GEffectTrail::write(YAML::Emitter &out) const
 {
     out << YAML::BeginMap;
@@ -408,6 +439,7 @@ void GEffectTrail::write(YAML::Emitter &out) const
 
 bool GEffectTrail::setSmooth(int s)
 {
+    
     line_smooth_ = s;
     trail_.resize(this->effectLength());
     for (size_t i = 0; i < this->effectLength(); ++i) {
@@ -503,7 +535,7 @@ void GEffectMotion::render(QPainter &painter, int frame_id, int duration, bool v
 
     int base_id = getSyncLocalIndex(frame_id, startFrame(), duration) + async_offset_;
     base_id %= duration;
-    base_id = base_id > 0 ? base_id : base_id + duration;
+    base_id = base_id >= 0 ? base_id : base_id + duration;
 
     int inv_id = ((effectLength() - 1) / duration) * duration + base_id;
     if (inv_id >= effectLength()) inv_id -= duration;
@@ -533,7 +565,7 @@ void GEffectMotion::render(QPainter &painter, int frame_id, int duration, bool v
 
         if (marker_mode_ == 2 || (marker_mode_ == 1 && anchor_id == 0)) {
             float rad = qMax(rect.width(), rect.height()) / 2.5;
-            int marker_pos = local_id + startFrame() - path()->startFrame();
+            int marker_pos = local_id + startFrame();
             QPointF pos = scaleMat().map(marker_trail_[marker_pos]);
             pos.setY(pos.y() - rad);
             float scale = painter.viewport().width() / 900.0; // TODO: a bit hacking
@@ -559,7 +591,7 @@ void GEffectMotion::render(QPainter &painter, int frame_id, int duration, bool v
             trail[i] = scaleMat().map(trail_[i]);
 //        qDebug() << "Draw line" << trail_length << trail_.size() << trail_[0] << trail[0];
 //        trail_length -= (startFrame() - path()->startFrame());
-        painter.drawPolyline(trail.data() + startFrame() - path()->startFrame(), trail_length + 1);
+        painter.drawPolyline(trail.data() + startFrame(), trail_length + 1);
     }
 }
 
@@ -576,7 +608,7 @@ bool GEffectMotion::setSmooth(int s)
     line_smooth_ = s;
     trail_.resize(n);
     for (size_t i = 0; i < n; ++i) {
-        trail_[i] = this->path()->frameRoiRect(i + path()->startFrame()).center();
+        trail_[i] = this->path()->frameRoiRect(i).center();
 //        trail_[i] = this->renderLocation(i + startFrame()).center();
     }
     marker_trail_.assign(trail_.begin(), trail_.end());

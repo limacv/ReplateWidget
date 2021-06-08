@@ -116,7 +116,6 @@
     <ClCompile Include="GObjLayer.cpp" />
     <ClCompile Include="GPath.cpp" />
     <ClCompile Include="GTracking.cpp" />
-    <ClCompile Include="GPathTracker.cpp" />
     <ClCompile Include="GPictureLabel.cpp" />
     <ClCompile Include="GResultDisplay.cpp" />
     <ClCompile Include="GRoi.cpp" />
@@ -170,7 +169,6 @@
     <QtMoc Include="GMainDisplay.h" />
     <ClInclude Include="GPath.h" />
     <ClInclude Include="GTracking.h" />
-    <ClInclude Include="GPathTracker.h" />
     <ClInclude Include="GPictureLabel.h" />
     <ClInclude Include="GRoi.h" />
     <ClInclude Include="GUtil.h" />

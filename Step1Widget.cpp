@@ -5,6 +5,7 @@
 #include <qdialog.h>
 #include <qfiledialog.h>
 #include <qmath.h>
+#include <iostream>
 #include <qevent.h>
 #include "Step1Widget.h"
 #include "ui_Step1Widget.h"

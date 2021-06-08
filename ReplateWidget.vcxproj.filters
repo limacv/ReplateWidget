@@ -130,9 +130,6 @@
     <ClCompile Include="GMainDisplay.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="GPathTracker.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="MLCacheFlow.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -275,9 +272,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="GUtil.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="GPathTracker.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="MLCacheFlow.h">

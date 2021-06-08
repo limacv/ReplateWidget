@@ -4,11 +4,12 @@
 #include <QVector>
 #include <QImage>
 #include <QPainter>
+#include <QDebug>
 #include <fstream>
 #include <string>
 #include <set>
 #include <map>
-#include "GPathTracker.h"
+#include "GPath.h"
 #include "opencv2/stitching/detail/blenders.hpp"
 #include "GEffectCommon.h"
 
@@ -63,9 +64,9 @@ public:
     int async() const { return async_offset_; }
     void adjustAsync(int offset, int duration);
 
-    int effectLength() const {return end_frame_ - start_frame_ + 1;}
-    int startFrame() const {return start_frame_;}
-    int endFrame() const {return end_frame_;}
+    int startFrame() const {return pathStart();}
+    int endFrame() const {return pathEnd();}
+    int effectLength() const {return endFrame() - startFrame() + 1;}
 
     virtual void setOrder(bool b) { render_order_ = b; }
     virtual bool getOrder() const { return render_order_;}
@@ -103,6 +104,7 @@ protected:
     void setPath(const GPathPtr &path);
     int pathLength() const {return path()->length();}
     int pathStart() const {return path()->startFrame();}
+    int pathEnd() const { return path()->endFrame(); }
 
     virtual int getSyncLocalIndex(int frame_id, int start_id, int duration) const;
     virtual int getSyncLocalIndex2(int frame_id, int start_id, int duration,
@@ -123,8 +125,6 @@ protected:
     GPathPtr path_;
     G_EFFECT_ID effect_type_;
     int priority_level_;
-    int start_frame_;
-    int end_frame_;
     int async_offset_;
     bool render_order_;
     bool is_shown_;
@@ -199,6 +199,7 @@ public:
     std::vector<QImage> d_images;
     std::vector<QImage> cached_effect_;
     std::vector<QPointF> trail_;
+    cv::Rect cached_roi_;
     bool recache;
     int prev_length_;
 
@@ -209,14 +210,6 @@ public:
 
     virtual void render(QPainter &painter, int frame_id, int duration, bool video = false) const;
 
-    virtual QImage image(int i) const {return d_images[i];}
-    virtual QImage renderImage(int i) const {return d_images[i];}
-
-    void getImageAlphaByVec(const std::vector<QPointF> &path,
-                                    std::vector<float> &out) const;
-
-    void generateTrail(QPainter &painter);
-
     virtual void write(YAML::Emitter &out) const;
     //virtual void read(const YAML::Node &node);
 
@@ -226,6 +219,10 @@ public:
     virtual bool setSmooth(int s);
     virtual int getSmooth() const {return line_smooth_;}
 
+private:
+    void getImageAlphaByVec(const std::vector<QPointF> &path,
+                                    std::vector<float> &out) const;
+    void generateTrail(QPainter &painter);
 };
 
 class GEffectMotion : public GEffect

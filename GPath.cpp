@@ -5,11 +5,25 @@
 GPath::GPath(bool backward)
     :is_backward_(backward)
     ,frame_id_start_(-1)
+    ,frame_id_end_(-1)
+    ,world_offset_(0)
 {}
+
+GPath::GPath(int startframe, int endframe, int space)
+    :is_backward_(false),
+    frame_id_start_(startframe),
+    frame_id_end_(endframe),
+    world_offset_(0)
+{
+    resize(space);
+}
+
 
 GPath::GPath(int startframe, const QRectF & rect0, const QPainterPath & painterpath, bool backward)
     :is_backward_(backward),
     frame_id_start_(startframe),
+    frame_id_end_(startframe),
+    world_offset_(startframe),
     painter_path_(painterpath),
     roi_rect_(1, rect0),
     flow_points_(1, 0),
@@ -27,55 +41,60 @@ bool GPath::is_draw_flow = true;
 
 bool GPath::checkInside(int frame_id, QPointF pos)
 {
-    int idx = frame_id - startFrame();
-    if (idx < 0 || idx >= this->length())
+    if (space() == 0
+        || frame_id < frame_id_start_
+        || frame_id > frame_id_end_)
         return false;
-    if (roi_rect_[idx].contains(pos))
-        return true;
-    return false;
+
+    int idx = worldid2thisid(frame_id);
+    return roi_rect_[idx].contains(pos);
 }
 
 void GPath::translateRect(int frame_id, QPointF offset)
 {
-    int idx = frame_id - startFrame();
-    if (idx >= 0 && idx < this->length()) {
+    if (space() > 0 && frame_id >= frame_id_start_ && frame_id <= frame_id_end_) 
+    {
+        int idx = worldid2thisid(frame_id);
         manual_adjust_[idx] = true;
         roi_rect_[idx].translate(offset);
+        dirty_[idx] = true;
         GUtil::boundRectF(roi_rect_[idx]);
     }
-    dirty_[idx] = true;
 }
 
 void GPath::moveRectCenter(int frame_id, QPointF center)
 {
-    int idx = frame_id - startFrame();
-    if (idx >= 0 && idx < this->length()) {
-        manual_adjust_[idx] = true;
+    if (space() > 0 && frame_id >= frame_id_start_ && frame_id <= frame_id_end_)
+    {
+        int idx = worldid2thisid(frame_id);
         roi_rect_[idx].moveCenter(center);
+        manual_adjust_[idx] = true;
+        dirty_[idx] = true;
     }
-    dirty_[idx] = true;
 }
 
-void GPath::updateImage(int frame_id)
+void GPath::updateImage(int idx)
 {
     const auto& data = MLDataManager::get();
-    int idx = frame_id - startFrame();
-    if (idx >= 0 && idx < this->length()) {
-        if (roi_reshape_[idx]) {
-            roi_fg_mat_[idx] = data.getForeground(frame_id, roi_reshape_[idx]);
-        }
-        else
-            roi_fg_mat_[idx] = data.getForeground(frame_id, roi_rect_[idx]);
-        roi_fg_qimg_[idx] = GUtil::mat2qimage(
-                    roi_fg_mat_[idx], QImage::Format_ARGB32_Premultiplied);
+    
+    int frame_idx = idx + world_offset_;
+    if (roi_reshape_[idx]) {
+        roi_fg_mat_[idx] = data.getForeground(frame_idx, roi_reshape_[idx]);
     }
+    else
+        roi_fg_mat_[idx] = data.getForeground(frame_idx, roi_rect_[idx]);
+
+    roi_fg_qimg_[idx] = GUtil::mat2qimage(
+        roi_fg_mat_[idx], QImage::Format_ARGB32_Premultiplied);
 }
 
 void GPath::updateimages()
 {
-    for (int i = 0; i < length(); ++i) {
-        if (dirty_[i]) {
-            updateImage(i + startFrame());
+    for (int i = 0; i < space(); ++i)
+    {
+        if (dirty_[i])
+        {
+            updateImage(i);
             dirty_[i] = false;
         }
     }
@@ -83,7 +102,8 @@ void GPath::updateimages()
 
 QRectF GPath::frameRoiRect(int frame_id) const
 {
-    int idx = frame_id - startFrame();
+    assert(frame_id >= frame_id_start_ && frame_id <= frame_id_end_);
+    int idx = worldid2thisid(frame_id);
     if (roi_reshape_[idx])
         return roi_reshape_[idx]->rectF();
     else
@@ -91,12 +111,12 @@ QRectF GPath::frameRoiRect(int frame_id) const
 }
 
 QImage GPath::frameRoiImage(int frame_id) const {
-    return roi_fg_qimg_[frame_id - startFrame()];
+    return roi_fg_qimg_[worldid2thisid(frame_id)];
 }
 
 cv::Mat4b GPath::frameRoiMat4b(int frame_id) const
 {
-    return roi_fg_mat_[frame_id - startFrame()];
+    return roi_fg_mat_[worldid2thisid(frame_id)];
 }
 
 void GPath::paint(QPainter &painter, int frame_id) const
@@ -106,11 +126,12 @@ void GPath::paint(QPainter &painter, int frame_id) const
         return;
     }
     if (this->isEmpty()) return;
+
     QSize size = painter.viewport().size();
     QMatrix mat;
     mat.scale(size.width(), size.height());
 
-    int idx = frame_id - this->startFrame();
+    int idx = worldid2thisid(frame_id);
     if (roi_reshape_[idx]) {
         Qt::PenStyle style = Qt::SolidLine;
         QPen pen = QPen(Qt::red, 1, style);
@@ -127,7 +148,7 @@ void GPath::paint(QPainter &painter, int frame_id) const
         }
     }
     else {
-        Qt::PenStyle pen_style = (manual_adjust_[idx]? Qt::SolidLine: Qt::DashLine);
+        Qt::PenStyle pen_style = (manual_adjust_[idx]? Qt::DotLine: Qt::DashLine);
         QPen rect_pen = (isBackward()?QPen(Qt::green, 1, pen_style):
                                       QPen(Qt::red, 1, pen_style));
         painter.setPen(rect_pen);
@@ -162,13 +183,15 @@ void GPath::paint(QPainter &painter, int frame_id) const
 
 void GPath::setPathRoi(int frame_id, const GRoiPtr &roi)
 {
-    int id = frame_id - startFrame();
+    int id = worldid2thisid(frame_id);
     roi_reshape_[id] = roi;
     manual_adjust_[id] = true;
     dirty_[id] = true;
 }
 
 void GPath::resize(int n) {
+    if (n != 1 || n != MLDataManager::get().get_framecount())
+        qWarning("Path resize different to the total frame count");
     roi_rect_.resize(n);
     flow_points_.resize(n, 0);
     number_flow_points_.resize(n,0);

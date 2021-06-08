@@ -3,6 +3,7 @@
 #include "GTracking.h"
 #include "GUtil.h"
 #include <vector>
+#include <list>
 #include <algorithm>
 #include <opencv2/imgproc.hpp>
 
@@ -58,15 +59,17 @@ std::vector<BBox*> findDetectBox(int frameidx, int class_id)
 }
 
 /// <summary>
-/// track a path using trajectories
+/// return vector of BBox* (successfully tracked path)
+/// unsuccessfully tracked path are repeated in the boundary. e.g.  a a a a a b c d e e e e e 
 /// </summary>
-GPathPtr autoTrackPath(int start_frame, const QRectF& start_rectF)
+std::list<BBox*> autoTrackPath(int start_frame, const QRectF& start_rectF)
 {
     const auto& global_data = MLDataManager::get();
+    std::list<BBox*> tracked;
     if (start_frame < 0 || start_frame >= global_data.get_framecount())
-        return nullptr;
-    cv::Rect rect_world = global_data.toWorldROI(start_rectF);
+        return tracked;
 
+    cv::Rect rect_world = global_data.toWorldROI(start_rectF);
     // first, try to directly use the tracking results
     {
         std::vector<const Traject*> candidates;
@@ -89,121 +92,86 @@ GPathPtr autoTrackPath(int start_frame, const QRectF& start_rectF)
         if (candidates.size() > 0)
         {
             const auto& traj = *candidates[0];
-            GPathPtr path_data = std::make_shared<GPath>(false);
-            auto& path = *path_data;
-            path.setStartFrame(traj.beginidx);
-            path.resize(traj.length());
-            for (int i = 0; i < traj.length(); ++i)
-            {
-                cv::Rect dilatedrect = GUtil::addMarginToRect(traj[i + traj.beginidx]->rect_global, RECT_MARGIN);
-                path.roi_rect_[i] = global_data.toPaintROI(dilatedrect, QRect(), true);
-                boundRectF(path.roi_rect_[i]);
-            }
-            return path_data;
+            for (int i = traj.beginidx; i <= traj.endidx; ++i)
+                tracked.push_back(traj[i]);
         }
     }
-
+    // tracked may be empty or contains partial bboxes
     // second try to use detect boxes to guess a good trajectories
     {
-        cv::Rect rect_world0 = global_data.toWorldROI(start_rectF);
-        BBox* pbox_ini = findDetectBox(start_frame, rect_world0);
-        if (!pbox_ini) return nullptr;
-        std::vector<BBox*> reverseboxes; reverseboxes.push_back(pbox_ini);
-        for (int frameidx = start_frame - 1; frameidx >= 0; --frameidx)
+        if (tracked.empty())
         {
-            const auto& pbox0 = reverseboxes[reverseboxes.size() - 1];
+            BBox* pbox_ini = findDetectBox(start_frame, rect_world);
+            if (!pbox_ini) return tracked;
+            
+            tracked.push_back(pbox_ini);
+        }
+        // track backwards
+        for (int frameidx = tracked.front()->frameidx - 1; frameidx >= 0; --frameidx)
+        {
+            const auto& pbox0 = tracked.front();
             BBox* pbox1 = findDetectBox(frameidx, pbox0->rect_global, pbox0->classid);
-            if (pbox1) reverseboxes.push_back(pbox1);
+            if (pbox1) tracked.push_front(pbox1);
             else break;
         }
-        std::vector<BBox*> orderboxes; orderboxes.push_back(pbox_ini);
-        for (int frameidx = start_frame + 1; frameidx < global_data.get_framecount(); ++frameidx)
+        // track forwards
+        for (int frameidx = tracked.back()->frameidx + 1; frameidx < global_data.get_framecount(); ++frameidx)
         {
-            const auto& pbox0 = orderboxes[orderboxes.size() - 1];
+            const auto& pbox0 = tracked.back();
             BBox* pbox1 = findDetectBox(frameidx, pbox0->rect_global, pbox0->classid);
-            if (pbox1) orderboxes.push_back(pbox1);
+            if (pbox1) tracked.push_back(pbox1);
             else break;
         }
-
-        GPathPtr path_data = std::make_shared<GPath>(false);
-        auto& path = *path_data;
-        path.setStartFrame(reverseboxes[reverseboxes.size() - 1]->frameidx);
-        path.resize(reverseboxes.size() + orderboxes.size() - 1);
-        for (int i = 0; i < reverseboxes.size(); ++i)
-            path.roi_rect_[reverseboxes.size() - i - 1] = global_data.toPaintROI(
-                GUtil::addMarginToRect(reverseboxes[i]->rect_global, RECT_MARGIN), 
-                QRect(), true
-            );
-        for (int i = 1; i < orderboxes.size(); ++i)
-            path.roi_rect_[reverseboxes.size() + i - 1] = global_data.toPaintROI(
-                GUtil::addMarginToRect(orderboxes[i]->rect_global, RECT_MARGIN),
-                QRect(), true
-            );
-        for (int i = 0; i < path.length(); ++i)
-            boundRectF(path.roi_rect_[i]);
-        return path_data;
+        return tracked;
     }
-    return nullptr;
+}
+
+void fillsInvalidPath(GPath& path, int startidx, int endidx)
+{
+    for (int i = startidx - 1; i >= 0; --i)
+        path.roi_rect_[i] = path.roi_rect_[i + 1];
+    for (int i = endidx + 1; i < path.space(); ++i)
+        path.roi_rect_[i] = path.roi_rect_[i - 1];
 }
 
 GPathPtr MLPathTracker::trackPath(int start_frame, const QRectF& start_rectF, int end_frame, const QRectF& end_rectF)
 {
-    if (start_frame >= 0 && end_frame < 0)
-        return autoTrackPath(start_frame, start_rectF);
-
     const auto& global_data = MLDataManager::get();
-    if (start_frame < 0 || end_frame < 0) {
-        qCritical() << "Invalid range! " << "A: " << start_frame
-            << " B " << end_frame;
-        return 0;
-    }
-    if (start_frame >= end_frame) {
-        qCritical() << "Invalid Tracking Range. " << "A: "
-            << start_frame << "B: " << end_frame;
-        return 0;
-    }
-
-    qDebug() << "Track Path." << "A" << start_frame << start_rectF
-        << "B" << end_frame << end_rectF;
-
+    if (start_frame < 0 || start_frame >= global_data.get_framecount()) return nullptr;
+    std::list<BBox*> trackedbox = autoTrackPath(start_frame, start_rectF);
+    
     // initiate path
     GPathPtr path_data = std::make_shared<GPath>(false);
     GPath& path = *path_data;
-    path.setStartFrame(start_frame);
-    int number_frames = end_frame - start_frame + 1;
-    path.resize(number_frames);
+    path.resize(global_data.get_framecount());
+    path.manual_adjust_[start_frame] = true;
 
-    for (int i = start_frame; i < end_frame; ++i) {
-        int curIdx = (path.isBackward() ? end_frame - i : i - start_frame);
-        int nextIdx = (path.isBackward() ? curIdx - 1 : curIdx + 1);
-        int cur_frameidx = curIdx + start_frame;
-        int next_frameidx = nextIdx + start_frame;
+    if (trackedbox.empty()) // if track failed, use naive solution
+    {
+        path.roi_rect_[start_frame] = start_rectF;
+        path.setStartFrame(start_frame);
+        path.setEndFrame(start_frame);
+        fillsInvalidPath(path, start_frame, start_frame);
+        return path_data;
+    }
 
-        // init roi
-        if (i == start_frame) {
-            // TODO: we don't use backward to init any more
-            path.roi_rect_[curIdx] = (path.isBackward() ? end_rectF : start_rectF);
-        }
-
-        QRectF current_rectF = path.roi_rect_[curIdx];
-        cv::Rect rect_world0 = global_data.toWorldROI(current_rectF);
-        BBox* pbox0 = findDetectBox(cur_frameidx, rect_world0);
-        BBox* pbox1 = pbox0 ? findDetectBox(next_frameidx, pbox0->rect_global, pbox0->classid) 
-                            : findDetectBox(next_frameidx, rect_world0);
-
-        if (pbox1) // successfully locate new box
-        {
-            cv::Rect dilated = GUtil::addMarginToRect(pbox1->rect_global, RECT_MARGIN);
-            path.roi_rect_[nextIdx] = global_data.toPaintROI(dilated, QRect(), true);
-            boundRectF(path.roi_rect_[nextIdx]);
-        }
-        else
-        {
-            // TODO track future in case some frames miss
-            cv::Rect dilated = GUtil::addMarginToRect(rect_world0, RECT_MARGIN);
-            path.roi_rect_[nextIdx] = global_data.toPaintROI(dilated, QRect(), true);
-            boundRectF(path.roi_rect_[nextIdx]);
-        }
+    for (const auto pbox : trackedbox) // copy rects
+    {
+        cv::Rect dilated = GUtil::addMarginToRect(pbox->rect_global, RECT_MARGIN);
+        path.roi_rect_[pbox->frameidx] = global_data.toPaintROI(dilated, QRect(), true);
+        boundRectF(path.roi_rect_[pbox->frameidx]);
+    }
+    fillsInvalidPath(path, trackedbox.front()->frameidx, trackedbox.back()->frameidx);
+    // deciding start frame and end frame
+    if (end_frame < 0 || end_frame >= global_data.get_framecount())
+    {
+        path.setStartFrame(trackedbox.front()->frameidx);
+        path.setEndFrame(trackedbox.back()->frameidx);
+    }
+    else
+    {
+        path.setStartFrame(std::min(start_frame, end_frame));
+        path.setEndFrame(std::max(start_frame, end_frame));
     }
     return path_data;
 }
@@ -217,52 +185,48 @@ void MLPathTracker::updateTrack(GPath* path_data)
         return;
     }
     GPath& path = *path_data;
-    int start_frame = path.startFrame();
-    int end_frame = path.endFrame();
+    std::vector<int> modified_points;
+    for (int i = 0; i < path.space(); ++i)
+        if (path.manual_adjust_[i] && path.dirty_[i])
+            modified_points.push_back(i);
 
-    // Track
-    GTracking track;
-    for (int i = start_frame; i < end_frame; ++i) {
-        qDebug() << "Re-track Frame:" << i;
-        int curIdx = (path.isBackward() ? end_frame - i : i - start_frame);
-        int nextIdx = (path.isBackward() ? curIdx - 1 : curIdx + 1);
-        int cur_frame = curIdx + start_frame;
+    for (int modified_idx : modified_points)
+    {
+        // update backward
+        for (int backward_idx = modified_idx - 1;
+            backward_idx >= 0 && !path.manual_adjust_[backward_idx];
+            --backward_idx)
+        {
+            auto rect_w = global_data.toWorldROI(path.roi_rect_[backward_idx + 1]);
+            BBox* pbox = findDetectBox(backward_idx, rect_w);
+            if (pbox)
+            {
+                cv::Rect dilated = GUtil::addMarginToRect(pbox->rect_global, RECT_MARGIN);
+                path.roi_rect_[backward_idx] = global_data.toPaintROI(dilated, QRect(), true);
+                boundRectF(path.roi_rect_[backward_idx]);
+            }
+            else
+                path.roi_rect_[backward_idx] = path.roi_rect_[backward_idx + 1];
 
-        path.dirty_[curIdx] = true; // TODO: set true only for non-manual
-        // init roi
-        if (i == start_frame && path.manual_adjust_[curIdx]) {
-            //            path.roi_fg_mat_[curIdx] = video_->
-            //                    getForeground(cur_frameidx, path.frameRoiRect(cur_frameidx));
+            path.dirty_[backward_idx] = true;
         }
+        // update forward
+        for (int forward_idx = modified_idx + 1;
+            forward_idx < path.space() && !path.manual_adjust_[forward_idx];
+            ++forward_idx)
+        {
+            auto rect_w = global_data.toWorldROI(path.roi_rect_[forward_idx - 1]);
+            BBox* pbox = findDetectBox(forward_idx, rect_w);
+            if (pbox)
+            {
+                cv::Rect dilated = GUtil::addMarginToRect(pbox->rect_global, RECT_MARGIN);
+                path.roi_rect_[forward_idx] = global_data.toPaintROI(dilated, QRect(), true);
+                boundRectF(path.roi_rect_[forward_idx]);
+            }
+            else
+                path.roi_rect_[forward_idx] = path.roi_rect_[forward_idx - 1];
 
-        QRectF current_rectF = path.roi_rect_[curIdx];
-        QRectF next_rectF = path.roi_rect_[nextIdx];
-        cv::Mat4b flow_roi_mat = global_data.getFlowImage(cur_frame, current_rectF);
-
-        GFrameFlowData flow_data;
-        if (path.manual_adjust_[nextIdx]) {
-            track.adjust(flow_roi_mat, global_data.imageRect(current_rectF),
-                global_data.imageRect(next_rectF),
-                path.isBackward(), flow_data);
+            path.dirty_[forward_idx] = true;
         }
-        else {
-            QPointF image_off = track.predict(flow_roi_mat, global_data.imageRect(current_rectF),
-                path.isBackward(), flow_data);
-            QPointF offet(image_off.x() / (qreal)global_data.VideoWidth(),
-                image_off.y() / (qreal)global_data.VideoHeight());
-            path.roi_rect_[nextIdx] = current_rectF.translated(offet);
-            boundRectF(path.roi_rect_[nextIdx]);
-            //            path.roi_fg_mat_[nextIdx] = video_->getForeground(nextIdx + start_frame,
-            //                                                              path.roi_rect_[nextIdx]);
-        }
-
-        // assign flow points
-        int number_points = flow_data.flow_points_.size();
-        path.flow_points_[curIdx] = new QPointF[number_points];
-        QMatrix mat;
-        mat.scale(1.0 / (qreal)global_data.VideoWidth(), 1.0 / (qreal)global_data.VideoHeight());
-        for (int i = 0; i < number_points; ++i)
-            path.flow_points_[curIdx][i] = mat.map(QPointF(flow_data.flow_points_[i]));
-        path.number_flow_points_[curIdx] = number_points;
     }
 }

@@ -17,6 +17,7 @@ class GPath
 {
 public:
     explicit GPath(bool backward = false);
+    GPath::GPath(int startframe, int endframe, int space);
     GPath(int startframe, const QRectF& rect0, const QPainterPath& painterpath, bool backward = false);
     ~GPath();
 
@@ -30,19 +31,20 @@ public:
     QRectF frameRoiRect(int frame_id) const;
     QImage frameRoiImage(int frame_id) const;
     cv::Mat4b frameRoiMat4b(int frame_id) const;
-
-    void updateImage(int frame_id);
-
+    
     void updateimages();
 
     int startFrame() const {return frame_id_start_;}
-    int endFrame() const {return frame_id_start_ + length() - 1;}
+    int endFrame() const {return frame_id_end_;}
     void setStartFrame(int id) { frame_id_start_ = id;}
+    void setEndFrame(int id) { frame_id_end_ = id; }
+
     bool isBackward() const {return is_backward_;}
     void setBackward(bool b) {is_backward_ = b;}
 
-    bool isEmpty() const { return !length(); }
-    size_t length() const {return roi_rect_.size();}
+    bool isEmpty() const { return length() <= 0 || !space(); }
+    int length() const {return frame_id_end_ - frame_id_start_ + 1;}
+    size_t space() const { return roi_rect_.size(); }
     void resize(int n);
     void release();
 
@@ -50,11 +52,15 @@ public:
 
     static bool is_draw_flow;
 
-public: // to be changed to protected
+private:
+    int worldid2thisid(int frameidx) const { return frameidx - world_offset_; }
+    void updateImage(int idx);
+
+public:
     std::vector<QRectF> roi_rect_;
     std::vector<QPointF*> flow_points_;
     std::vector<int> number_flow_points_;
-    std::vector<cv::Mat4b> roi_fg_mat_;
+    std::vector<cv::Mat> roi_fg_mat_;
 
     // rendering
     QPainterPath painter_path_;
@@ -66,7 +72,9 @@ public: // to be changed to protected
     std::vector<bool> dirty_;
 
 protected:
+    int world_offset_;  // usually 0, or start frame, used alongside
     int frame_id_start_;
+    int frame_id_end_;
     bool is_backward_;
 };
 

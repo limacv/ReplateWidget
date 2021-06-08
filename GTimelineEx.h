@@ -96,8 +96,8 @@ private:
 
     QPoint right_click_pos_;
     bool select_started_;
-    bool align_started_;
-    int align_start_pos_;
+    //bool align_started_;
+    //int align_start_pos_;
     bool move_stated_;
 
     std::vector<GInterval*> intervals_;

@@ -41,7 +41,7 @@ namespace GUtil
 
     void averageImages(const std::vector<cv::Mat4b> &matarray, cv::Mat4b &out);
 
-    void adaptiveImages(const std::vector<cv::Mat4b> &matarray, std::vector<cv::Mat4b> &out);
+    void adaptiveImages(const std::vector<cv::Mat> &matarray, std::vector<cv::Mat> &out);
 
     QRect scaleQRect(const QRect &src, float scale);
 

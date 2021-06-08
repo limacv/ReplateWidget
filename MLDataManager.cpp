@@ -86,7 +86,7 @@ bool MLDataManager::load_raw_video(const QString& path)
 cv::Mat4b MLDataManager::getRoiofFrame(int frameidx, const QRectF& rectF) const
 {
 	if (!stitch_cache.isprepared()) return cv::Mat4b();
-	return getRoiofFrame(frameidx, imageRect(rectF));
+	return getRoiofFrame(frameidx, toCropROI(rectF));
 }
 
 cv::Mat4b MLDataManager::getRoiofFrame(int frameidx, const QRect& rect) const
@@ -121,7 +121,7 @@ cv::Mat4b MLDataManager::getRoiofFrame(int frameidx, const cv::Rect& rect) const
 cv::Mat3b MLDataManager::getRoiofBackground(const QRectF& rectF) const
 {
 	if (!stitch_cache.isprepared()) return cv::Mat3b();
-	return getRoiofBackground(imageRect(rectF));
+	return getRoiofBackground(toCropROI(rectF));
 }
 
 cv::Mat3b MLDataManager::getRoiofBackground(const QRect& rect) const
@@ -149,7 +149,7 @@ cv::Mat4b MLDataManager::getFlowImage(int frameidx, QRectF rectF) const
 	const auto& video = flow_cache.flows;
 	if (rectF.isValid())
 	{
-		const cv::Rect rect = GUtil::cvtRect(imageRect(rectF));
+		const cv::Rect rect = toCropROI(rectF);
 		cv::Mat img(rect.size(), CV_8UC4, cv::Scalar(128, 128, 128, 128));
 		cv::Rect frameroi = stitch_cache.rois[frameidx] - stitch_cache.global_roi.tl();
 		cv::Rect intersection = frameroi & rect;
@@ -215,11 +215,6 @@ QVector<BBox*> MLDataManager::queryBoxes(int frameidx, const QPointF& pt_norm, b
 	return outboxes;
 }
 
-QRect MLDataManager::imageRect(const QRectF& rectf) const
-{
-	return imageScale().mapRect(rectf).toRect();
-}
-
 QMatrix MLDataManager::imageScale() const
 {
 	return QMatrix().scale(stitch_cache.background.cols, stitch_cache.background.rows);
@@ -241,6 +236,14 @@ cv::Rect MLDataManager::toWorldROI(const QRectF& rect_norm) const
 {
 	return cv::Rect(rect_norm.x() * VideoWidth() + VideoLeft(), 
 		rect_norm.y() * VideoHeight() + VideoTop(),
+		rect_norm.width() * VideoWidth(),
+		rect_norm.height() * VideoHeight());
+}
+
+cv::Rect MLDataManager::toCropROI(const QRectF& rect_norm) const
+{
+	return cv::Rect(rect_norm.x() * VideoWidth(),
+		rect_norm.y() * VideoHeight(),
 		rect_norm.width() * VideoWidth(),
 		rect_norm.height() * VideoHeight());
 }
