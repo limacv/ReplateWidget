@@ -6,11 +6,14 @@
 #include "GTimelineWidget.h"
 #include "GMainDisplay.h"
 #include "ui_GControlWidget.h"
+#include "GPathTracker.h"
+#include "MLPathTracker.h"
 #include <qevent.h>
 #include <qcombobox.h>
 
 Step3Widget::Step3Widget(QWidget *parent)
-	: QMainWindow(parent)
+	: QMainWindow(parent),
+    tracker(new MLPathTracker)
 {
 	ui = new Ui::Step3Widget();
 	ui->setupUi(this);

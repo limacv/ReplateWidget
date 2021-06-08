@@ -5,7 +5,7 @@
 #include <qdockwidget.h>
 #include <qmainwindow.h>
 #include <qslider.h>
-#include "GPathTracker.h"
+#include "PathTrackerBase.h"
 #include "GObjLayer.h"
 namespace Ui { class Step3Widget; class GControlWidget; };
 
@@ -91,7 +91,7 @@ public:
     void setPathRoi(const GRoiPtr& roi);
 
     // current states (about tracking)
-    GPathTracker* tracker;
+    PathTrackerBase* tracker;
     bool tracker_is_A_set_;
     int tracker_frame_A_;
     QRectF tracker_rect_A_;

@@ -145,6 +145,9 @@
     <ClCompile Include="InpainterCV.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="MLPathTracker.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="Step1Widget.h">
@@ -290,6 +293,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="InpainterCV.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PathTrackerBase.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MLPathTracker.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
