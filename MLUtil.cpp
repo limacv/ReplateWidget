@@ -2,6 +2,7 @@
 #include <qdebug.h>
 #include <opencv2/imgproc.hpp>
 #include <qpixmap.h>
+#include <qpainter.h>
 
 namespace MLUtil
 {
@@ -71,5 +72,24 @@ namespace MLUtil
         default:
             break;
         }
+    }
+
+    QRect scaleViewportWithRatio(const QRect& viewport, float wid_hei)
+    {
+        QRect rect_ori = viewport;
+        float ratio_ori = (float)rect_ori.width() / rect_ori.height();
+        if (ratio_ori > wid_hei)  // too wide
+        {
+            const int wid = rect_ori.height() * wid_hei;
+            rect_ori.translate((rect_ori.width() - wid) / 2, 0);
+            rect_ori.setWidth(wid);
+        }
+        else if (ratio_ori < wid_hei) // too thin
+        {
+            const int hei = rect_ori.width() / wid_hei;
+            rect_ori.translate(0, (rect_ori.height() - hei) / 2);
+            rect_ori.setHeight(hei);
+        }
+        return rect_ori;
     }
 }

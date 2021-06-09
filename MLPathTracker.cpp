@@ -7,8 +7,6 @@
 #include <algorithm>
 #include <opencv2/imgproc.hpp>
 
-const int RECT_MARGIN = 15;
-
 BBox* findDetectBox(int frameidx, const cv::Rect& query_rect, int class_id = -1)
 {
     const auto& boxes = MLDataManager::get().trajectories.frameidx2detectboxes[frameidx];

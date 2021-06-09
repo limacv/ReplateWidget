@@ -139,6 +139,7 @@
     <ClCompile Include="Step1Widget.cpp" />
     <ClCompile Include="Step2Widget.cpp" />
     <ClCompile Include="StitcherSsfm.cpp" />
+    <QtRcc Include="breeze.qrc" />
     <QtRcc Include="ReplateWidget.qrc" />
     <QtRcc Include="shared.qrc" />
     <QtUic Include="GControlWidget.ui" />

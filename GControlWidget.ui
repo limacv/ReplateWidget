@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1193</width>
+    <width>1228</width>
     <height>141</height>
    </rect>
   </property>
@@ -268,6 +268,9 @@
                 <property name="text">
                  <string>Add all</string>
                 </property>
+                <property name="shortcut">
+                 <string>A</string>
+                </property>
                 <property name="checkable">
                  <bool>false</bool>
                 </property>
@@ -286,6 +289,9 @@
                 </property>
                 <property name="text">
                  <string>Start</string>
+                </property>
+                <property name="shortcut">
+                 <string>Shift+A</string>
                 </property>
                 <property name="checkable">
                  <bool>true</bool>
@@ -320,6 +326,89 @@
                <bool>true</bool>
               </property>
              </widget>
+            </item>
+            <item>
+             <layout class="QHBoxLayout" name="horizontalLayout">
+              <property name="spacing">
+               <number>1</number>
+              </property>
+              <item>
+               <widget class="QPushButton" name="control_modify_widthbiger">
+                <property name="enabled">
+                 <bool>false</bool>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                  <width>25</width>
+                  <height>16777215</height>
+                 </size>
+                </property>
+                <property name="text">
+                 <string>w+</string>
+                </property>
+                <property name="shortcut">
+                 <string>Right</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QPushButton" name="control_modify_widthsmaller">
+                <property name="enabled">
+                 <bool>false</bool>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                  <width>25</width>
+                  <height>16777215</height>
+                 </size>
+                </property>
+                <property name="text">
+                 <string>w-</string>
+                </property>
+                <property name="shortcut">
+                 <string>Left</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QPushButton" name="control_modify_heightbigger">
+                <property name="enabled">
+                 <bool>false</bool>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                  <width>25</width>
+                  <height>16777215</height>
+                 </size>
+                </property>
+                <property name="text">
+                 <string>h+</string>
+                </property>
+                <property name="shortcut">
+                 <string>Up</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QPushButton" name="control_modify_heightsmaller">
+                <property name="enabled">
+                 <bool>false</bool>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                  <width>25</width>
+                  <height>16777215</height>
+                 </size>
+                </property>
+                <property name="text">
+                 <string>h-</string>
+                </property>
+                <property name="shortcut">
+                 <string>Down</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
             </item>
            </layout>
           </item>
@@ -413,32 +502,20 @@
                    </size>
                   </property>
                   <property name="text">
-                   <string>Priority</string>
+                   <string>Layer</string>
                   </property>
                  </widget>
                 </item>
                 <item>
-                 <widget class="QLineEdit" name="control_edit_priority_">
-                  <property name="sizePolicy">
-                   <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-                    <horstretch>0</horstretch>
-                    <verstretch>0</verstretch>
-                   </sizepolicy>
-                  </property>
+                 <widget class="QSpinBox" name="layer_spinbox">
                   <property name="minimumSize">
                    <size>
                     <width>40</width>
                     <height>0</height>
                    </size>
                   </property>
-                  <property name="maximumSize">
-                   <size>
-                    <width>70</width>
-                    <height>16777215</height>
-                   </size>
-                  </property>
-                  <property name="placeholderText">
-                   <string>0~80</string>
+                  <property name="maximum">
+                   <number>7</number>
                   </property>
                  </widget>
                 </item>
@@ -481,26 +558,26 @@
                 <item>
                  <widget class="QLabel" name="label_priority_3">
                   <property name="text">
-                   <string>Speed</string>
+                   <string>Slow</string>
                   </property>
                  </widget>
                 </item>
                 <item>
-                 <widget class="QLineEdit" name="control_edit_speed_">
-                  <property name="sizePolicy">
-                   <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-                    <horstretch>0</horstretch>
-                    <verstretch>0</verstretch>
-                   </sizepolicy>
-                  </property>
+                 <widget class="QDoubleSpinBox" name="speed_spinbox">
                   <property name="minimumSize">
                    <size>
                     <width>40</width>
                     <height>0</height>
                    </size>
                   </property>
-                  <property name="placeholderText">
-                   <string>1~3</string>
+                  <property name="minimum">
+                   <double>1.000000000000000</double>
+                  </property>
+                  <property name="maximum">
+                   <double>3.000000000000000</double>
+                  </property>
+                  <property name="singleStep">
+                   <double>0.200000000000000</double>
                   </property>
                  </widget>
                 </item>

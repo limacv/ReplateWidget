@@ -14,7 +14,7 @@ class GMainDisplay : public GBaseWidget
 public:
     explicit GMainDisplay(Step3Widget* step3widget, QWidget *parent = 0);
 
-    bool toggleModifyMode();
+    void toggleModifyMode(bool ismodify);
 protected:
     virtual QSize sizeHint() const;
     virtual QSize minimumSizeHint() const;
@@ -30,7 +30,7 @@ private:
 protected:
     // mouse related
     bool is_adjust_path_;
-    QPointF adjust_path_start_pos_;
+    //QPointF adjust_path_start_pos_;
     bool is_modify_;
 };
 

@@ -38,6 +38,9 @@
     <QtRcc Include="shared.qrc">
       <Filter>Resource Files</Filter>
     </QtRcc>
+    <QtRcc Include="breeze.qrc">
+      <Filter>Resource Files</Filter>
+    </QtRcc>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">

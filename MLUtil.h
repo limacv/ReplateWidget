@@ -20,6 +20,6 @@ namespace MLUtil
 		STOP = 1
 	};
 	QIcon getIcon(ICON_ID id);
-	
+	QRect scaleViewportWithRatio(const QRect& viewport, float wid_hei);
 };
 

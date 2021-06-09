@@ -14,12 +14,13 @@
 #include <qevent.h>
 
 Step4Widget::Step4Widget(QWidget *parent)
-	: QWidget(parent)
+	: QWidget(parent),
+	render_isdirty(true)
 {
 	ui = new Ui::Step4Widget();
 	ui->setupUi(this);
 	cfg = &MLDataManager::get().out_video_cfg;
-	ui->imageWidget->setVideoConfig(cfg);
+	ui->imageWidget->setStep4Widget(this);
 
 	connect(ui->buttonRender, &QPushButton::clicked, this, &Step4Widget::render);
 	connect(ui->buttonExport, &QPushButton::clicked, this, &Step4Widget::exportVideo);
@@ -41,20 +42,17 @@ Step4Widget::Step4Widget(QWidget *parent)
 		});
 	
 	// UI that change configuration
-	connect(ui->pathLineEdit, &QLineEdit::textChanged, [this](const QString& text) {cfg->filepath = text; });
+	connect(ui->pathLineEdit, &QLineEdit::textEdited, [this](const QString& text) {setFilePath(text); });
 	connect(ui->pathLineButton, &QPushButton::clicked, [this](bool checked) {
 		QString outfile = QFileDialog::getSaveFileName(this, tr("Select Save File"), "D:/MSI_NB/source/data/", tr("Videos (*.mp4 *.avi)"));
-		ui->pathLineEdit->setText(outfile);
+		setFilePath(outfile);
 		});
 	ui->fpsLineEdit->setValidator(new QDoubleValidator(0, 1000, 1, this));
-	connect(ui->fpsLineEdit, &QLineEdit::textChanged, [this](const QString& text) {
-		cfg->fps = text.toDouble();
-		ui->imageWidget->display_timer.setInterval(1000.f / cfg->fps);
-		});
+	connect(ui->fpsLineEdit, &QLineEdit::textEdited, [this](const QString& text) {setFps(text.toDouble()); });
 	ui->resolutionhLineEdit->setValidator(new QIntValidator(0, 100000, this));
 	ui->resolutionwLineEdit->setValidator(ui->resolutionhLineEdit->validator());
-	connect(ui->resolutionhLineEdit, &QLineEdit::textChanged, [this](const QString& text) {	setSizeHeight(text.toInt()); });
-	connect(ui->resolutionwLineEdit, &QLineEdit::textChanged, [this](const QString& text) {	setSizeWidth(text.toInt());	});
+	connect(ui->resolutionhLineEdit, &QLineEdit::textEdited, [this](const QString& text) {	setResolutionHeight(text.toInt()); });
+	connect(ui->resolutionwLineEdit, &QLineEdit::textEdited, [this](const QString& text) {	setResolutionWidth(text.toInt());	});
 
 	ui->transxLineEdit->setValidator(new QIntValidator(-1000, 1000, this));
 	ui->transyLineEdit->setValidator(ui->transxLineEdit->validator());
@@ -74,10 +72,12 @@ Step4Widget::Step4Widget(QWidget *parent)
 	connect(ui->scalexSlider, &QSlider::sliderMoved, [this](int value) {setScalingx(powf(2.f, (float)value / 100)); });
 	connect(ui->scaleySlider, &QSlider::sliderMoved, [this](int value) {setScalingy(powf(2.f, (float)value / 100)); });
 
-	ui->rotationLineEdit->setValidator(new QDoubleValidator(-180, 180, 1, this));
+	ui->rotationLineEdit->setValidator(new QDoubleValidator(-180, 180, 0.1, this));
 	connect(ui->rotationLineEdit, &QLineEdit::textEdited, [this](const QString& text) {setRotation(text.toDouble()); });
-	ui->rotationDial->setRange(-180, 180);
-	connect(ui->rotationDial, &QDial::sliderMoved, this, &Step4Widget::setRotation);
+	ui->rotationSlider->setRange(-1800, 1800);
+	connect(ui->rotationSlider, &QSlider::sliderMoved, this, [this](int value) {setRotation((float)value / 10); });
+
+	connect(ui->repeatSpinBox, static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged), this, &Step4Widget::setRepeat);
 }
 
 Step4Widget::~Step4Widget()
@@ -85,7 +85,20 @@ Step4Widget::~Step4Widget()
 	delete ui;
 }
 
-void Step4Widget::setSizeHeight(int y)
+void Step4Widget::setFilePath(const QString& path) 
+{ 
+	cfg->filepath = path; 
+	ui->pathLineEdit->setText(path);
+}
+
+void Step4Widget::setFps(float fps)
+{
+	cfg->fps = fps;
+	ui->fpsLineEdit->setText(QString::number(fps));
+	ui->imageWidget->display_timer.setInterval(1000.f / fps);
+}
+
+void Step4Widget::setResolutionHeight(int y)
 {
 	cfg->size.height = y;
 	ui->resolutionhLineEdit->setText(QString::number(y));
@@ -95,10 +108,10 @@ void Step4Widget::setSizeHeight(int y)
 		cfg->size.width = y;
 		ui->resolutionwLineEdit->setText(QString::number(y));
 	}
-	render();
+	ui->imageWidget->update();
 }
 
-void Step4Widget::setSizeWidth(int x)
+void Step4Widget::setResolutionWidth(int x)
 {
 	cfg->size.width = x;
 	ui->resolutionwLineEdit->setText(QString::number(x));
@@ -108,14 +121,13 @@ void Step4Widget::setSizeWidth(int x)
 		cfg->size.height = x;
 		ui->resolutionhLineEdit->setText(QString::number(x));
 	}
-	render();
+	ui->imageWidget->update();
 }
 
 void Step4Widget::setRotation(float rot)
 {
-	rot = rot < -180 ? 0 : (rot > 180 ? 180 : rot);
 	cfg->rotation = rot;
-	ui->rotationDial->setSliderPosition(rot);
+	ui->rotationSlider->setSliderPosition((int)(rot * 10));
 	ui->rotationLineEdit->setText(QString::number(rot));
 	ui->imageWidget->update();
 }
@@ -166,6 +178,20 @@ void Step4Widget::setScalingy(float y)
 	ui->imageWidget->update();
 }
 
+void Step4Widget::setRepeat(int s)
+{
+	s = s < 1 ? 1 : s;
+	cfg->repeat = s;
+	ui->repeatSpinBox->setValue(s);
+	setRenderResultDirty(true);
+}
+
+void Step4Widget::setRenderResultDirty(bool isdirty)
+{
+	render_isdirty = isdirty;
+	ui->buttonRender->setText(isdirty ? "Render*" : "Render");
+}
+
 void Step4Widget::showEvent(QShowEvent* event)
 {
 	if (event->spontaneous()) return;
@@ -174,13 +200,15 @@ void Step4Widget::showEvent(QShowEvent* event)
 	if (cfg->isempty())
 	{
 		(*cfg) = globaldata.raw_video_cfg;
+		QFileInfo info(cfg->filepath);
+		
 		cfg->size = MLDataManager::get().stitch_cache.background.size();
 		cfg->framecount = MLDataManager::get().plates_cache.replate_duration;
 	}
 	ui->imageSlider->setRange(0, globaldata.plates_cache.replate_duration - 1);
 	ui->imageWidget->display_timer.setInterval(1000.f / cfg->fps);
-	updateUIfromcfg();
 	render();
+	updateUIfromcfg();
 }
 
 
@@ -242,17 +270,22 @@ void Step4Widget::showEvent(QShowEvent* event)
 
 bool Step4Widget::render()
 {
+	if (!render_isdirty) return true;
+
 	const auto& global_data = MLDataManager::get();
 	auto& outvideo = MLDataManager::get().replate_video;
-	outvideo.resize(cfg->framecount);
-	for (int frameidx = 0; frameidx < cfg->framecount; frameidx++)
+	outvideo.resize(cfg->framecount * cfg->repeat);
+	for (int frameidx = 0; frameidx < outvideo.size(); frameidx++)
 	{
-		QImage frame(cfg->size.width, cfg->size.height, QImage::Format_ARGB32_Premultiplied);
+		QImage frame(global_data.VideoWidth(), global_data.VideoHeight(), QImage::Format_ARGB32_Premultiplied);
 		QPainter painter(&frame);
 		global_data.paintReplateFrame(painter, frameidx);
 		outvideo[frameidx] = MLUtil::qimage_to_mat_cpy(frame, CV_8UC4);
 		cv::cvtColor(outvideo[frameidx], outvideo[frameidx], cv::COLOR_BGRA2RGBA);
+
 	}
+	ui->imageSlider->setRange(0, outvideo.size() - 1);
+	setRenderResultDirty(false);
 	return true;
 }
 
@@ -290,8 +323,18 @@ bool Step4Widget::exportVideo()
 	{
 		QImage out(cfg->size.width, cfg->size.height, QImage::Format_ARGB32_Premultiplied);
 		QPainter painter(&out);
-		cfg->transformQPainter(painter);
-		painter.drawImage(painter.viewport(), MLUtil::mat2qimage(frame, QImage::Format_ARGB32_Premultiplied));
+
+		//transformQPainter(painter);
+		//painter.drawImage(painter.viewport(), MLUtil::mat2qimage(frame, QImage::Format_ARGB32_Premultiplied));
+		//cv::Mat rgb = MLUtil::qimage_to_mat_cpy(out, CV_8UC4);
+		//cv::cvtColor(rgb, rgb, cv::COLOR_RGBA2RGB);
+		//writer.write(rgb);
+
+		QRect targetrect = MLUtil::scaleViewportWithRatio(painter.viewport(), (float)cfg->size.width / cfg->size.height);
+		painter.setWindow(QRect(0, 0, cfg->size.width, cfg->size.height));
+		transformQPainter(painter);
+		painter.setViewport(targetrect);
+		painter.drawImage(QPoint(0, 0), MLUtil::mat2qimage(frame, QImage::Format_ARGB32_Premultiplied));
 		cv::Mat rgb = MLUtil::qimage_to_mat_cpy(out, CV_8UC4);
 		cv::cvtColor(rgb, rgb, cv::COLOR_RGBA2RGB);
 		writer.write(rgb);
@@ -300,24 +343,59 @@ bool Step4Widget::exportVideo()
 	return true;
 }
 
-void Step4Widget::updateUIfromcfg() const
+void Step4Widget::updateUIfromcfg()
 {
-	ui->pathLineEdit->setText(cfg->filepath);
-	ui->fpsLineEdit->setText(QString::number(cfg->fps));
-	ui->resolutionhLineEdit->setText(QString::number(cfg->size.height));
-	ui->resolutionwLineEdit->setText(QString::number(cfg->size.width));
-	ui->transxLineEdit->setText(QString::number(cfg->translation.x));
-	ui->transyLineEdit->setText(QString::number(cfg->translation.y));
-	ui->rotationLineEdit->setText(QString::number(cfg->rotation));
+	setFilePath(cfg->filepath);
+	setFps(cfg->fps);
+	setResolutionHeight(cfg->size.height);
+	setResolutionWidth(cfg->size.width);
+	setRepeat(cfg->repeat);
+	setTranslationx(cfg->translation.x);
+	setTranslationy(cfg->translation.y);
+	setScalingx(cfg->scaling[0]);
+	setScalingy(cfg->scaling[1]);
+	setRotation(cfg->rotation);
+}
+
+void Step4Widget::transformQPainter(QPainter& paint) const
+{
+	auto& viewport = paint.viewport();
+	paint.translate(cfg->translation.x, cfg->translation.y);
+	paint.scale(cfg->scaling[0], cfg->scaling[1]);
+	paint.translate(cfg->size.width / 2, cfg->size.height / 2);
+	paint.rotate(cfg->rotation);
+	paint.translate(-cfg->size.width / 2, -cfg->size.height / 2);
 }
 
 void Step4RenderArea::paintEvent(QPaintEvent* event)
 {
-	const auto& video = MLDataManager::get().replate_video;
+	const auto& global_data = MLDataManager::get();
+	const auto& video = global_data.replate_video;
+	const auto& size = global_data.out_video_cfg.size;
 	if (display_frameidx < 0 || display_frameidx >= video.size())
 		return;
-	QPainter paint(this);
-	const auto& viewport = paint.viewport();
-	cfg->transformQPainter(paint);
-	paint.drawImage(viewport, MLUtil::mat2qimage(video[display_frameidx], QImage::Format_ARGB32_Premultiplied));
+
+	/*if (display_map.height() != size.height || display_map.width() != size.width)
+		display_map = QPixmap(size.width, size.height);
+	
+	display_map.fill(Qt::transparent);
+	QPainter paint(&display_map);
+	step4widget->transformQPainter(paint);
+	paint.drawImage(paint.viewport(), MLUtil::mat2qimage(video[display_frameidx], QImage::Format_ARGB32_Premultiplied));
+
+	QPainter painter2(this);
+	QRect viewport = MLUtil::scaleViewportWithRatio(painter2, (float)size.width / size.height);
+	painter2.drawPixmap(viewport, display_map);*/
+
+	QPainter painter(this);
+	QRect targetrect = MLUtil::scaleViewportWithRatio(painter.viewport(), (float)size.width / size.height);
+	targetrect = QRect(targetrect.x() + 3, targetrect.y() + 3, targetrect.width() - 6, targetrect.height() - 6);
+
+	painter.setWindow(QRect(0, 0, size.width, size.height));
+	step4widget->transformQPainter(painter);
+	painter.setViewport(targetrect);
+	painter.drawImage(QPoint(0, 0), MLUtil::mat2qimage(video[display_frameidx], QImage::Format_ARGB32_Premultiplied));
+
+	painter.resetTransform();
+	painter.drawRect(targetrect);
 }

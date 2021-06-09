@@ -189,6 +189,19 @@ void GPath::setPathRoi(int frame_id, const GRoiPtr &roi)
     dirty_[id] = true;
 }
 
+void GPath::setPathRoi(int frame_id, float dx, float dy)
+{
+    int id = worldid2thisid(frame_id);
+    QRectF& rect = roi_rect_[id];
+    rect.setWidth(rect.width() + dx * 2);
+    rect.setHeight(rect.height() + dy * 2);
+    rect.setLeft(rect.left() - dx);
+    rect.setTop(rect.top() - dy);
+    GUtil::boundRectF(rect);
+    manual_adjust_[id] = true;
+    dirty_[id] = true;
+}
+
 void GPath::resize(int n) {
     if (n != 1 || n != MLDataManager::get().get_framecount())
         qWarning("Path resize different to the total frame count");

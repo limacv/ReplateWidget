@@ -52,8 +52,6 @@ void Step3Widget::ApplyStyleSheet()
     //control_widget_ui_->control_clear_show_button_->setStyleSheet(button_style_[8]);
     control_widget_ui_->path_line_button_->setStyleSheet(button_style_[7]);
     //render_order_button_->setStyleSheet(button_style_[7]);
-    control_widget_ui_->control_edit_priority_->setValidator(new QIntValidator(0, 80, control_widget_ui_->control_edit_priority_));
-    control_widget_ui_->control_edit_speed_->setValidator(new QIntValidator(1, 3, control_widget_ui_->control_edit_speed_));
     display_widget_->setMouseTracking(true);
 }
 
@@ -94,8 +92,8 @@ void Step3Widget::CreateConnections()
     connect(control_widget_ui_->fade_spinbox, 
         static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged), this, [this](int i) 
         {this->setFadeLevel(i); });
-    connect(control_widget_ui_->control_edit_priority_, &QLineEdit::editingFinished, this, &Step3Widget::changePriority);
-    connect(control_widget_ui_->control_edit_speed_, &QLineEdit::editingFinished, this, &Step3Widget::changeSpeed);
+    connect(control_widget_ui_->layer_spinbox, static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged), this, &Step3Widget::changePriority);
+    connect(control_widget_ui_->speed_spinbox, static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged), this, &Step3Widget::changeSpeed);
 
     connect(control_widget_ui_->control_modify_path_button_, &QPushButton::toggled, this, &Step3Widget::toggleModify);
     
@@ -112,6 +110,10 @@ void Step3Widget::CreateConnections()
     connect(control_widget_ui_->button_manual_add, &QPushButton::clicked, this, &Step3Widget::onManualAddPressed);
     connect(control_widget_ui_->button_auto_add, &QPushButton::clicked, this, &Step3Widget::onAutoAddPressed);
     //connect(ui->dockMain, &QDockWidget::destroyed)
+    connect(control_widget_ui_->control_modify_widthsmaller, &QPushButton::clicked, [this]() {morphPathRoi(-5, 0); });
+    connect(control_widget_ui_->control_modify_widthbiger, &QPushButton::clicked, [this]() {morphPathRoi(5, 0); });
+    connect(control_widget_ui_->control_modify_heightsmaller, &QPushButton::clicked, [this]() {morphPathRoi(0, -5); });
+    connect(control_widget_ui_->control_modify_heightbigger, &QPushButton::clicked, [this]() {morphPathRoi(0, 5); });
 }
 
 int Step3Widget::get_selection_mode() const { return control_widget_ui_->combo_autoselection->currentIndex(); }
@@ -127,8 +129,19 @@ inline bool Step3Widget::is_singleframe_efx() const { return selected_efx_type()
 
 void Step3Widget::setPathRoi(const GRoiPtr& roi)
 {
+    if (!cur_tracked_path) return;
+    if (roi->painter_path_.isEmpty() && roi->rectF().isEmpty()) return;
     cur_tracked_path->setPathRoi(cur_frameidx, roi);
     cur_tracked_path->updateimages();
+}
+
+void Step3Widget::morphPathRoi(int dx, int dy)
+{
+    if (!cur_tracked_path) return;
+    const auto& data = MLDataManager::get();
+    cur_tracked_path->setPathRoi(cur_frameidx, (float)dx / data.VideoWidth(), (float)dy / data.VideoHeight());
+    cur_tracked_path->updateimages();
+    display_widget_->update();
 }
 
 GEffectPtr Step3Widget::createEffectFromPath(const GPathPtr& path, G_EFFECT_ID type)
@@ -357,22 +370,26 @@ void Step3Widget::changePathLine(bool b)
     cur_effect->setTrailLine(b);
 }
 
-void Step3Widget::changePriority()
+void Step3Widget::changePriority(int p)
 {
     if (!cur_effect) return;
 
-    int priority = control_widget_ui_->control_edit_priority_->text().toInt();
+    int priority = p * 10;
     auto& effect_manager = MLDataManager::get().effect_manager_;
-    effect_manager.popEffect(cur_effect);
+
+    effect_manager.popEffect(cur_effect); // pop/push to update the priority queue
     cur_effect->setPriority(priority);
     effect_manager.pushEffect(cur_effect);
+
+    result_widget_->update();
 }
 
-void Step3Widget::changeSpeed()
+void Step3Widget::changeSpeed(double s)
 {
-    int speed = control_widget_ui_->control_edit_speed_->text().toInt();
     if (!cur_effect) return;
-    cur_effect->setSpeed(speed);
+    cur_effect->setSpeed(s);
+
+    result_widget_->update();
 }
 
 //void Step3Widget::changeCurrentEffect(GEffectPtr &efx)
@@ -392,8 +409,8 @@ void Step3Widget::onCurrentEffectChanged()
         qDebug() << "Current effect not selected";
         control_widget_ui_->trans_spinbox->setEnabled(false);
         control_widget_ui_->fade_spinbox->setEnabled(false);
-        control_widget_ui_->control_edit_priority_->setEnabled(false);
-        control_widget_ui_->control_edit_speed_->setEnabled(false);
+        control_widget_ui_->layer_spinbox->setEnabled(false);
+        control_widget_ui_->speed_spinbox->setEnabled(false);
         control_widget_ui_->marker_one_button_->setEnabled(false);
         control_widget_ui_->marker_all_button_->setEnabled(false);
         control_widget_ui_->path_line_button_->setEnabled(false);
@@ -449,14 +466,13 @@ void Step3Widget::onCurrentEffectChanged()
         control_widget_ui_->path_line_button_->setChecked(cur_effect->getTrailLine());
     }
 
-    control_widget_ui_->control_edit_priority_->setEnabled(true);
-    control_widget_ui_->control_edit_priority_->setText(
-        QString::number(cur_effect->priority()));
+    control_widget_ui_->layer_spinbox->setEnabled(true);
+    control_widget_ui_->layer_spinbox->setValue(cur_effect->priority() / 10);
 
     if (cur_effect->type() == EFX_ID_MOTION)
     {
-        control_widget_ui_->control_edit_speed_->setEnabled(true);
-        control_widget_ui_->control_edit_speed_->setText(QString::number(cur_effect->speed()));
+        control_widget_ui_->speed_spinbox->setEnabled(true);
+        control_widget_ui_->speed_spinbox->setValue(cur_effect->speed());
     }
 }
 
@@ -576,24 +592,30 @@ void Step3Widget::toggleModify(bool checked)
             control_widget_ui_->control_modify_path_button_->setChecked(false);
             return;
         }
-        display_widget_->toggleModifyMode();
+        display_widget_->toggleModifyMode(true);
         
         // set button
-        control_widget_ui_->combo_autoselection->setEnabled(false);
         control_widget_ui_->comboMode->setEnabled(false);
         control_widget_ui_->button_auto_add->setEnabled(false);
         control_widget_ui_->button_manual_add->setEnabled(false);
         control_widget_ui_->control_modify_path_button_->setText("Apply");
+        control_widget_ui_->control_modify_widthbiger->setEnabled(true);
+        control_widget_ui_->control_modify_widthsmaller->setEnabled(true);
+        control_widget_ui_->control_modify_heightbigger->setEnabled(true);
+        control_widget_ui_->control_modify_heightsmaller->setEnabled(true);
     }
     else {
-        control_widget_ui_->combo_autoselection->setEnabled(true);
         control_widget_ui_->comboMode->setEnabled(true);
         control_widget_ui_->button_auto_add->setEnabled(true);
         control_widget_ui_->button_manual_add->setEnabled(true);
         control_widget_ui_->control_modify_path_button_->setText("Modify");
+        control_widget_ui_->control_modify_widthbiger->setEnabled(false);
+        control_widget_ui_->control_modify_widthsmaller->setEnabled(false);
+        control_widget_ui_->control_modify_heightbigger->setEnabled(false);
+        control_widget_ui_->control_modify_heightsmaller->setEnabled(false);
         if (!cur_tracked_path) return;
 
-        display_widget_->toggleModifyMode();
+        display_widget_->toggleModifyMode(false);
         display_widget_->update();
     }
 }

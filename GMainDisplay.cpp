@@ -2,8 +2,10 @@
 #include "Step3Widget.h"
 #include "MLDataManager.h"
 #include "MLDataStructure.h"
+#include "GUtil.h"
+#include "MLPathTracker.h"
 
-GMainDisplay::GMainDisplay(Step3Widget* step3widget, QWidget *parent)
+GMainDisplay::GMainDisplay(Step3Widget* step3widget, QWidget* parent)
     : GBaseWidget(parent)
     , step3widget(step3widget)
     , is_adjust_path_(false)
@@ -11,15 +13,10 @@ GMainDisplay::GMainDisplay(Step3Widget* step3widget, QWidget *parent)
 {
 }
 
-bool GMainDisplay::toggleModifyMode()
+void GMainDisplay::toggleModifyMode(bool ismodify)
 {
-    is_modify_ = !is_modify_;
-    setPathSelectionMode(is_modify_);
-    if (!is_modify_) {
-        step3widget->setPathRoi(curSelectRoi());
-        clearMouseSelection();
-    }
-    return is_modify_;
+    is_modify_ = ismodify;
+    clearMouseSelection();
 }
 
 QSize GMainDisplay::sizeHint() const
@@ -52,12 +49,12 @@ void GMainDisplay::mousePressEvent(QMouseEvent *event)
 {
     mouse_pos_ = getMousePosNorm(event->pos());
 
-    if (is_modify_
-        && step3widget->cur_tracked_path
-        && step3widget->cur_tracked_path->checkInside(step3widget->cur_frameidx, mouse_pos_))
+    if (is_modify_ && event->button() == Qt::RightButton)
     {
+        step3widget->cur_tracked_path->moveRectCenter(step3widget->cur_frameidx, mouse_pos_);
         is_adjust_path_ = true;
-        adjust_path_start_pos_ = mouse_pos_;
+        clearMouseSelection();
+        setCursor(Qt::SizeAllCursor);
     }
     else if (step3widget->is_auto_selection())
     {
@@ -72,21 +69,20 @@ void GMainDisplay::mouseMoveEvent(QMouseEvent *event)
 {
     mouse_pos_ = getMousePosNorm(event->pos());
 
-    if (is_modify_)
+    if (is_modify_ && is_adjust_path_)
     {
-        if (is_adjust_path_)
-        {
-            QPointF off = mouse_pos_ - adjust_path_start_pos_;
-            adjust_path_start_pos_ = mouse_pos_;
-            step3widget->cur_tracked_path->translateRect(step3widget->cur_frameidx, off);
-        }
+        step3widget->cur_tracked_path->moveRectCenter(step3widget->cur_frameidx, mouse_pos_);
     }
     else if (step3widget->is_auto_selection())
     {
         const auto& global_data = MLDataManager::get();
         static unsigned int selection_count = 0;
         QVector<BBox*> boxes = global_data.queryBoxes(step3widget->cur_frameidx, mouse_pos_);
-        rect_pre_select_ = boxes.empty() ? QRect() : global_data.toPaintROI(boxes[selection_count++ / 5 % boxes.size()]->rect_global, QRect(), true);
+        rect_pre_select_ = boxes.empty() 
+            ? QRect() 
+            : global_data.toPaintROI(
+                GUtil::addMarginToRect(boxes[selection_count++ / 5 % boxes.size()]->rect_global, RECT_MARGIN), 
+                QRect(), true);
     }
     else
         GBaseWidget::mouseMoveEvent(event);
@@ -97,14 +93,11 @@ void GMainDisplay::mouseReleaseEvent(QMouseEvent *event)
 {
     mouse_pos_ = getMousePosNorm(event->pos());
 
-    if (is_modify_) 
+    if (is_modify_ && is_adjust_path_)
     {
+        step3widget->trackPath();
         is_adjust_path_ = false;
-        if (event->button() == Qt::RightButton)
-        {
-            step3widget->cur_tracked_path->moveRectCenter(step3widget->cur_frameidx, mouse_pos_);
-            step3widget->trackPath();
-        }
+        setCursor(Qt::ArrowCursor);
     }
     else if (step3widget->is_auto_selection())
     {

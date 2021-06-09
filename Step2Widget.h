@@ -22,7 +22,7 @@ public:
 
 private slots:
 	// this set of funcs will block the main window and launch progress bar
-	void runDetect();
+	void runDetect(); 
 	void runTrack();
 	void runStitching();
 	void runInpainting();

@@ -14,7 +14,8 @@ struct VideoConfig
 		size(-1, -1),
 		translation(0, 0),
 		scaling(1, 1),
-		rotation(0)
+		rotation(0),
+		repeat(1)
 	{ }
 
 	bool isempty() const { return framecount <= 0; }
@@ -27,16 +28,7 @@ struct VideoConfig
 	cv::Point translation;
 	cv::Vec2f scaling;
 	float rotation;
-
-	void transformQPainter(QPainter& paint)
-	{
-		auto& viewport = paint.viewport();
-		paint.translate(translation.x, translation.y);
-		paint.scale(scaling[0], scaling[1]);
-		paint.translate(viewport.width() / 2, viewport.height() / 2);
-		paint.rotate(rotation);
-		paint.translate(-viewport.width() / 2, -viewport.height() / 2);
-	}
+	int repeat;
 };
 
 

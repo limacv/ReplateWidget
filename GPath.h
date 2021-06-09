@@ -27,6 +27,7 @@ public:
     void translateRect(int frame_id, QPointF offset);
     void moveRectCenter(int frame_id, QPointF center);
     void setPathRoi(int frame_id, const GRoiPtr &roi);
+    void setPathRoi(int frame_id, float dx, float dy);
 
     QRectF frameRoiRect(int frame_id) const;
     QImage frameRoiImage(int frame_id) const;

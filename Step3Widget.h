@@ -56,8 +56,8 @@ public slots:
     void changeMarkerAll(bool b);
     void changePathLine(bool b);
     void setTransLevel(int id);
-    void changePriority();
-    void changeSpeed();
+    void changePriority(int p);
+    void changeSpeed(double s);
 
     void onCurrentEffectChanged();
 
@@ -89,6 +89,7 @@ public:
     GPathPtr cur_tracked_path;
     int cur_frameidx;
     void setPathRoi(const GRoiPtr& roi);
+    void morphPathRoi(int dx, int dy);
 
     // current states (about tracking)
     PathTrackerBase* tracker;
