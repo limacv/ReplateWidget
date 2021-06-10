@@ -5,11 +5,12 @@
 #include "GUtil.h"
 #include "MLPathTracker.h"
 
-GMainDisplay::GMainDisplay(Step3Widget* step3widget, QWidget* parent)
+GMainDisplay::GMainDisplay(Step3Widget* step3widget, QSlider* slider, QWidget* parent)
     : GBaseWidget(parent)
     , step3widget(step3widget)
     , is_adjust_path_(false)
     , is_modify_(false)
+    , controlslider(slider)
 {
 }
 
@@ -43,6 +44,13 @@ void GMainDisplay::paintEvent(QPaintEvent *event)
     
     if (step3widget->cur_tracked_path)
         step3widget->cur_tracked_path->paint(painter, step3widget->cur_frameidx);
+}
+
+void GMainDisplay::wheelEvent(QWheelEvent* event)
+{
+    auto dp = event->angleDelta();
+    int dt = dp.y() > 0 ? 1 : -1;
+    controlslider->setValue(controlslider->value() - dt);
 }
 
 void GMainDisplay::mousePressEvent(QMouseEvent *event)

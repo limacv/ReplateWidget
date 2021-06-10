@@ -2,6 +2,7 @@
 
 #include <QWidget>
 #include <qtimer.h>
+#include "MLPlayerHandler.hpp"
 
 namespace Ui { class Step1Widget; };
 
@@ -20,14 +21,16 @@ public slots:
 	void selectVideo();
 	void selectProject();
 
-	void updateFrameidx(int frameidx);
+signals:
+	void videoloaded();
 
 private:
 	Ui::Step1Widget *ui;
 	
 	// for display
-	QTimer display_timer;
-	int display_frameidx;
+	QTimer timer;
+	MLPlayerHandler* player_manager;
+
 	friend class Step1RenderArea;
 };
 

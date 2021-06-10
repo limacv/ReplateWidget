@@ -98,6 +98,7 @@ public:
     QRectF tracker_rect_A_;
     int tracker_frame_B_;
     QRectF tracker_rect_B_;
+
 private:
 	MLCacheTrajectories* trajp;
 	MLCachePlatesConfig* platesp;

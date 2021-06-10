@@ -669,12 +669,19 @@ QPushButton:pressed
 
 QComboBox
 {
-    selection-background-color: #3daee9;
+    color: #eff0f1;
+    background-color: qlineargradient(x1: 0.5, y1: 0.5 x2: 0.5, y2: 1, stop: 0 #3b4045, stop: 0.5 #31363b);
+    border-width: 0.1ex;
+    border-color: #76797c;
     border-style: solid;
-    border: 0.1ex solid #76797c;
-    border-radius: 0.2ex;
     padding: 0.5ex;
-    min-width: 7.5ex;
+    border-radius: 0.2ex;
+    outline: none;
+}
+
+QComboBox:focus
+{
+    color: white;
 }
 
 QPushButton:checked
@@ -767,12 +774,14 @@ QComboBox::down-arrow:focus
 
 QAbstractSpinBox
 {
-    padding: 0.5ex;
-    border: 0.1ex solid #76797c;
-    background-color: #232629;
     color: #eff0f1;
+    background-color: qlineargradient(x1: 0.5, y1: 0.5 x2: 0.5, y2: 1, stop: 0 #3b4045, stop: 0.5 #31363b);
+    border-width: 0.1ex;
+    border-color: #76797c;
+    border-style: solid;
+    padding: 0.5ex;
     border-radius: 0.2ex;
-    min-width: 7.5ex;
+    outline: none;
 }
 
 QAbstractSpinBox:up-button

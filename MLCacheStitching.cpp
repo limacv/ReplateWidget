@@ -119,7 +119,7 @@ bool MLCacheStitching::saveRois() const
 	file.close();
 }
 
-bool MLCacheStitching::isprepared() const
+bool MLCacheStitching::isPrepared() const
 {
 	const int framecount = MLDataManager::get().get_framecount();
 	return (!background.empty()

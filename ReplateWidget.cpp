@@ -25,6 +25,9 @@ ReplateWidget::ReplateWidget(QWidget *parent)
 
     connect(ui.actionClear_Cache, &QAction::toggled, this, &ReplateWidget::clearCache);
     connect(ui.actionClear_All_Cache, &QAction::toggled, this, &ReplateWidget::clearAllCache);
+    connect(ui.step1Widget, &Step1Widget::videoloaded, this, [this]() {ui.buttonNextStep->setEnabled(true); });
+    
+    ui.buttonNextStep->setEnabled(false);
 
     ui.menuWindow->addAction(ui.step3Widget->showMainDisplayAction());
     ui.menuWindow->addAction(ui.step3Widget->showResultAction());

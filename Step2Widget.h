@@ -3,6 +3,7 @@
 #include <QWidget>
 #include <qtimer.h>
 #include <qpalette.h>
+#include "MLPlayerHandler.hpp"
 
 namespace Ui { class Step2Widget; };
 
@@ -26,15 +27,16 @@ private slots:
 	void runTrack();
 	void runStitching();
 	void runInpainting();
-	void runOptflow();
 	void runSegmentation();
-	void updateFrameidx(int frameidx);
 
 	// this set of funcs will check necessarities and then launch run***() 
 	void tryRunDetect();
 	void tryRunTrack();
 	void tryRunStitching();
 	void tryRunOpticalFlow();
+
+private:
+	void runOptflow(); // deprecated
 
 private:
 	Ui::Step2Widget *ui;
@@ -44,8 +46,8 @@ private:
 	MLCacheTrajectories* trajp;  // only for convenient
 
 	// for display
+	MLPlayerHandler* player_manager;
 	QTimer display_timer;
-	int display_frameidx;
 	bool display_showbackground();
 	bool display_showwarped();
 	bool display_showbox();

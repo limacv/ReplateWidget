@@ -25,18 +25,24 @@
 
 Step2Widget::Step2Widget(QWidget* parent)
 	: QWidget(parent),
-	display_frameidx(0),
 	stitchdatap(&MLDataManager::get().stitch_cache),
-	flowdatap(&MLDataManager::get().flow_cache),
+	flowdatap(nullptr /*&MLDataManager::get().flow_cache*/),
 	trajp(&MLDataManager::get().trajectories)
 {
 	ui = new Ui::Step2Widget();
 	ui->setupUi(this);
-	
-	connect(ui->frameSlider, &QSlider::valueChanged, this, &Step2Widget::updateFrameidx);
+	player_manager = new MLPlayerHandler(
+		[]() ->int {return MLDataManager::get().get_framecount(); },
+		ui->frameSlider,
+		ui->imageWidget,
+		&display_timer,
+		ui->frameButton
+	);
 
 	connect(ui->buttonStitchBg, &QPushButton::clicked, this, &Step2Widget::runStitching);
 	connect(ui->buttonInpaintBg, &QPushButton::clicked, this, &Step2Widget::runInpainting);
+	connect(ui->buttonDetection, &QPushButton::clicked, this, &Step2Widget::runDetect);
+	connect(ui->buttonTracking, &QPushButton::clicked, this, &Step2Widget::runTrack);
 	
 	connect(ui->checkShowBg, SIGNAL(stateChanged(int)), this->ui->imageWidget, SLOT(update()));
 	connect(ui->checkShowFrames, SIGNAL(stateChanged(int)), this->ui->imageWidget, SLOT(update()));
@@ -53,6 +59,7 @@ Step2Widget::Step2Widget(QWidget* parent)
 Step2Widget::~Step2Widget()
 {
 	delete ui;
+	delete player_manager;
 }
 
 void Step2Widget::showEvent(QShowEvent* event)
@@ -61,30 +68,21 @@ void Step2Widget::showEvent(QShowEvent* event)
 	QWidget::show();
 	auto& global_data = MLDataManager::get();
 
-	if (!trajp->tryLoadDetectionFromFile())
-		runDetect();
-	if (!trajp->tryLoadTrackFromFile())
-		runTrack();
+	if (!trajp->isDetectOk())
+		tryRunDetect();
+	if (!trajp->isTrackOk())
+		tryRunTrack();
 
-	if (!trajp->tryLoadGlobalTrackBoxes() 
-		|| !trajp->tryLoadGlobalDetectBoxes()
-		|| !stitchdatap->tryLoadAllFromFiles())
+	if (!trajp->isDetectGlobalBoxOk()
+		|| !trajp->isTrackGlobalBoxOk()
+		|| !stitchdatap->isPrepared())
 	{
 		global_data.initMasks();
 		runSegmentation();
-		runStitching();
+		tryRunStitching();
 	}
-	if (!flowdatap->tryLoadFlows() || !flowdatap->isprepared())
-		runOptflow();
-	
-	ui->frameSlider->setRange(0, global_data.get_framecount() - 1);
-}
-
-
-void Step2Widget::updateFrameidx(int frameidx)
-{
-	display_frameidx = frameidx;
-	ui->imageWidget->update();
+	//if (!flowdatap->tryLoadFlows() || !flowdatap->isprepared())
+		//runOptflow();
 }
 
 inline bool Step2Widget::display_showbackground() { return ui->checkShowBg->isChecked(); }
@@ -97,12 +95,14 @@ inline bool Step2Widget::display_showtraj() { return ui->checkShowTraj->isChecke
 
 inline bool Step2Widget::display_showtrack() { return ui->checkShowTrack->isChecked(); }
 
-
+// if cache exist, load cache, else run detection
 void Step2Widget::tryRunDetect()
 {
-
+	if (!trajp->tryLoadDetectionFromFile())
+		runDetect();
 }
 
+// force to run detection
 void Step2Widget::runDetect()
 {
 	const auto& pathcfg = MLConfigManager::get();
@@ -153,6 +153,8 @@ void Step2Widget::runDetect()
 
 void Step2Widget::tryRunTrack()
 {
+	if (!trajp->tryLoadTrackFromFile())
+		runTrack();
 }
 
 void Step2Widget::runTrack()
@@ -225,7 +227,10 @@ void Step2Widget::runSegmentation()
 
 void Step2Widget::tryRunStitching()
 {
-
+	if (!trajp->tryLoadGlobalTrackBoxes()
+		|| !trajp->tryLoadGlobalDetectBoxes()
+		|| !stitchdatap->tryLoadAllFromFiles())
+		runStitching();
 }
 
 void Step2Widget::runStitching()
@@ -234,7 +239,7 @@ void Step2Widget::runStitching()
 	const auto rawframes = MLDataManager::get().raw_frames.toStdVector();
 	const auto rawmasks = MLDataManager::get().masks.toStdVector();
 
-	if (stitchdatap->isprepared())
+	if (stitchdatap->isPrepared())
 	{
 		QMessageBox existwarningbox;
 		existwarningbox.setText("Stitching result exists.");
@@ -307,7 +312,8 @@ void Step2Widget::tryRunOpticalFlow()
 
 void Step2Widget::runOptflow()
 {
-	if (!stitchdatap->isprepared())
+	throw std::runtime_error("should not enter here");
+	if (!stitchdatap->isPrepared())
 		return;
 	const auto& global_data = MLDataManager::get();
 	const int framecount = global_data.get_framecount();
@@ -400,9 +406,9 @@ void Step2RenderArea::paintEvent(QPaintEvent* event)
 	const auto& raw_frames = MLDataManager::get().raw_frames;
 	const auto& stitch_cache = MLDataManager::get().stitch_cache;
 	auto& trajectories = MLDataManager::get().trajectories;
-	const int frameidx = step2widget->display_frameidx;
+	const int frameidx = step2widget->player_manager->display_frameidx();
 
-	if (!stitch_cache.isprepared()) return;
+	if (!stitch_cache.isPrepared()) return;
 	
 	QPainter paint(this);
 	auto viewport = paint.viewport();

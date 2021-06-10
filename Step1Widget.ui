@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1091</width>
+    <width>1017</width>
     <height>722</height>
    </rect>
   </property>
@@ -46,7 +46,15 @@
         </size>
        </property>
        <property name="text">
-        <string>&gt;</string>
+        <string/>
+       </property>
+       <property name="icon">
+        <iconset resource="ReplateWidget.qrc">
+         <normaloff>:/ReplateWidget/images/play_button_icon.png</normaloff>
+         <normalon>:/ReplateWidget/images/stop_button_icon.png</normalon>:/ReplateWidget/images/play_button_icon.png</iconset>
+       </property>
+       <property name="flat">
+        <bool>true</bool>
        </property>
       </widget>
      </item>
@@ -140,6 +148,8 @@
    <container>1</container>
   </customwidget>
  </customwidgets>
- <resources/>
+ <resources>
+  <include location="ReplateWidget.qrc"/>
+ </resources>
  <connections/>
 </ui>

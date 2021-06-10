@@ -44,6 +44,16 @@ MLCacheTrajectories::~MLCacheTrajectories()
 		delete pbox;
 }
 
+bool MLCacheTrajectories::isDetectPrepared() const
+{
+	return frameidx2detectboxes.size() == (MLDataManager::get().get_framecount());
+}
+
+bool MLCacheTrajectories::isTrackPrepared() const
+{
+	return frameidx2trackboxes.size() == (MLDataManager::get().get_framecount());
+}
+
 bool MLCacheTrajectories::tryLoadDetectionFromFile()
 {
 	const auto& pathcfg = MLConfigManager::get();
@@ -178,6 +188,22 @@ bool MLCacheTrajectories::saveGlobalTrackBoxes() const
 {
 	const auto& pathcfg = MLConfigManager::get();
 	return saveWorldRects(track_boxes_list, pathcfg.get_stitch_track_bboxes_path().toStdString());
+}
+
+bool MLCacheTrajectories::isDetectGlobalBoxOk()
+{
+	for (const auto& pbox : detect_boxes_list)
+		if (!pbox->rectglobalupdated())
+			return false;
+	return true;
+}
+
+bool MLCacheTrajectories::isTrackGlobalBoxOk()
+{
+	for (const auto& pbox : track_boxes_list)
+		if (!pbox->rectglobalupdated())
+			return false;
+	return true;
 }
 
 QColor MLCacheTrajectories::getColor(const ObjID& id) const

@@ -40,7 +40,7 @@ public:
 		return true;
 	}
 
-	bool isprepared() const;
+	bool isPrepared() const;
 
 	void update_global_roi()
 	{

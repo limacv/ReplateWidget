@@ -298,6 +298,9 @@
     <ClInclude Include="MLPathTracker.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="MLPlayerHandler.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
