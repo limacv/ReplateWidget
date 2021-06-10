@@ -45,12 +45,12 @@ Step3Widget::~Step3Widget()
 
 void Step3Widget::ApplyStyleSheet()
 {
-    control_widget_ui_->control_play_slider_->setStyle(new ArthurStyle);
-    control_widget_ui_->control_modify_path_button_->setStyleSheet(button_style_[0]);
-    control_widget_ui_->marker_one_button_->setStyleSheet(button_style_[7]);
-    control_widget_ui_->marker_all_button_->setStyleSheet(button_style_[7]);
+    //control_widget_ui_->control_play_slider_->setStyle(new ArthurStyle);
+    //control_widget_ui_->control_modify_path_button_->setStyleSheet(button_style_[0]);
+    //control_widget_ui_->marker_one_button_->setStyleSheet(button_style_[7]);
+    //control_widget_ui_->marker_all_button_->setStyleSheet(button_style_[7]);
     //control_widget_ui_->control_clear_show_button_->setStyleSheet(button_style_[8]);
-    control_widget_ui_->path_line_button_->setStyleSheet(button_style_[7]);
+    //control_widget_ui_->path_line_button_->setStyleSheet(button_style_[7]);
     //render_order_button_->setStyleSheet(button_style_[7]);
     display_widget_->setMouseTracking(true);
 }

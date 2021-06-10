@@ -16,6 +16,9 @@ public:
 	MLCacheTrajectories();
 	virtual ~MLCacheTrajectories();
 	
+	bool isDetectPrepared() const;
+	bool isTrackPrepared() const;
+
 	// this will update detect_boxes_list
 	bool tryLoadDetectionFromFile();
 	// this will update track_boxes_list and frameidx/objid2trajectories
@@ -40,6 +43,8 @@ public:
 
 	bool isDetectOk() { return !detect_boxes_list.empty(); }
 	bool isTrackOk() { return !track_boxes_list.empty(); }
+	bool isDetectGlobalBoxOk();
+	bool isTrackGlobalBoxOk();
 
 	QColor getColor(const ObjID& id) const;
 

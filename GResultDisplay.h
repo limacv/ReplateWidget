@@ -9,6 +9,7 @@
 
 #include "GBaseWidget.h"
 #include "GVideoPlayer.h"
+#include "MLPlayerHandler.hpp"
 
 class GResultDisplay;
 namespace Ui { class GResultWidget; }
@@ -23,11 +24,8 @@ public:
     void clearMouseSelection();
 
     void setInpaintState(bool b);
-
-public slots:
     void play();
-    void stop();
-    void updateFrame();
+public slots:
     void editFrameRate();
     void changeFrameRate();
 
@@ -40,6 +38,7 @@ private:
     
     QLineEdit* frame_rate_edit_;
     int* duration;
+    MLPlayerHandler* player_manager;
 public:
     GResultDisplay* display_widget;
 };

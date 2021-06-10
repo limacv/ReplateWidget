@@ -14,16 +14,18 @@
 #include "MLUtil.h"
 
 Step1Widget::Step1Widget(QWidget* parent)
-	: QWidget(parent),
-	display_frameidx(0)
+	: QWidget(parent)
 {
 	ui = new Ui::Step1Widget();
 	ui->setupUi(this);
-
-	// init the slider
-	connect(ui->frameSlider, &QSlider::valueChanged, this, &Step1Widget::updateFrameidx);
-	ui->frameSlider->setRange(0, 0);
-
+	player_manager = new MLPlayerHandler(
+		[]() ->int {return MLDataManager::get().get_framecount(); },
+		ui->frameSlider,
+		ui->imageLabel,
+		&timer,
+		ui->buttonPlay
+	);
+	
 	// init the button
 	connect(ui->buttonLoadVideo, &QPushButton::clicked, this, &Step1Widget::selectVideo);
 	connect(ui->buttonLoadProject, &QPushButton::clicked, this, &Step1Widget::selectProject);
@@ -35,6 +37,7 @@ Step1Widget::Step1Widget(QWidget* parent)
 Step1Widget::~Step1Widget()
 {
 	delete ui;
+	delete player_manager;
 }
 
 void Step1Widget::showEvent(QShowEvent* event)
@@ -60,7 +63,8 @@ void Step1Widget::selectVideo()
 	}
 
 	global_data.set_clean(MLDataManager::DataIndex::RAW);
-	ui->frameSlider->setRange(0, global_data.get_framecount() - 1);
+	emit videoloaded();
+	timer.setInterval(1000 / global_data.raw_video_cfg.fps);
 }
 
 void Step1Widget::selectProject()
@@ -72,20 +76,13 @@ void Step1Widget::selectProject()
 	QMessageBox::warning(this, "warning", "select from project is not yet implemented");
 }
 
-void Step1Widget::updateFrameidx(int frameidx)
-{
-	display_frameidx = frameidx;
-	ui->imageLabel->update();
-}
-
-
 void Step1RenderArea::paintEvent(QPaintEvent* event)
 {
 	if (MLDataManager::get().get_framecount() == 0)
 		return;
 
 	QPainter paint(this);
-	MLDataManager::get().paintRawFrames(paint, step1widget->display_frameidx);
+	MLDataManager::get().paintRawFrames(paint, step1widget->player_manager->display_frameidx());
 }
 
 QSize Step1RenderArea::sizeHint()

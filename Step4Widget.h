@@ -4,6 +4,7 @@
 #include <qpainter>
 #include <qtimer.h>
 #include "MLDataStructure.h"
+#include "MLPlayerHandler.hpp"
 
 namespace Ui { class Step4Widget; };
 
@@ -38,9 +39,11 @@ private:
 
 
 private:
+	friend class Step4RenderArea;
 	bool render_isdirty;
 	Ui::Step4Widget *ui;
 	VideoConfig* cfg;
+	MLPlayerHandler* player_manager;
 };
 
 
@@ -52,8 +55,7 @@ class Step4RenderArea : public QWidget
 
 public:
 	Step4RenderArea(QWidget* parent = Q_NULLPTR)
-		:QWidget(parent), step4widget(nullptr),
-		display_frameidx(0)
+		:QWidget(parent), step4widget(nullptr)
 	{}
 
 	~Step4RenderArea() {};
@@ -65,8 +67,6 @@ protected:
 private:
 	friend class Step4Widget;
 	Step4Widget* step4widget;
-	QPixmap display_map;
 	//VideoConfig* cfg;
-	int display_frameidx;
 	QTimer display_timer;
 };

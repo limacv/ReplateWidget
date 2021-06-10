@@ -85,19 +85,19 @@ bool MLDataManager::load_raw_video(const QString& path)
 
 cv::Mat4b MLDataManager::getRoiofFrame(int frameidx, const QRectF& rectF) const
 {
-	if (!stitch_cache.isprepared()) return cv::Mat4b();
+	if (!stitch_cache.isPrepared()) return cv::Mat4b();
 	return getRoiofFrame(frameidx, toCropROI(rectF));
 }
 
 cv::Mat4b MLDataManager::getRoiofFrame(int frameidx, const QRect& rect) const
 {
-	if (!stitch_cache.isprepared()) return cv::Mat4b();
+	if (!stitch_cache.isPrepared()) return cv::Mat4b();
 	return getRoiofFrame(frameidx, GUtil::cvtRect(rect));
 }
 
 cv::Mat4b MLDataManager::getRoiofFrame(int frameidx, const cv::Rect& rect) const
 {
-	if (!stitch_cache.isprepared()) return cv::Mat4b();
+	if (!stitch_cache.isPrepared()) return cv::Mat4b();
 	const auto& video = stitch_cache.warped_frames;
 	if (rect.area() > 0)
 	{
@@ -120,19 +120,19 @@ cv::Mat4b MLDataManager::getRoiofFrame(int frameidx, const cv::Rect& rect) const
 
 cv::Mat3b MLDataManager::getRoiofBackground(const QRectF& rectF) const
 {
-	if (!stitch_cache.isprepared()) return cv::Mat3b();
+	if (!stitch_cache.isPrepared()) return cv::Mat3b();
 	return getRoiofBackground(toCropROI(rectF));
 }
 
 cv::Mat3b MLDataManager::getRoiofBackground(const QRect& rect) const
 {
-	if (!stitch_cache.isprepared()) return cv::Mat3b();
+	if (!stitch_cache.isPrepared()) return cv::Mat3b();
 	return getRoiofBackground(GUtil::cvtRect(rect));
 }
 
 cv::Mat3b MLDataManager::getRoiofBackground(const cv::Rect& rect) const
 {
-	if (!stitch_cache.isprepared()) return cv::Mat3b();
+	if (!stitch_cache.isPrepared()) return cv::Mat3b();
 	cv::Mat3b ret;
 	if (rect.area() > 0)
 	{

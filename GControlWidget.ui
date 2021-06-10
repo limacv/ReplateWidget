@@ -154,6 +154,11 @@
            <layout class="QHBoxLayout" name="horizontalLayout_5">
             <item>
              <widget class="QGroupBox" name="groupBox">
+              <property name="font">
+               <font>
+                <pointsize>7</pointsize>
+               </font>
+              </property>
               <property name="title">
                <string>Select Mode</string>
               </property>
@@ -178,6 +183,14 @@
                    <height>25</height>
                   </size>
                  </property>
+                 <property name="font">
+                  <font>
+                   <pointsize>9</pointsize>
+                  </font>
+                 </property>
+                 <property name="styleSheet">
+                  <string notr="true"/>
+                 </property>
                  <item>
                   <property name="text">
                    <string>AutoBox</string>
@@ -200,6 +213,11 @@
             </item>
             <item>
              <widget class="QGroupBox" name="groupBox_5">
+              <property name="font">
+               <font>
+                <pointsize>7</pointsize>
+               </font>
+              </property>
               <property name="title">
                <string>Effect Type</string>
               </property>
@@ -223,6 +241,11 @@
                    <width>0</width>
                    <height>25</height>
                   </size>
+                 </property>
+                 <property name="font">
+                  <font>
+                   <pointsize>9</pointsize>
+                  </font>
                  </property>
                  <item>
                   <property name="text">
@@ -265,6 +288,11 @@
                   <height>0</height>
                  </size>
                 </property>
+                <property name="font">
+                 <font>
+                  <pointsize>9</pointsize>
+                 </font>
+                </property>
                 <property name="text">
                  <string>Add all</string>
                 </property>
@@ -287,6 +315,11 @@
                   <height>0</height>
                  </size>
                 </property>
+                <property name="font">
+                 <font>
+                  <pointsize>9</pointsize>
+                 </font>
+                </property>
                 <property name="text">
                  <string>Start</string>
                 </property>
@@ -301,13 +334,6 @@
              </layout>
             </item>
            </layout>
-          </item>
-          <item row="0" column="3">
-           <widget class="Line" name="line_2">
-            <property name="orientation">
-             <enum>Qt::Vertical</enum>
-            </property>
-           </widget>
           </item>
           <item row="0" column="4">
            <layout class="QVBoxLayout" name="verticalLayout_12">
@@ -416,9 +442,16 @@
         </widget>
        </item>
        <item>
+        <widget class="Line" name="line_2">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+        </widget>
+       </item>
+       <item>
         <widget class="QGroupBox" name="groupBox_4">
          <property name="title">
-          <string>Result</string>
+          <string>Effect</string>
          </property>
          <property name="flat">
           <bool>true</bool>
@@ -433,7 +466,7 @@
              </sizepolicy>
             </property>
             <property name="styleSheet">
-             <string notr="true">background-color:#E8E8E8;</string>
+             <string notr="true"/>
             </property>
             <property name="frameShape">
              <enum>QFrame::StyledPanel</enum>

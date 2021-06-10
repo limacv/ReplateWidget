@@ -21,25 +21,16 @@ Step4Widget::Step4Widget(QWidget *parent)
 	ui->setupUi(this);
 	cfg = &MLDataManager::get().out_video_cfg;
 	ui->imageWidget->setStep4Widget(this);
+	player_manager = new MLPlayerHandler(
+		[]() ->int {return MLDataManager::get().replate_video.size(); },
+		ui->imageSlider,
+		ui->imageWidget,
+		&ui->imageWidget->display_timer,
+		ui->buttonPlay
+	);
 
 	connect(ui->buttonRender, &QPushButton::clicked, this, &Step4Widget::render);
 	connect(ui->buttonExport, &QPushButton::clicked, this, &Step4Widget::exportVideo);
-	connect(ui->imageSlider, &QSlider::valueChanged, [this](int idx) {
-		ui->imageWidget->display_frameidx = idx;
-		ui->imageWidget->update();
-		});
-	connect(ui->buttonPlay, &QPushButton::clicked, this, [this]() {
-		auto& timer = ui->imageWidget->display_timer;
-		timer.isActive() ? timer.stop() : timer.start();
-		});
-	connect(&ui->imageWidget->display_timer, &QTimer::timeout, this, [&]() {
-		int framecount = MLDataManager::get().replate_video.size();
-		if (framecount > 0)
-		{
-			ui->imageWidget->display_frameidx = (ui->imageWidget->display_frameidx + 1) % framecount;
-			ui->imageSlider->setValue(ui->imageWidget->display_frameidx);
-		}
-		});
 	
 	// UI that change configuration
 	connect(ui->pathLineEdit, &QLineEdit::textEdited, [this](const QString& text) {setFilePath(text); });
@@ -83,6 +74,7 @@ Step4Widget::Step4Widget(QWidget *parent)
 Step4Widget::~Step4Widget()
 {
 	delete ui;
+	delete player_manager;
 }
 
 void Step4Widget::setFilePath(const QString& path) 
@@ -205,7 +197,6 @@ void Step4Widget::showEvent(QShowEvent* event)
 		cfg->size = MLDataManager::get().stitch_cache.background.size();
 		cfg->framecount = MLDataManager::get().plates_cache.replate_duration;
 	}
-	ui->imageSlider->setRange(0, globaldata.plates_cache.replate_duration - 1);
 	ui->imageWidget->display_timer.setInterval(1000.f / cfg->fps);
 	render();
 	updateUIfromcfg();
@@ -372,6 +363,7 @@ void Step4RenderArea::paintEvent(QPaintEvent* event)
 	const auto& global_data = MLDataManager::get();
 	const auto& video = global_data.replate_video;
 	const auto& size = global_data.out_video_cfg.size;
+	int display_frameidx = step4widget->player_manager->display_frameidx();
 	if (display_frameidx < 0 || display_frameidx >= video.size())
 		return;
 

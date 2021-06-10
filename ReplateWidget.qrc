@@ -3,5 +3,7 @@
         <file>images/delete_button_icon.png</file>
         <file>images/play_button_icon.png</file>
         <file>images/stop_button_icon.png</file>
+        <file>images/lock_button_icon.png</file>
+        <file>images/lock1_button_icon.png</file>
     </qresource>
 </RCC>
