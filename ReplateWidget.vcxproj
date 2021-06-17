@@ -138,6 +138,7 @@
     <ClCompile Include="MLUtil.cpp" />
     <ClCompile Include="Step1Widget.cpp" />
     <ClCompile Include="Step2Widget.cpp" />
+    <ClCompile Include="StitcherGe.cpp" />
     <ClCompile Include="StitcherSsfm.cpp" />
     <QtRcc Include="breeze.qrc" />
     <QtRcc Include="ReplateWidget.qrc" />
@@ -158,6 +159,7 @@
     <ClInclude Include="arthurstyle.h" />
     <QtMoc Include="arthurwidgets.h" />
     <QtMoc Include="GBaseWidget.h" />
+    <ClInclude Include="GeCeresBA.hpp" />
     <ClInclude Include="GEffect.h" />
     <ClInclude Include="GEffectCommon.h" />
     <ClInclude Include="GEffectManager.h" />
@@ -169,6 +171,7 @@
     <QtMoc Include="GObjLayer.h" />
     <QtMoc Include="GMainDisplay.h" />
     <ClInclude Include="GPath.h" />
+    <ClInclude Include="GStitchConifg.hpp" />
     <ClInclude Include="GTracking.h" />
     <ClInclude Include="GPictureLabel.h" />
     <ClInclude Include="GRoi.h" />
@@ -190,6 +193,7 @@
     <QtMoc Include="Step4Widget.h" />
     <ClInclude Include="MLTracking.h" />
     <ClInclude Include="PathTrackerBase.h" />
+    <ClInclude Include="resource.h" />
     <ClInclude Include="StitcherBase.h" />
     <ClInclude Include="StitcherCV2.h" />
     <ClInclude Include="MLUtil.h" />
@@ -200,6 +204,9 @@
   <ItemGroup>
     <None Include="config.yaml" />
     <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="ReplateWidget.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Condition="Exists('$(QtMsBuild)\qt.targets')">

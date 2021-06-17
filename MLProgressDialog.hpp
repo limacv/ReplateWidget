@@ -18,9 +18,12 @@ public:
     virtual void beginStage(const std::string& name) 
     { 
         dialog.setLabelText(QString::fromStdString(name)); 
+        dialog.setWindowModality(Qt::WindowModal);
         dialog.setValue(0);
+        dialog.show();
     }
     virtual void setValue(float value) { dialog.setValue(100 * value); }
+    virtual bool wasCanceled() { return dialog.wasCanceled(); }
     
 private:
     QProgressDialog dialog;

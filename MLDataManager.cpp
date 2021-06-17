@@ -248,6 +248,14 @@ cv::Rect MLDataManager::toCropROI(const QRectF& rect_norm) const
 		rect_norm.height() * VideoHeight());
 }
 
+void MLDataManager::paintManualMask(QPainter& painter) const
+{
+	for (const auto& rect : manual_masks)
+	{
+		painter.drawRect(GUtil::cvtRect(rect));
+	}
+}
+
 void MLDataManager::paintRawFrames(QPainter& painter, int frameidx) const
 {
 	painter.drawImage(painter.viewport(),

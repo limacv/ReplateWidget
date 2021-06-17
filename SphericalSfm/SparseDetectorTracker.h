@@ -11,8 +11,8 @@ namespace Ssfm {
     class SparseDetectorTracker
     {
     public:
-        SparseDetectorTracker(double _min_dist=8, double _radius=8, double _qualitylevel=0.4, double _maxEigminThr=1e-5,
-            int _maxPointPerCell=30, int _cellH=50, int _cellW=50)
+        SparseDetectorTracker(double _min_dist=8, double _radius=8, double _qualitylevel=0.1, int _cellH=30, int _cellW=30, 
+            int _maxPointPerCell=30, double _maxEigminThr=1e-5)
             :min_dist(_min_dist), xradius(_radius), yradius(_radius), 
             qualitylevel(_qualitylevel), maxEigminThr(_maxEigminThr), maxPointPerCell(_maxPointPerCell),
             cellW(_cellW), cellH(_cellH),

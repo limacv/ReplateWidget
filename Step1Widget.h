@@ -3,6 +3,7 @@
 #include <QWidget>
 #include <qtimer.h>
 #include "MLPlayerHandler.hpp"
+#include "GBaseWidget.h"
 
 namespace Ui { class Step1Widget; };
 
@@ -20,6 +21,7 @@ public:
 public slots:
 	void selectVideo();
 	void selectProject();
+	void addmask();
 
 signals:
 	void videoloaded();
@@ -37,13 +39,13 @@ private:
 
 // the class for drawing image and rectangles (since QPainter can only used in paintEvent, 
 // so have to use an extra class for painting all the things
-class Step1RenderArea : public QWidget
+class Step1RenderArea : public GBaseWidget
 {
 	Q_OBJECT
 
 public:
 	Step1RenderArea(QWidget* parent = Q_NULLPTR)
-		:QWidget(parent), step1widget(nullptr) {}
+		:GBaseWidget(parent), step1widget(nullptr) {}
 	~Step1RenderArea() {};
 	void setStep1Widget(Step1Widget* p) { step1widget = p; }
 
@@ -52,7 +54,7 @@ protected:
 	virtual QSize sizeHint();
 	virtual bool hasHeightForWidth();
 	virtual int heightForWidth(int w);
-	
+
 private:
 	Step1Widget* step1widget;
 };

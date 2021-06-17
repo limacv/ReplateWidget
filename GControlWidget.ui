@@ -144,7 +144,7 @@
        <item>
         <widget class="QGroupBox" name="groupBox_2">
          <property name="title">
-          <string>Operation</string>
+          <string>Path</string>
          </property>
          <property name="flat">
           <bool>true</bool>

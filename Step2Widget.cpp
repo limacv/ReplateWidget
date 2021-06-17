@@ -21,6 +21,7 @@
 #include "SphericalSfm/SphericalSfm.h"
 #include "StitcherCV2.h"
 #include "StitcherSsfm.h"
+#include "StitcherGe.h"
 #include "MLPythonWarpper.h"
 
 Step2Widget::Step2Widget(QWidget* parent)
@@ -221,6 +222,9 @@ void Step2Widget::runSegmentation()
 			mask(pbox->rect & cv::Rect(cv::Point(0, 0), mask.size())).setTo(0);
 		//for (auto pbox : trajp->frameidx2trackboxes[i])
 			//mask(pbox->rect).setTo(0);
+
+		for (const cv::Rect& rect : globaldata.manual_masks)
+			mask(rect).setTo(0);
 	}
 	ui->imageWidget->update();
 }
@@ -251,11 +255,13 @@ void Step2Widget::runStitching()
 			return;
 	}
 	
+	GStitchConfig st_cfg;
 	std::unique_ptr<StitcherBase> st;
 	if (true)
-		st = std::make_unique<StitcherSsfm>();
+		st = std::make_unique<StitcherGe>(&st_cfg);
 	else
-		st = std::make_unique<StitcherCV2>();
+		st = std::make_unique<StitcherSsfm>();
+		//st = std::make_unique<StitcherCV2>();
 
 	MLProgressDialog bar(this);
 	st->set_progress_observer(&bar);

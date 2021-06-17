@@ -12,6 +12,7 @@
 #include "MLDataManager.h"
 #include "MLConfigManager.h"
 #include "MLUtil.h"
+#include "GUtil.h"
 
 Step1Widget::Step1Widget(QWidget* parent)
 	: QWidget(parent)
@@ -30,6 +31,12 @@ Step1Widget::Step1Widget(QWidget* parent)
 	connect(ui->buttonLoadVideo, &QPushButton::clicked, this, &Step1Widget::selectVideo);
 	connect(ui->buttonLoadProject, &QPushButton::clicked, this, &Step1Widget::selectProject);
 
+	connect(ui->buttonAddMask, &QPushButton::clicked, this, &Step1Widget::addmask);
+	connect(ui->buttonDeleteMask, &QPushButton::clicked, []() {MLDataManager::get().manual_masks.clear(); });
+
+	ui->buttonAddMask->setEnabled(false);
+	ui->buttonDeleteMask->setEnabled(false);
+
 	// initialize the drawer
 	ui->imageLabel->setStep1Widget(this);
 }
@@ -44,6 +51,15 @@ void Step1Widget::showEvent(QShowEvent* event)
 {
 	if (event->spontaneous()) return;
 	std::cout << "mmp" << std::endl;
+}
+
+void Step1Widget::addmask()
+{
+	QRect rect = ui->imageLabel->curSelectRect();
+	if (rect.isEmpty())
+		return;
+	MLDataManager::get().manual_masks.push_back(GUtil::cvtRect(rect));
+	ui->imageLabel->clearMouseSelection();
 }
 
 void Step1Widget::selectVideo()
@@ -63,8 +79,10 @@ void Step1Widget::selectVideo()
 	}
 
 	global_data.set_clean(MLDataManager::DataIndex::RAW);
-	emit videoloaded();
 	timer.setInterval(1000 / global_data.raw_video_cfg.fps);
+	emit videoloaded();
+	ui->buttonAddMask->setEnabled(true);
+	ui->buttonDeleteMask->setEnabled(true);
 }
 
 void Step1Widget::selectProject()
@@ -83,6 +101,9 @@ void Step1RenderArea::paintEvent(QPaintEvent* event)
 
 	QPainter paint(this);
 	MLDataManager::get().paintRawFrames(paint, step1widget->player_manager->display_frameidx());
+	paint.setPen(Qt::green);
+	MLDataManager::get().paintManualMask(paint);
+	GBaseWidget::paintEvent(event);
 }
 
 QSize Step1RenderArea::sizeHint()

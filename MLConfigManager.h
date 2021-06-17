@@ -14,7 +14,13 @@ public:
 		raw_video_path(),
 		yolov5_path("./YOLOv5"),
 		yolov5_weight("yolov5m.pt"),
-		python_path("pythonw.exe")
+		python_path("pythonw.exe"),
+		stitcher_detect_qualitylevel(0.1),
+		stitcher_detect_cellH(30),
+		stitcher_track_min_rot(0.5),
+		stitcher_track_inlier_threshold(1.0),
+		stitcher_track_win(8),
+		stitcher_verbose(false)
 	{}
 
 	~MLConfigManager() {}
@@ -55,6 +61,14 @@ private:
 
 	QString raw_video_path;
 	QString basename;
+
+public:
+	float stitcher_detect_qualitylevel;
+	int stitcher_detect_cellH;
+	float stitcher_track_min_rot;
+	float stitcher_track_inlier_threshold;
+	int stitcher_track_win;
+	bool stitcher_verbose;
 };
 
 inline
@@ -99,6 +113,22 @@ void MLConfigManager::initFromFile(const QString& cfgpath)
 	{
 		if (!fs["detector"]["yolov5weights"].empty())
 			yolov5_weight = QString::fromStdString((std::string)fs["detector"]["yolov5weights"]);
+	}
+
+	if (!fs["stitcher"].empty())
+	{
+		if (!fs["stitcher"]["detect_qualitylevel"].empty())
+			stitcher_detect_qualitylevel = (float)fs["stitcher"]["detect_qualitylevel"];
+		if (!fs["stitcher"]["detect_cellH"].empty())
+			stitcher_detect_cellH = (int)fs["stitcher"]["detect_cellH"];
+		if (!fs["stitcher"]["track_min_rot"].empty())
+			stitcher_track_min_rot = (float)fs["stitcher"]["track_min_rot"];
+		if (!fs["stitcher"]["track_inlier_threshold"].empty())
+			stitcher_track_inlier_threshold = (float)fs["stitcher"]["track_inlier_threshold"];
+		if (!fs["stitcher"]["track_win"].empty())
+			stitcher_track_win = (int)fs["stitcher"]["track_win"];
+		if (!fs["stitcher"]["verbose"].empty())
+			stitcher_verbose = (int)fs["stitcher"]["verbose"];
 	}
 
 	fs.release();

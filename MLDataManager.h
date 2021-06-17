@@ -68,6 +68,7 @@ public:
 
 	// painting function
 	// convert world coordinate to the paint coordinate
+	void paintManualMask(QPainter& painter) const;
 	void paintRawFrames(QPainter& painter, int frameidx) const;
 	void paintWarpedFrames(QPainter& painter, int frameidx, bool paintbg = true, bool paintfg = true) const;
 	void paintWorldTrackBoxes(QPainter& painter, int frameidx, bool paint_name = true, bool paint_traj = true) const;
@@ -82,6 +83,7 @@ public:
 public:
 	VideoConfig raw_video_cfg;
 	QVector<cv::Mat> raw_frames;
+	QVector<cv::Rect> manual_masks;
 
 	MLCacheTrajectories trajectories;
 	QVector<cv::Mat> masks;

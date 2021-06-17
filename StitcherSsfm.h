@@ -22,11 +22,11 @@ public:
 		seam_find_type("gc_color"),
 		blend_scheme("blend"), // seam, blend
 		seam_scale(0.1),
-		expos_comp_type(cv::detail::ExposureCompensator::GAIN_BLOCKS),
+		expos_comp_type(cv::detail::ExposureCompensator::GAIN),
 		expos_comp_nr_feeds(1),
 		expos_comp_nr_filtering(2),
 		expos_comp_block_size(32),
-		blend_type(cv::detail::Blender::MULTI_BAND),
+		blend_type(cv::detail::Blender::FEATHER),
 		blend_strength(5)
 	{}
 	virtual ~StitcherSsfm() {}

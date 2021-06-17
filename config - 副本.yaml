@@ -7,8 +7,8 @@ detector:
 stitcher:
   detect_qualitylevel: 0.1
   detect_cellH: 30
-  track_min_rot: 0.01
-  track_inlier_threshold: 1.5
-  track_win: 12
+  track_min_rot: 0.5
+  track_inlier_threshold: 1.0
+  track_win: 8
   verbose: 1  # 0
   

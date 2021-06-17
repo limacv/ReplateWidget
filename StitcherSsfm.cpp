@@ -50,12 +50,19 @@ int StitcherSsfm::warp_points(const int frameidx, std::vector<cv::Point>& inoutp
 int StitcherSsfm::stitch(const std::vector<cv::Mat>& frames, const std::vector<cv::Mat>& masks)
 {
     Ssfm::SphericalSfm ssfm;
-    ssfm.set_verbose(false);
     ssfm.set_intrinsics(0.9 * frames[0].cols, 0.5 * frames[0].cols, 0.5 * frames[0].rows);
     ssfm.set_allow_translation(false);
     ssfm.set_optimize_translation(false);
     ssfm.set_visualize_root(MLConfigManager::get().get_stitch_cache().toStdString());
     ssfm.set_progress_observer(progress_reporter);
+
+    const auto& global_cfg = MLConfigManager::get();
+    ssfm.qualitylevel = global_cfg.stitcher_detect_qualitylevel;
+    ssfm.cellsize = global_cfg.stitcher_detect_cellH;
+    ssfm.min_rot = global_cfg.stitcher_track_min_rot;
+    ssfm.inlier_threshold = global_cfg.stitcher_track_inlier_threshold;
+    ssfm.trackwin = global_cfg.stitcher_track_win;
+    ssfm.set_verbose(global_cfg.stitcher_verbose);
 
     ssfm.runSfM(frames, masks);
     Ssfm::SparseModel model;

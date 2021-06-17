@@ -45,7 +45,7 @@ void Ssfm::SphericalSfm::track_all_frames(const vector<cv::Mat>& frames, const v
 	if (image.channels() == 3) cv::cvtColor(image, image, cv::COLOR_BGR2GRAY);
 
 	int xradius, yradius; yradius = xradius = trackwin;
-	SparseDetectorTracker detectortracker;
+	SparseDetectorTracker detectortracker(min_dist, trackwin, qualitylevel, cellsize, cellsize);
 
 	int camera0 = model3d->GetCameraIdxfromFrameIdx(0);
 	vector<cv::Point2f> keypoints0;
@@ -209,16 +209,42 @@ void Ssfm::SphericalSfm::track_all_frames(const vector<cv::Mat>& frames, const v
 
 					ceres::Problem problem;
 					ceres::LossFunction* lossfunc = new ceres::SoftLOneLoss(2.);
+
+					Pose curpose(transBuffer[bufferi], rotsBuffer[bufferi]);
+					Intrinsics curintrin = intrinBuffer[bufferi];
+					int outlier_count = 0;
+
 					for (int pti = 0; pti < pt2ds.size(); ++pti)
 					{
 						if (pt3dpos[pti] == Pointhomo(0, 0, 0, 1) || pt3dpos[pti] == Pointhomo(0, 0, 0, 0))
 							continue;
+
+						auto thispt3d = pt3dpos[pti];
+						thispt3d = curpose.P * thispt3d;
+						auto depth = thispt3d[2] / thispt3d[3];
+						Point thispt2d_proj = curintrin.getK() * thispt3d.head(3);
+						cv::Point2f pt2d_proj(thispt2d_proj[0] / thispt2d_proj[2], thispt2d_proj[1] / thispt2d_proj[2]);
+
+						auto reprojecterror = cv::norm(pt2ds[pti] - pt2d_proj);
+						if (depth < 0.1)
+						{
+							outlier_count++;
+							continue;
+						}
+						// check if pt3d lies behind the camera
+						//Eigen::Transform t()
+						
 						//ReprojectionErrorhomo* reproj_error = new ReprojectionErrorhomo(focal, pt2ds[pti].x - centerx, pt2ds[pti].y - centery);
 						//ceres::CostFunction* costfunc = new ceres::AutoDiffCostFunction<ReprojectionErrorhomo, 2, 3, 3, 4>(reproj_error);
 						//problem.AddResidualBlock(costfunc, lossfunc, transBuffer[bufferi].data(), rotsBuffer[bufferi].data(), pt3dpos[pti].data());
 						//problem.SetParameterBlockConstant(pt3dpos[pti].data());
+
 						ReprojErrorhomo_optfocal* reproj_error = new ReprojErrorhomo_optfocal(pt2ds[pti].x - intrinBuffer[bufferi].centerx, pt2ds[pti].y - intrinBuffer[bufferi].centery);
 						ceres::CostFunction* costfunc = new ceres::AutoDiffCostFunction<ReprojErrorhomo_optfocal, 2, 3, 3, 4, 1>(reproj_error);
+
+						//ReprojErrorhomo_constraintfocal* reproj_error = new ReprojErrorhomo_constraintfocal(pt2ds[pti].x - intrinBuffer[bufferi].centerx, pt2ds[pti].y - intrinBuffer[bufferi].centery);
+						//ceres::CostFunction* costfunc = new ceres::AutoDiffCostFunction<ReprojErrorhomo_constraintfocal, 3, 3, 3, 4, 1>(reproj_error);
+
 						problem.AddResidualBlock(costfunc, lossfunc, transBuffer[bufferi].data(), rotsBuffer[bufferi].data(), pt3dpos[pti].data(), &intrinBuffer[bufferi].focal);
 						problem.SetParameterBlockConstant(pt3dpos[pti].data());
 						if (notranslation)
@@ -227,6 +253,7 @@ void Ssfm::SphericalSfm::track_all_frames(const vector<cv::Mat>& frames, const v
 							problem.SetParameterBlockConstant(&intrinBuffer[bufferi].focal);
 					}
 
+					std::cout << "number of points that is behind camera:" << pt2ds.size() - outlier_count << std::endl;
 					ceres::Solver::Options solveropt;
 					solveropt.max_num_iterations = 500;
 					solveropt.minimizer_type = ceres::TRUST_REGION;

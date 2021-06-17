@@ -22,12 +22,13 @@ namespace Ssfm {
 	{
 	public:
 		SphericalSfm()
-			:inlier_threshold(2), trackwin(8), min_rot(2.0),
+			:inlier_threshold(1), trackwin(10), min_rot(0.5),
 			optimizeFocal(true), softspherical(true), notranslation(false), dynamicFocal(true),
 			lc_bestonly(false), lc_numbegin(30), lc_numend(30), lc_mininlier(100),
 			init_intrinsic(0., 0., 0.),
 			verbose(false), model3d(nullptr),
-			progress_observer(nullptr)
+			progress_observer(nullptr), 
+			min_dist(8), qualitylevel(0.1), cellsize(30)
 		{}
 
 		~SphericalSfm()
@@ -82,7 +83,7 @@ namespace Ssfm {
 		
 		SfM* model3d;
 
-		// configuration
+	public:
 		double inlier_threshold;  // inlier threshold in pixels
 		double min_rot;  // minimum rotation between keyframes
 		int trackwin;  // window size while tracking in pixels
@@ -91,11 +92,16 @@ namespace Ssfm {
 		bool notranslation;
 		bool dynamicFocal;
 
+		int min_dist;
+		float qualitylevel;
+		int cellsize;
+
 		bool lc_bestonly;
 		int lc_numbegin; // Number of frames at beginning of sequence to use for loop closure
 		int lc_numend; // Number of frames at end of sequence to use for loop closure
 		int lc_mininlier;  // Minimum number of inliers to accept a loop closure"
 
+	private:
 		bool verbose;
 		std::string visualize_root;
 		MLProgressObserverBase* progress_observer;
