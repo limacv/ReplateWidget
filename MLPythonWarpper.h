@@ -10,14 +10,19 @@ int callDetectPy()
 {
 	const auto& pathcfg = MLConfigManager::get();
 	const auto& globaldata = MLDataManager::get();
+	const auto& detectrackcfg = pathcfg.detectrack_cfg;
 	
-	QString cmd = QString("%1 %2/detect.pyw --weights %3 --source %4 --save_path %5 --img-size %6").arg(
+	QString cmd = QString("%1 %2/detect.pyw --weights %3 --source %4 --save_path %5 --img-size %6 --conf-thres %7 --iou-thres %8 --device %9 --nosave %10").arg(
 		pathcfg.get_python_path(),
 		pathcfg.get_yolov5_path(),
 		pathcfg.get_yolov5_weight(),
 		pathcfg.get_raw_video_path(),
 		pathcfg.get_cache_path(),
-		QString::number(globaldata.raw_video_cfg.size.width)
+		QString::number(detectrackcfg.detect_image_size),
+		QString::number(detectrackcfg.detect_conf_threshold),
+		QString::number(detectrackcfg.detect_iou_threshold),
+		detectrackcfg.detect_device,
+		detectrackcfg.detect_save_visualization ? "False" : "True"
 	);
 	qDebug("Step1Widget::executing command: %s", cmd.toLocal8Bit().constData());
 	return system(cmd.toLocal8Bit().constData());

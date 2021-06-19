@@ -151,6 +151,9 @@
     <ClCompile Include="StitcherGe.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="MLConfigManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="Step1Widget.h">
@@ -213,6 +216,9 @@
       <Filter>Form Files</Filter>
     </QtUic>
     <QtUic Include="Step3Widget.ui">
+      <Filter>Form Files</Filter>
+    </QtUic>
+    <QtUic Include="MLConfigWidget.ui">
       <Filter>Form Files</Filter>
     </QtUic>
   </ItemGroup>
@@ -307,10 +313,13 @@
     <ClInclude Include="resource.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GStitchConifg.hpp">
+    <ClInclude Include="GeCeresBA.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GeCeresBA.hpp">
+    <ClInclude Include="MLConfigStitcher.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MLConfigDetectTrack.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -319,6 +328,7 @@
     <None Include="config.yaml">
       <Filter>Config Files</Filter>
     </None>
+    <None Include="ClassDiagram.cd" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="ReplateWidget.rc">

@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1183</width>
-    <height>788</height>
+    <width>1179</width>
+    <height>779</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -247,7 +247,7 @@
        <number>1</number>
       </property>
       <property name="currentIndex">
-       <number>2</number>
+       <number>1</number>
       </property>
       <widget class="Step1Widget" name="step1Widget"/>
       <widget class="Step2Widget" name="step2Widget"/>
@@ -262,17 +262,16 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1183</width>
+     <width>1179</width>
      <height>26</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
     <property name="title">
-     <string>File</string>
+     <string>Project</string>
     </property>
     <addaction name="actionClear_Cache"/>
     <addaction name="actionClear_All_Cache"/>
-    <addaction name="actionConfiguration"/>
    </widget>
    <widget class="QMenu" name="menuWindow">
     <property name="title">

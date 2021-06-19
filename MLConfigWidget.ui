@@ -1,0 +1,558 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MLConfigWidget</class>
+ <widget class="QWidget" name="MLConfigWidget">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>428</width>
+    <height>581</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <layout class="QGridLayout" name="gridLayout">
+   <property name="leftMargin">
+    <number>0</number>
+   </property>
+   <property name="topMargin">
+    <number>0</number>
+   </property>
+   <property name="rightMargin">
+    <number>0</number>
+   </property>
+   <property name="bottomMargin">
+    <number>0</number>
+   </property>
+   <item row="0" column="0">
+    <widget class="QScrollArea" name="scrollArea">
+     <property name="widgetResizable">
+      <bool>true</bool>
+     </property>
+     <widget class="QWidget" name="scrollAreaWidgetContents">
+      <property name="geometry">
+       <rect>
+        <x>0</x>
+        <y>-332</y>
+        <width>405</width>
+        <height>911</height>
+       </rect>
+      </property>
+      <layout class="QGridLayout" name="gridLayout_5">
+       <item row="0" column="0">
+        <layout class="QHBoxLayout" name="horizontalLayout" stretch="1,1,1">
+         <item>
+          <widget class="QPushButton" name="saveButton">
+           <property name="text">
+            <string>Save(ctrl+s)</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <spacer name="horizontalSpacer">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>30</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item>
+          <widget class="QPushButton" name="setdefaultButton">
+           <property name="text">
+            <string>Set to default</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item row="1" column="0">
+        <widget class="QGroupBox" name="groupBox">
+         <property name="title">
+          <string>General</string>
+         </property>
+         <layout class="QGridLayout" name="gridLayout_2">
+          <property name="leftMargin">
+           <number>11</number>
+          </property>
+          <property name="topMargin">
+           <number>11</number>
+          </property>
+          <property name="rightMargin">
+           <number>11</number>
+          </property>
+          <property name="bottomMargin">
+           <number>0</number>
+          </property>
+          <item row="0" column="0">
+           <layout class="QFormLayout" name="formLayout">
+            <item row="0" column="0">
+             <widget class="QLabel" name="cachePathLabel">
+              <property name="text">
+               <string>Cache path</string>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="1">
+             <widget class="QLineEdit" name="cachePathLineEdit">
+              <property name="readOnly">
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="0">
+             <widget class="QLabel" name="videoPathLabel">
+              <property name="text">
+               <string>Video path</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="1">
+             <widget class="QLineEdit" name="videoPathLineEdit">
+              <property name="readOnly">
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+            <item row="2" column="0">
+             <widget class="QLabel" name="videoNameLabel">
+              <property name="text">
+               <string>Video name</string>
+              </property>
+             </widget>
+            </item>
+            <item row="2" column="1">
+             <widget class="QLineEdit" name="videoNameLineEdit">
+              <property name="readOnly">
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item row="2" column="0">
+        <widget class="QGroupBox" name="groupBox_2">
+         <property name="title">
+          <string>Detection and Tracking</string>
+         </property>
+         <layout class="QGridLayout" name="gridLayout_3">
+          <property name="leftMargin">
+           <number>11</number>
+          </property>
+          <property name="topMargin">
+           <number>11</number>
+          </property>
+          <property name="bottomMargin">
+           <number>0</number>
+          </property>
+          <item row="0" column="0">
+           <layout class="QFormLayout" name="formLayout_2">
+            <item row="0" column="0">
+             <widget class="QLabel" name="yolov5PathLabel">
+              <property name="text">
+               <string>Yolov5 path</string>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="1">
+             <widget class="QLineEdit" name="yolov5PathLineEdit"/>
+            </item>
+            <item row="1" column="0">
+             <widget class="QLabel" name="pythonPathLabel">
+              <property name="text">
+               <string>Python path</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="1">
+             <widget class="QLineEdit" name="pythonPathLineEdit"/>
+            </item>
+            <item row="2" column="0">
+             <widget class="QLabel" name="yolov5WeightLabel">
+              <property name="text">
+               <string>Yolov5 weight</string>
+              </property>
+             </widget>
+            </item>
+            <item row="3" column="0">
+             <widget class="QLabel" name="workSizeLabel">
+              <property name="text">
+               <string>Work size</string>
+              </property>
+             </widget>
+            </item>
+            <item row="3" column="1">
+             <widget class="QLineEdit" name="workSizeLineEdit"/>
+            </item>
+            <item row="4" column="0">
+             <widget class="QLabel" name="confThresLabel">
+              <property name="text">
+               <string>Conf Thres</string>
+              </property>
+             </widget>
+            </item>
+            <item row="4" column="1">
+             <widget class="QLineEdit" name="confThresLineEdit"/>
+            </item>
+            <item row="5" column="0">
+             <widget class="QLabel" name="ioUThresLabel">
+              <property name="text">
+               <string>IoU Thres</string>
+              </property>
+             </widget>
+            </item>
+            <item row="5" column="1">
+             <widget class="QLineEdit" name="ioUThresLineEdit"/>
+            </item>
+            <item row="6" column="0">
+             <widget class="QLabel" name="deviceLabel">
+              <property name="text">
+               <string>Device</string>
+              </property>
+             </widget>
+            </item>
+            <item row="6" column="1">
+             <widget class="QComboBox" name="deviceComboBox">
+              <item>
+               <property name="text">
+                <string>0</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>cpu</string>
+               </property>
+              </item>
+             </widget>
+            </item>
+            <item row="2" column="1">
+             <widget class="QComboBox" name="yolov5WeightCombo">
+              <item>
+               <property name="text">
+                <string>yolov5m.pt</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>yolov5l.pt</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>yolov5s.pt</string>
+               </property>
+              </item>
+             </widget>
+            </item>
+            <item row="7" column="0">
+             <widget class="QLabel" name="saveVisualLabel">
+              <property name="text">
+               <string>Save visual</string>
+              </property>
+             </widget>
+            </item>
+            <item row="7" column="1">
+             <widget class="QCheckBox" name="saveVisualCheckBox"/>
+            </item>
+           </layout>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item row="3" column="0">
+        <widget class="QGroupBox" name="groupBox_3">
+         <property name="title">
+          <string>Stitching</string>
+         </property>
+         <layout class="QGridLayout" name="gridLayout_4">
+          <property name="topMargin">
+           <number>11</number>
+          </property>
+          <property name="bottomMargin">
+           <number>0</number>
+          </property>
+          <item row="0" column="0">
+           <layout class="QFormLayout" name="formLayout_3">
+            <item row="0" column="0">
+             <widget class="QLabel" name="featureTypeLabel">
+              <property name="text">
+               <string>Feature type</string>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="1">
+             <widget class="QComboBox" name="featureTypeComboBox">
+              <item>
+               <property name="text">
+                <string>surf</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>orb</string>
+               </property>
+              </item>
+             </widget>
+            </item>
+            <item row="1" column="0">
+             <widget class="QLabel" name="matchConfLabel">
+              <property name="text">
+               <string>Match conf</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="1">
+             <widget class="QLineEdit" name="matchConfLineEdit"/>
+            </item>
+            <item row="2" column="0">
+             <widget class="QLabel" name="matchRangeLabel">
+              <property name="text">
+               <string>Match range</string>
+              </property>
+             </widget>
+            </item>
+            <item row="2" column="1">
+             <widget class="QLineEdit" name="matchRangeLineEdit"/>
+            </item>
+            <item row="3" column="0">
+             <widget class="QLabel" name="warpTypeLabel">
+              <property name="text">
+               <string>Warp type</string>
+              </property>
+             </widget>
+            </item>
+            <item row="3" column="1">
+             <widget class="QComboBox" name="warpTypeComboBox">
+              <item>
+               <property name="text">
+                <string>cylindrical</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>plane</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>spherical</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>fisheye</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>stereographic</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>affine</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>mercator</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>transverseMercator</string>
+               </property>
+              </item>
+             </widget>
+            </item>
+            <item row="4" column="0">
+             <widget class="QLabel" name="blendTypeLabel">
+              <property name="text">
+               <string>Blend type</string>
+              </property>
+             </widget>
+            </item>
+            <item row="4" column="1">
+             <widget class="QComboBox" name="blendTypeComboBox">
+              <item>
+               <property name="text">
+                <string>No</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>Feather</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>Multiband</string>
+               </property>
+              </item>
+             </widget>
+            </item>
+            <item row="5" column="0">
+             <widget class="QLabel" name="blendStrengthLabel">
+              <property name="text">
+               <string>Blend strength</string>
+              </property>
+             </widget>
+            </item>
+            <item row="5" column="1">
+             <widget class="QLineEdit" name="blendStrengthLineEdit"/>
+            </item>
+            <item row="6" column="0">
+             <widget class="QLabel" name="waveCorrectLabel">
+              <property name="text">
+               <string>Wave correct</string>
+              </property>
+             </widget>
+            </item>
+            <item row="6" column="1">
+             <widget class="QComboBox" name="waveCorrectComboBox">
+              <item>
+               <property name="text">
+                <string>No</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>Horiz</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>Verti</string>
+               </property>
+              </item>
+             </widget>
+            </item>
+            <item row="7" column="0">
+             <widget class="QLabel" name="workScaleLabel">
+              <property name="text">
+               <string>Work megapix</string>
+              </property>
+             </widget>
+            </item>
+            <item row="7" column="1">
+             <widget class="QLineEdit" name="workScaleLineEdit"/>
+            </item>
+            <item row="8" column="0">
+             <widget class="QLabel" name="seamScaleLabel">
+              <property name="text">
+               <string>Seam megapix</string>
+              </property>
+             </widget>
+            </item>
+            <item row="8" column="1">
+             <widget class="QLineEdit" name="seamScaleLineEdit"/>
+            </item>
+            <item row="9" column="0">
+             <widget class="QLabel" name="composeScaleLabel">
+              <property name="text">
+               <string>Compose megapix</string>
+              </property>
+             </widget>
+            </item>
+            <item row="9" column="1">
+             <widget class="QLineEdit" name="composeScaleLineEdit"/>
+            </item>
+            <item row="10" column="0">
+             <widget class="QLabel" name="expoCompTypeLabel">
+              <property name="text">
+               <string>ExpoComp type</string>
+              </property>
+             </widget>
+            </item>
+            <item row="10" column="1">
+             <widget class="QComboBox" name="expoCompTypeComboBox">
+              <item>
+               <property name="text">
+                <string>No</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>Gain</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>Gain Block</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>Channel</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>Channel Block</string>
+               </property>
+              </item>
+             </widget>
+            </item>
+            <item row="11" column="0">
+             <widget class="QLabel" name="expoCompNrfeedsLabel">
+              <property name="text">
+               <string>ExpoComp nrfeeds</string>
+              </property>
+             </widget>
+            </item>
+            <item row="11" column="1">
+             <widget class="QLineEdit" name="expoCompNrfeedsLineEdit"/>
+            </item>
+            <item row="12" column="0">
+             <widget class="QLabel" name="expoCompNrfilteringLabel">
+              <property name="text">
+               <string>ExpoComp nrfiltering</string>
+              </property>
+             </widget>
+            </item>
+            <item row="12" column="1">
+             <widget class="QLineEdit" name="expoCompNrfilteringLineEdit"/>
+            </item>
+            <item row="13" column="0">
+             <widget class="QLabel" name="expoCompBlockszLabel">
+              <property name="text">
+               <string>ExpoComp blocksz</string>
+              </property>
+             </widget>
+            </item>
+            <item row="13" column="1">
+             <widget class="QLineEdit" name="expoCompBlockszLineEdit"/>
+            </item>
+            <item row="14" column="0">
+             <widget class="QLabel" name="tryGPULabel">
+              <property name="text">
+               <string>Try GPU</string>
+              </property>
+             </widget>
+            </item>
+            <item row="14" column="1">
+             <widget class="QCheckBox" name="tryGPUCheckBox"/>
+            </item>
+           </layout>
+          </item>
+         </layout>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

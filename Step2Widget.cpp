@@ -255,10 +255,9 @@ void Step2Widget::runStitching()
 			return;
 	}
 	
-	GStitchConfig st_cfg;
 	std::unique_ptr<StitcherBase> st;
 	if (true)
-		st = std::make_unique<StitcherGe>(&st_cfg);
+		st = std::make_unique<StitcherGe>(&MLConfigManager::get().stitcher_cfg);
 	else
 		st = std::make_unique<StitcherSsfm>();
 		//st = std::make_unique<StitcherCV2>();

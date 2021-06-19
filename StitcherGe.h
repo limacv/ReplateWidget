@@ -16,7 +16,7 @@
 #include "opencv2/stitching/warpers.hpp"
 #include "opencv2/xfeatures2d.hpp"
 #include <qwidget.h>
-#include "GStitchConifg.hpp"
+#include "MLConfigStitcher.hpp"
 
 using namespace cv;
 using namespace cv::detail;
@@ -26,7 +26,7 @@ class StitcherGe :
     public StitcherBase
 {
 public:
-	StitcherGe(GStitchConfig* config)
+	StitcherGe(MLConfigStitcher* config)
         :work_scale(0),
         seam_scale(0),
         compose_scale(0),
@@ -103,7 +103,7 @@ private:
         std::vector<cv::Mat>& images_warped, std::vector<cv::Mat>& masks_warped,
         std::vector<cv::Size>& sizes, std::vector<cv::Point>& corners, cv::Mat& stitch_result);
 
-    const GStitchConfig* config() const { return config_; }
+    const MLConfigStitcher* config() const { return config_; }
 private:
     vector<ImageFeatures> m_features;
     vector<MatchesInfo> m_pairwise_matches;
@@ -115,5 +115,5 @@ private:
     double seam_scale;
     double compose_scale;
 
-    GStitchConfig* config_;
+    MLConfigStitcher* config_;
 };

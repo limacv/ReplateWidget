@@ -56,13 +56,13 @@ int StitcherSsfm::stitch(const std::vector<cv::Mat>& frames, const std::vector<c
     ssfm.set_visualize_root(MLConfigManager::get().get_stitch_cache().toStdString());
     ssfm.set_progress_observer(progress_reporter);
 
-    const auto& global_cfg = MLConfigManager::get();
-    ssfm.qualitylevel = global_cfg.stitcher_detect_qualitylevel;
-    ssfm.cellsize = global_cfg.stitcher_detect_cellH;
-    ssfm.min_rot = global_cfg.stitcher_track_min_rot;
-    ssfm.inlier_threshold = global_cfg.stitcher_track_inlier_threshold;
-    ssfm.trackwin = global_cfg.stitcher_track_win;
-    ssfm.set_verbose(global_cfg.stitcher_verbose);
+    const auto& stitcher_cfg = MLConfigManager::get().stitcher_cfg;
+    ssfm.qualitylevel = stitcher_cfg.stitcher_detect_qualitylevel;
+    ssfm.cellsize = stitcher_cfg.stitcher_detect_cellH;
+    ssfm.min_rot = stitcher_cfg.stitcher_track_min_rot;
+    ssfm.inlier_threshold = stitcher_cfg.stitcher_track_inlier_threshold;
+    ssfm.trackwin = stitcher_cfg.stitcher_track_win;
+    ssfm.set_verbose(stitcher_cfg.stitcher_verbose);
 
     ssfm.runSfM(frames, masks);
     Ssfm::SparseModel model;

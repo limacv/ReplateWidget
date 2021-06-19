@@ -3,24 +3,22 @@
 #include <qdir.h>
 #include <qfile.h>
 #include <qfileinfo.h>
-#include <opencv2/core.hpp>
+#include <yaml-cpp/yaml.h>
 #include <string>
+#include "MLConfigStitcher.hpp"
+#include "MLConfigDetectTrack.hpp"
+#include <qwidget.h>
+#include <qdockwidget.h>
+
+namespace Ui { class MLConfigWidget; };
 
 class MLConfigManager
 {
 public:
 	MLConfigManager()
 		:cache_root("./.cache"),
-		raw_video_path(),
-		yolov5_path("./YOLOv5"),
-		yolov5_weight("yolov5m.pt"),
-		python_path("pythonw.exe"),
-		stitcher_detect_qualitylevel(0.1),
-		stitcher_detect_cellH(30),
-		stitcher_track_min_rot(0.5),
-		stitcher_track_inlier_threshold(1.0),
-		stitcher_track_win(8),
-		stitcher_verbose(false)
+		config_widget_ui(nullptr),
+		config_widget(nullptr)
 	{}
 
 	~MLConfigManager() {}
@@ -29,16 +27,24 @@ public:
 		static MLConfigManager manager;
 		return manager;
 	}
+
+	void setup_ui(QWidget* parent = Q_NULLPTR);
+	QAction* config_widget_view_action() { return config_widget->toggleViewAction(); }
+	
+	void update_ui();
 	void update_videopath(const QString& video_path);
-	void initFromFile(const QString& cfgpath = "./config.yaml");
+	void readFromFile(const QString& cfgpath = "./config.yaml");
+	void writeToFile(const QString& cfgpapth) const;
+	void restore_to_default();
 
 public:
-	// Step1
+	// path config
 	QString get_cache_path() const { return QDir(cache_root).filePath(basename); }
+	QString get_localconfig_path() const { return QDir(get_cache_path()).filePath("config.yaml"); }
 
-	QString get_yolov5_path() const { return yolov5_path; }
-	QString get_yolov5_weight() const { return yolov5_weight; }
-	QString get_python_path() const { return python_path; }
+	QString get_yolov5_path() const { return detectrack_cfg.detect_yolov5_path; }
+	QString get_yolov5_weight() const { return detectrack_cfg.detect_yolov5_weight; }
+	QString get_python_path() const { return detectrack_cfg.detect_python_path; }
 	QString get_raw_video_path() const { return raw_video_path; }
 	QString get_raw_video_base() const { return basename; }
 
@@ -55,82 +61,14 @@ public:
 
 private:
 	QString cache_root;
-	QString yolov5_path;
-	QString yolov5_weight;
-	QString python_path;
 
 	QString raw_video_path;
 	QString basename;
-
-public:
-	float stitcher_detect_qualitylevel;
-	int stitcher_detect_cellH;
-	float stitcher_track_min_rot;
-	float stitcher_track_inlier_threshold;
-	int stitcher_track_win;
-	bool stitcher_verbose;
-};
-
-inline
-void MLConfigManager::update_videopath(const QString& video_path)
-{
-	auto ff = QFileInfo(video_path);
-	raw_video_path = ff.absoluteFilePath();
-	basename = ff.baseName();
 	
-	if (!QDir().mkpath(get_cache_path()))
-		qWarning("MLConfigManager::failed to create directory %s", qPrintable(get_cache_path()));
-}
-
-inline
-void MLConfigManager::initFromFile(const QString& cfgpath)
-{
-	cv::FileStorage fs;
-	try
-	{
-		fs.open(cfgpath.toStdString(), cv::FileStorage::READ);
-	}
-	catch (const std::exception&)
-	{
-		qWarning("ConfigManager::cannot parser config file %s, use default settings", qPrintable(cfgpath));
-	}
-	if (!fs.isOpened())
-		qWarning("ConfigManager::cannot open config file %s, use default settings", qPrintable(cfgpath));
-
-	if (!fs["cache_root"].empty())
-	{
-		cache_root = QString::fromStdString((std::string)fs["cache_root"]);
-		cache_root = QFileInfo(cache_root).absoluteFilePath();
-	}
-	if (!fs["yolov5_path"].empty())
-	{
-		yolov5_path = QString::fromStdString((std::string)fs["yolov5_path"]);
-		yolov5_path = QFileInfo(yolov5_path).absoluteFilePath();
-	}
-	if (!fs["python_path"].empty()) python_path = QString::fromStdString((std::string)fs["python_path"]);
-
-	if (!fs["detector"].empty())
-	{
-		if (!fs["detector"]["yolov5weights"].empty())
-			yolov5_weight = QString::fromStdString((std::string)fs["detector"]["yolov5weights"]);
-	}
-
-	if (!fs["stitcher"].empty())
-	{
-		if (!fs["stitcher"]["detect_qualitylevel"].empty())
-			stitcher_detect_qualitylevel = (float)fs["stitcher"]["detect_qualitylevel"];
-		if (!fs["stitcher"]["detect_cellH"].empty())
-			stitcher_detect_cellH = (int)fs["stitcher"]["detect_cellH"];
-		if (!fs["stitcher"]["track_min_rot"].empty())
-			stitcher_track_min_rot = (float)fs["stitcher"]["track_min_rot"];
-		if (!fs["stitcher"]["track_inlier_threshold"].empty())
-			stitcher_track_inlier_threshold = (float)fs["stitcher"]["track_inlier_threshold"];
-		if (!fs["stitcher"]["track_win"].empty())
-			stitcher_track_win = (int)fs["stitcher"]["track_win"];
-		if (!fs["stitcher"]["verbose"].empty())
-			stitcher_verbose = (int)fs["stitcher"]["verbose"];
-	}
-
-	fs.release();
-}
-
+	Ui::MLConfigWidget* config_widget_ui;
+	QDockWidget* config_widget;
+public:
+	// variable config
+	MLConfigDetectTrack detectrack_cfg;
+	MLConfigStitcher stitcher_cfg;
+};

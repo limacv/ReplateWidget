@@ -8,6 +8,7 @@
 #include <fstream>
 #include <qvector.h>
 #include <qmap.h>
+#include <qdebug.h>
 #include <qprogressdialog.h>
 #include "SphericalSfm/MLProgressObserverBase.h"
 
@@ -79,6 +80,9 @@ bool MLCacheStitching::tryLoadRois()
 bool MLCacheStitching::saveBackground() const
 {
 	const auto& pathcfg = MLConfigManager::get();
+	QString path = pathcfg.get_stitch_cache();
+	if (!QDir().mkpath(path))
+		qWarning("MLConfigManager::failed to create directory %s", qPrintable(path));
 	// save background
 	if (background.empty())
 		return false;
@@ -92,6 +96,10 @@ bool MLCacheStitching::saveWarppedFrames(MLProgressObserverBase* observer) const
 	// save background
 	if (warped_frames.empty() || warped_frames.size() != MLDataManager::get().get_framecount())
 		return false;
+
+	QString path = pathcfg.get_stitch_cache();
+	if (!QDir().mkpath(path))
+		qWarning("MLConfigManager::failed to create directory %s", qPrintable(path));
 
 	if (observer) observer->beginStage("Save Stitching");
 	for (int i = 0; i < warped_frames.size(); ++i)
@@ -109,6 +117,10 @@ bool MLCacheStitching::saveRois() const
 	
 	if (rois.empty() || rois.size() != MLDataManager::get().get_framecount())
 		return false;
+
+	QString path = pathcfg.get_stitch_cache();
+	if (!QDir().mkpath(path))
+		qWarning("MLConfigManager::failed to create directory %s", qPrintable(path));
 
 	std::ofstream file(pathcfg.get_stitch_rois_path().toStdString());
 	if (!file.is_open()) return false;

@@ -10,6 +10,7 @@ ReplateWidget::ReplateWidget(QWidget *parent)
 {
     initConfig("./config.yaml");
     ui.setupUi(this);
+    MLConfigManager::get().setup_ui(this);
 
     stepwidgets[0] = ui.step1Widget; stepbuttons[0] = ui.buttonStep1;
     stepwidgets[1] = ui.step2Widget; stepbuttons[1] = ui.buttonStep2;
@@ -25,6 +26,8 @@ ReplateWidget::ReplateWidget(QWidget *parent)
 
     connect(ui.actionClear_Cache, &QAction::toggled, this, &ReplateWidget::clearCache);
     connect(ui.actionClear_All_Cache, &QAction::toggled, this, &ReplateWidget::clearAllCache);
+    ui.menuFile->addAction(MLConfigManager::get().config_widget_view_action());
+    
     connect(ui.step1Widget, &Step1Widget::videoloaded, this, [this]() {ui.buttonNextStep->setEnabled(true); });
     
     ui.buttonNextStep->setEnabled(false);
@@ -46,7 +49,7 @@ ReplateWidget::ReplateWidget(QWidget *parent)
 
 void ReplateWidget::initConfig(const QString& cfgpath) const
 {
-    MLConfigManager::get().initFromFile(cfgpath);
+    MLConfigManager::get().readFromFile(cfgpath);
 }
 
 void ReplateWidget::setStepTo(int step)
@@ -123,7 +126,7 @@ void ReplateWidget::setButtonValid(QPushButton& button)
 
 void ReplateWidget::clearCache()
 {
-
+    
 }
 
 void ReplateWidget::clearAllCache()

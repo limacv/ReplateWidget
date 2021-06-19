@@ -45,35 +45,15 @@ enum SeamType {
     DP_COLORGRAD
 };
 
-class GStitchConfig
+class MLConfigStitcher
 {
 public:
-    GStitchConfig()
-        :conf_thresh_(1)
-        , features_type_("surf")
-        , warp_type_("cylindrical")
-        , match_conf_(0.6f)
-        , matcher_type("")
-        , match_range_width(-1)
-        , seam_type_(SeamType::NO)
-        , blend_type_(Blender::FEATHER)
-        , blend_strength_(1)
-        , work_megapix_(0.7)
-        , seam_megapix_(0.01)
-        , compose_megapix_(-1)
-        , expos_comp_type_(ExposureCompensator::NO)
-        ,expos_comp_nr_feeds(1)
-        ,expos_comp_nr_filtering(2)
-        ,expos_comp_block_size(32)
-        , try_gpu_(true)
-        , preview_(false)
-        , save_BA_(true)
-        , load_BA_(true)
+    MLConfigStitcher()
     {
-        parseStitchArgs();
+        restore_default();
     }
 
-
+    void restore_default();
     void write(YAML::Emitter& out) const;
     void read(const YAML::Node& doc);
     void writeBundle(YAML::Emitter& out) const;
@@ -88,7 +68,6 @@ public:
     string wave_correct_;
     string warp_type_;
     SeamType seam_type_;
-    vector<QRectF> logo_masks_;
     int blend_type_;
     float blend_strength_;
     double work_megapix_;
@@ -99,6 +78,14 @@ public:
     int expos_comp_nr_feeds;
     int expos_comp_nr_filtering;
     int expos_comp_block_size;
+
+    // this is used by StitcherSsfm
+    float stitcher_detect_qualitylevel;
+    int stitcher_detect_cellH;
+    float stitcher_track_min_rot;
+    float stitcher_track_inlier_threshold;
+    int stitcher_track_win;
+    bool stitcher_verbose;
 
     vector<CameraParams> cameras_;
 
@@ -121,43 +108,101 @@ private:
 
 
 inline
-void GStitchConfig::write(YAML::Emitter& out) const
+void MLConfigStitcher::restore_default()
+{
+    conf_thresh_ = 1;
+    features_type_ = "surf";
+    warp_type_ = "cylindrical";
+    match_conf_ = 0.6f;
+    matcher_type = "";
+    match_range_width = -1;
+    seam_type_ = SeamType::NO;
+    blend_type_ = Blender::FEATHER;
+    wave_correct_type_ = WAVE_CORRECT_HORIZ;
+    blend_strength_ = 1;
+    work_megapix_ = 0.7;
+    seam_megapix_ = 0.01;
+    compose_megapix_ = -1;
+    expos_comp_type_ = ExposureCompensator::NO;
+    expos_comp_nr_feeds = 1;
+    expos_comp_nr_filtering = 2;
+    expos_comp_block_size = 32;
+    try_gpu_ = true;
+    preview_ = false;
+    save_BA_ = true;
+    load_BA_ = true;
+
+    stitcher_detect_qualitylevel = 0.1;
+    stitcher_detect_cellH = 30;
+    stitcher_track_min_rot = 0.5;
+    stitcher_track_inlier_threshold = 1.0;
+    stitcher_track_win = 8;
+    stitcher_verbose = false;
+}
+
+inline
+void MLConfigStitcher::write(YAML::Emitter& out) const
 {
     out << YAML::Key << "StitchConfig" << YAML::Value;
 
     out << YAML::BeginMap;
-    out << YAML::Key << "LogoMasks" << logo_masks_;
     out << YAML::Key << "MatchConf" << match_conf_;
     out << YAML::Key << "ConfThresh" << conf_thresh_;
+    out << YAML::Key << "MatchType" << matcher_type;
     out << YAML::Key << "FeatureType" << features_type_;
     out << YAML::Key << "WaveCorrect" << wave_correct_;
     out << YAML::Key << "WarpType" << warp_type_;
     out << YAML::Key << "SeamType" << seam_type_;
     out << YAML::Key << "BlendType" << blend_type_;
     out << YAML::Key << "BlendStrength" << blend_strength_;
+    out << YAML::Key << "ExpoCompType" << expos_comp_type_;
+    out << YAML::Key << "ExpoCompNrFeeds" << expos_comp_nr_feeds;
+    out << YAML::Key << "ExpoCompNrFiltering" << expos_comp_nr_filtering;
+    out << YAML::Key << "ExpoCompBlockSize" << expos_comp_block_size;
+    
+    out << YAML::Key << "StitcherDetectQualityLevel" << stitcher_detect_qualitylevel;
+    out << YAML::Key << "StitcherDetectCellH" << stitcher_detect_cellH;
+    out << YAML::Key << "StitcherTrackMinRot" << stitcher_track_min_rot;
+    out << YAML::Key << "StitcherTrackInlierThreshold" << stitcher_track_inlier_threshold;
+    out << YAML::Key << "StitcherTrackWin" << stitcher_track_win;
+    out << YAML::Key << "StitcherVerbose" << stitcher_verbose;
+
+
     out << YAML::EndMap;
 }
 
 inline
-void GStitchConfig::read(const YAML::Node& doc)
+void MLConfigStitcher::read(const YAML::Node& doc)
 {
     const YAML::Node& node = doc["StitchConfig"];
     if (node) {
-        node["LogoMasks"] >> logo_masks_;
-        match_conf_ = node["MatchConf"].as<float>();
-        conf_thresh_ = node["ConfThresh"].as<float>();
-        features_type_ = node["FeatureType"].as<string>();
-        wave_correct_ = node["WaveCorrect"].as<string>();
-        warp_type_ = node["WarpType"].as<string>();
-        seam_type_ = (SeamType)node["SeamType"].as<int>();
-        blend_type_ = node["BlendType"].as<int>();
-        blend_strength_ = node["BlendStrength"].as<float>();
+        if (node["MatchConf"]) match_conf_ = node["MatchConf"].as<float>();
+        if (node["MatchType"]) matcher_type = node["MatchType"].as<string>();
+        if (node["ConfThresh"]) conf_thresh_ = node["ConfThresh"].as<float>();
+        if (node["FeatureType"]) features_type_ = node["FeatureType"].as<string>();
+        if (node["WaveCorrect"]) wave_correct_ = node["WaveCorrect"].as<string>();
+        if (node["WarpType"]) warp_type_ = node["WarpType"].as<string>();
+        if (node["SeamType"]) seam_type_ = (SeamType)node["SeamType"].as<int>();
+        if (node["BlendType"]) blend_type_ = node["BlendType"].as<int>();
+        if (node["BlendStrength"]) blend_strength_ = node["BlendStrength"].as<float>();
+        if (node["ExpoCompType"]) expos_comp_type_ = node["ExpoCompType"].as<double>();
+        if (node["ExpoCompNrFeeds"]) expos_comp_nr_feeds = node["ExpoCompNrFeeds"].as<double>();
+        if (node["ExpoCompNrFiltering"]) expos_comp_nr_filtering = node["ExpoCompNrFiltering"].as<double>();
+        if (node["ExpoCompBlockSize"]) expos_comp_block_size = node["ExpoCompBlockSize"].as<double>();
+
+        if (node["StitcherDetectQualityLevel"]) stitcher_detect_qualitylevel = node["StitcherDetectQualityLevel"].as<float>();
+        if (node["StitcherDetectCellH"]) stitcher_detect_cellH = node["StitcherDetectCellH"].as<float>();
+        if (node["StitcherTrackMinRot"]) stitcher_track_min_rot = node["StitcherTrackMinRot"].as<float>();
+        if (node["StitcherTrackInlierThreshold"]) stitcher_track_inlier_threshold = node["StitcherTrackInlierThreshold"].as<float>();
+        if (node["StitcherTrackWin"]) stitcher_track_win = node["StitcherTrackWin"].as<float>();
+        if (node["StitcherVerbose"]) stitcher_verbose = node["StitcherVerbose"].as<bool>();
+
     }
     readBundle(doc);
 }
 
 inline
-void GStitchConfig::writeBundle(YAML::Emitter& out) const
+void MLConfigStitcher::writeBundle(YAML::Emitter& out) const
 {
     out << YAML::Key << "Bundle" << YAML::Value;
     out << YAML::BeginSeq;
@@ -185,7 +230,7 @@ void GStitchConfig::writeBundle(YAML::Emitter& out) const
 }
 
 inline
-void GStitchConfig::readBundle(const YAML::Node& doc)
+void MLConfigStitcher::readBundle(const YAML::Node& doc)
 {
     const YAML::Node& node = doc["Bundle"];
     if (node) {
@@ -206,7 +251,7 @@ void GStitchConfig::readBundle(const YAML::Node& doc)
 }
 
 inline
-void GStitchConfig::setWaveCorrect(const string& str)
+void MLConfigStitcher::setWaveCorrect(const string& str)
 {
     wave_correct_ = str;
 
@@ -215,9 +260,9 @@ void GStitchConfig::setWaveCorrect(const string& str)
 }
 
 inline
-void GStitchConfig::parseStitchArgs()
+void MLConfigStitcher::parseStitchArgs()
 {
-    GStitchConfig& st = *this;
+    MLConfigStitcher& st = *this;
 
     //GCONFIGVALUE2(st.match_conf_, "match_conf", float);
     //GCONFIGVALUE2(st.conf_thresh_, "conf_thresh", float);
@@ -297,7 +342,7 @@ void GStitchConfig::parseStitchArgs()
 }
 
 inline
-WaveCorrectKind GStitchConfig::convertWaveCorrect(const string& wave_correct) const
+WaveCorrectKind MLConfigStitcher::convertWaveCorrect(const string& wave_correct) const
 {
     if (wave_correct == "vert")
         return cv::detail::WAVE_CORRECT_VERT;

@@ -65,6 +65,7 @@ void Step1Widget::addmask()
 void Step1Widget::selectVideo()
 {
 	auto& global_data = MLDataManager::get();
+	auto& global_cfg = MLConfigManager::get();
 	global_data.set_dirty(MLDataManager::DataIndex::RAW);
 
 	QString filepath = QFileDialog::getOpenFileName(
@@ -83,6 +84,10 @@ void Step1Widget::selectVideo()
 	emit videoloaded();
 	ui->buttonAddMask->setEnabled(true);
 	ui->buttonDeleteMask->setEnabled(true);
+
+	// update globalconfig
+	global_cfg.update_videopath(filepath);
+	global_cfg.readFromFile(global_cfg.get_localconfig_path());
 }
 
 void Step1Widget::selectProject()
@@ -113,7 +118,6 @@ QSize Step1RenderArea::sizeHint()
 		return QSize(global_data.raw_video_cfg.size.width, global_data.raw_video_cfg.size.height);
 	else
 		return QSize(0, 0);
-
 }
 
 inline bool Step1RenderArea::hasHeightForWidth() { return !MLDataManager::get().raw_video_cfg.isempty(); }

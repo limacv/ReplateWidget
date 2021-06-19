@@ -106,13 +106,6 @@ void StitcherGe::featureFinder(const vector<Mat>& fullImages, vector<ImageFeatur
 
     QMatrix mat;
     mat.scale(full_img_size.width, full_img_size.height);
-    std::vector<Rect> logo_masks;
-    for (int i = 0; i < config()->logo_masks_.size(); ++i) {
-        QRect rect = mat.mapRect(config()->logo_masks_[i]).toRect();
-        logo_masks.push_back(GUtil::cvtRect(rect));
-    }
-
-
 
     for (int i = 0; i < num_images_; ++i)
     {
@@ -126,8 +119,6 @@ void StitcherGe::featureFinder(const vector<Mat>& fullImages, vector<ImageFeatur
         resize(fullImages[i], work_img, Size(), work_scale, work_scale);
         computeImageFeatures(finder, work_img, features[i]);
         features[i].img_idx = i;
-
-        _logoFilter(logo_masks, features[i], work_scale);
 
         if (config()->preview_)
         {

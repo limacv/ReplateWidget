@@ -126,6 +126,7 @@
     <ClCompile Include="InpainterCV.cpp" />
     <ClCompile Include="MLCacheFlow.cpp" />
     <ClCompile Include="MLCachePlatesConfig.cpp" />
+    <ClCompile Include="MLConfigManager.cpp" />
     <ClCompile Include="MLDataManager.cpp" />
     <ClCompile Include="MLCacheTrajectories.cpp" />
     <ClCompile Include="MLCacheStitching.cpp" />
@@ -148,6 +149,7 @@
     <ClCompile Include="ReplateWidget.cpp" />
     <ClCompile Include="main.cpp" />
     <QtUic Include="GResultWidget.ui" />
+    <QtUic Include="MLConfigWidget.ui" />
     <QtUic Include="ReplateWidget.ui" />
     <QtUic Include="Step1Widget.ui" />
     <QtUic Include="Step2Widget.ui" />
@@ -171,7 +173,6 @@
     <QtMoc Include="GObjLayer.h" />
     <QtMoc Include="GMainDisplay.h" />
     <ClInclude Include="GPath.h" />
-    <ClInclude Include="GStitchConifg.hpp" />
     <ClInclude Include="GTracking.h" />
     <ClInclude Include="GPictureLabel.h" />
     <ClInclude Include="GRoi.h" />
@@ -180,7 +181,9 @@
     <ClInclude Include="InpainterCV.h" />
     <ClInclude Include="MLCacheFlow.h" />
     <ClInclude Include="MLCachePlatesConfig.h" />
+    <ClInclude Include="MLConfigDetectTrack.hpp" />
     <ClInclude Include="MLConfigManager.h" />
+    <ClInclude Include="MLConfigStitcher.hpp" />
     <ClInclude Include="MLDataManager.h" />
     <ClInclude Include="MLPathTracker.h" />
     <ClInclude Include="MLPlayerHandler.hpp" />
@@ -202,6 +205,7 @@
     <QtMoc Include="Step1Widget.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="ClassDiagram.cd" />
     <None Include="config.yaml" />
     <None Include="packages.config" />
   </ItemGroup>

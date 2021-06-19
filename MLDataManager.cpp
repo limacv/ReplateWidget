@@ -78,8 +78,7 @@ bool MLDataManager::load_raw_video(const QString& path)
 	raw_video_cfg.fourcc = cap.get(cv::CAP_PROP_FOURCC);
 	raw_video_cfg.fps = cap.get(cv::CAP_PROP_FPS);
 	raw_video_cfg.size = raw_frames[0].size();
-	// update globalconfig
-	MLConfigManager::get().update_videopath(path);
+
 	return true;
 }
 
