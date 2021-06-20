@@ -46,9 +46,9 @@ public:
     void reset();
     bool undo();
 
-    void read(const YAML::Node &doc);
-    void readOld(const YAML::Node &doc);
-    void write(YAML::Emitter &out);
+    void read(const QString& file);
+    void readOld(const QString& file);
+    void write(const QString& file);
 
     void loadOldPathData(const YAML::Node &node, GPathPtr &path);
 
@@ -115,6 +115,7 @@ public:
 //    void addEffects(G_EFX *efx);
 //    void eraseEffect(G_EFX *efx);
 
+    bool empty() const { return prioritied_effects_.empty(); }
     void pushEffect(const GEffectPtr &efx);
     bool popEffect(const GEffectPtr &efx);
 

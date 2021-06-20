@@ -25,6 +25,7 @@ public:
 	Step3Widget(QWidget *parent = Q_NULLPTR);
     virtual ~Step3Widget();
     virtual void showEvent(QShowEvent* event);
+    virtual void hideEvent(QHideEvent* event);
 
     void setCurrentEffect(const GEffectPtr& efx);
     GEffectPtr createEffectFromPath(const GPathPtr& path, G_EFFECT_ID type);

@@ -1,6 +1,7 @@
 #include "arthurstyle.h"
 #include "Step3Widget.h"
 #include "MLDataManager.h"
+#include "MLConfigManager.h"
 #include "ui_Step3Widget.h"
 #include "GResultDisplay.h"
 #include "GTimelineWidget.h"
@@ -70,7 +71,21 @@ void Step3Widget::showEvent(QShowEvent* event)
     control_widget_ui_->blur_alpha_slider_->setValue(1 * control_widget_ui_->blur_alpha_slider_->maximum());
     onCurrentEffectChanged();
 
-	platesp->initialize_cut(45);
+    if (globaldata.effect_manager_.empty())  // try load from file
+    {
+        globaldata.effect_manager_.read(MLConfigManager::get().get_replatecfg_path());
+        for (auto efxs: globaldata.effect_manager_.getEffects())
+            for (auto efx: efxs.second)
+                timeline_widget_->addTimeline(efx);
+    }
+	//platesp->initialize_cut(45);
+}
+
+void Step3Widget::hideEvent(QHideEvent* event)
+{
+    if (event->spontaneous()) return;
+    
+    MLDataManager::get().effect_manager_.write(MLConfigManager::get().get_replatecfg_path());
 }
 
 void Step3Widget::CreateConnections()

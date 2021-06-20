@@ -41,6 +41,7 @@ public:
 	// path config
 	QString get_cache_path() const { return QDir(cache_root).filePath(basename); }
 	QString get_localconfig_path() const { return QDir(get_cache_path()).filePath("config.yaml"); }
+	QString get_replatecfg_path() const { return QDir(get_cache_path()).filePath("replate.yaml"); }
 
 	QString get_yolov5_path() const { return detectrack_cfg.detect_yolov5_path; }
 	QString get_yolov5_weight() const { return detectrack_cfg.detect_yolov5_weight; }

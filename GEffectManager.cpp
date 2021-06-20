@@ -4,6 +4,7 @@
 #include "MLDataManager.h"
 #include "InpainterCV.h"
 #include "GUtil.h"
+#include <fstream>
 
 //qreal GEffectManager::M_STREAK_LENGTH = 3;
 qreal GEffectManager::M_BLEND_ALPHA = 0.5;
@@ -149,8 +150,21 @@ bool GEffectManager::undo()
     return false;
 }
 
-void GEffectManager::read(const YAML::Node &doc)
+void GEffectManager::read(const QString& file)
 {
+    YAML::Node doc;
+    try
+    {
+        doc = YAML::LoadFile(file.toStdString());
+    }
+    catch (const YAML::ParserException& e)
+    {
+        qWarning() << e.what();
+    }
+    catch (const YAML::BadFile& e)
+    {
+        qDebug() << "cannot find file" << file;
+    }
     YAML::Node path_nodes = doc["Path"];
     std::vector<GPathPtr> paths(path_nodes.size());
     for (size_t i = 0; i < path_nodes.size(); ++i) {
@@ -173,8 +187,9 @@ void GEffectManager::read(const YAML::Node &doc)
     }
 }
 
-void GEffectManager::readOld(const YAML::Node &doc)
+void GEffectManager::readOld(const QString& file)
 {
+    YAML::Node doc = YAML::LoadFile(file.toStdString());
     YAML::Node path_nodes = doc["Path"];
     std::vector<GPathPtr> paths(path_nodes.size());
     for (size_t i = 0; i < path_nodes.size(); ++i) {
@@ -200,8 +215,10 @@ void GEffectManager::readOld(const YAML::Node &doc)
     }
 }
 
-void GEffectManager::write(YAML::Emitter &out)
+void GEffectManager::write(const QString& file)
 {
+    YAML::Emitter out;
+    out << YAML::BeginMap;
     // write effects first
     out << YAML::Key << "Effect" << YAML::Value;
     std::vector<std::vector<GEffectPtr>> effects(G_EFX_NUMBER, std::vector<GEffectPtr>());
@@ -254,6 +271,15 @@ void GEffectManager::write(YAML::Emitter &out)
         out << YAML::EndMap;
     }
     out << YAML::EndSeq;
+
+    out << YAML::EndMap;
+    std::ofstream outfile(file.toStdString());
+    if (!outfile.is_open())
+    {
+        qWarning("Failed to save to file");
+        return;
+    }
+    outfile << out.c_str();
 }
 
 void loadPainterPath(const YAML::Node &node, QPainterPath &painter_path)

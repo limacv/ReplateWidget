@@ -790,8 +790,8 @@ int StitcherGe::warp_and_compositebyblend(const std::vector<cv::Mat>& frames, co
     m_warper = warper_creator->create(warped_image_scale * compose_scale);
 
     //LOGLN("Compositing...");
-    UMat full_img, full_mask;
-    UMat img_warped_s;
+    Mat full_img, full_mask;
+    Mat img_warped_s;
     Ptr<Blender> blender;
     images_warped.resize(num_images);
     masks_warped.resize(num_images);
@@ -800,16 +800,16 @@ int StitcherGe::warp_and_compositebyblend(const std::vector<cv::Mat>& frames, co
         if (progress_reporter) progress_reporter->setValue(0.2 + 0.7 * img_idx / num_images);
         //LOGLN("Compositing image #" << indices[img_idx] + 1);
         // Read image and resize it if necessary
-        full_img = frames[img_idx].getUMat(ACCESS_READ);
-        full_mask = inmasks[img_idx].getUMat(ACCESS_READ);
+        full_img = frames[img_idx];
+        full_mask = inmasks[img_idx];
 
         Size img_size = full_img.size();
         Mat_<float> K;
         cameras[img_idx].K().convertTo(K, CV_32F);
         K(0, 0) *= compose_scale; K(0, 2) *= compose_scale;
         K(1, 1) *= compose_scale; K(1, 2) *= compose_scale;
-        UMat img_warped, blend_mask_warped, valid_mask_warped;
-        valid_mask_warped = UMat(img_size, CV_8UC1, cv::Scalar(255));
+        Mat img_warped, blend_mask_warped, valid_mask_warped;
+        valid_mask_warped = Mat(img_size, CV_8UC1, cv::Scalar(255));
         // Warp the current image
         m_warper->warp(full_img, K, cameras[img_idx].R, INTER_LINEAR, BORDER_REFLECT, img_warped);
         // Warp the current image mask
@@ -818,8 +818,10 @@ int StitcherGe::warp_and_compositebyblend(const std::vector<cv::Mat>& frames, co
 
         // Compensate exposure
         compensator->apply(img_idx, corners[img_idx], img_warped, blend_mask_warped);
+        //if (blend_mask_warped.empty())
+            //blend_mask_warped = img_warped;
         img_warped.convertTo(img_warped_s, CV_16S);
-        images_warped[img_idx] = img_warped.getMat(ACCESS_RW);
+        images_warped[img_idx] = img_warped;
         
         if (img_idx == 0)
         {
