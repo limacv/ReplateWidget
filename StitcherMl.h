@@ -22,17 +22,17 @@ using namespace cv;
 using namespace cv::detail;
 using namespace std;
 
-class StitcherGe :
+class StitcherMl :
     public StitcherBase
 {
 public:
-	StitcherGe(const MLConfigStitcher* config)
+    StitcherMl(const MLConfigStitcher* config)
         :work_scale(0),
         seam_scale(0),
         compose_scale(0),
         StitcherBase(config)
 	{}
-	virtual ~StitcherGe() 
+	virtual ~StitcherMl()
     {
         m_warper.release();
     }
@@ -51,51 +51,18 @@ private:
     void pairwiseMatch(const vector<ImageFeatures>& features,
         vector<MatchesInfo>& pairwise_matches) const;
 
-    void loadCameras(const string& filename, vector<CameraParams>& cameras) const;
-
     void drawMatches(const vector<Mat3b>& fullImages, vector<ImageFeatures>& features,
         vector<MatchesInfo>& pairwise_matches) const;
 
-    void _loadCameras(const string& filename, vector<CameraParams>& cameras) const;
-
-    void _loadRotCameras(const string& filename, vector<CameraParams>& cameras) const;
-
-    void saveCameras(const string& filename, const vector<CameraParams>& cameras) const;
-
-    void saveCamerasAndMatch(const string& filename, const vector<CameraParams>& cameras,
-        const vector<ImageFeatures>& features, const vector<MatchesInfo>& pairwise_matches) const;
-
-    void restrictMatchNumber(MatchesInfo& info) const;
-
     void initialIntrinsics(const vector<ImageFeatures>& features,
         vector<MatchesInfo>& pairwise_matches,
-        vector<CameraParams>& cameras) const;
+        vector<CameraParams>& cameras, const Mat& iniR = Mat()) const;
 
-    void bundleAdjust(const vector<ImageFeatures>& features,
-        const vector<MatchesInfo>& pairwise_matches,
-        vector<CameraParams>& cameras) const;
     void bundleAdjustCeres(const vector<ImageFeatures>& features,
-        const vector<MatchesInfo>& pairwise_matches,
-        vector<CameraParams>& cameras) const;
+        const vector<MatchesInfo>& pairwise_matches, vector<CameraParams>& cameras,
+        const vector<int>& fixed_camera_idx = vector<int>()) const;
 
-    void estimateWorkScale(double& work_scale, double megapix_ratio, const Size& full_img_size) const;
-    void estimateSeamScale(double& seam_scale, double megapix_ratio, const Size& full_img_size) const;
-    void estimateWarpScale(double& warp_scale, double megapix_ratio, const Size& full_img_size) const;
-
-    void _pairwiseMatch1(const vector<ImageFeatures>& features,
-        vector<MatchesInfo>& pairwise_matches) const;
-
-    void _pairwiseMatch2(const vector<ImageFeatures>& features,
-        vector<MatchesInfo>& pairwise_matches) const;
-
-    void _logoFilter(const vector<Rect>& logoMask, ImageFeatures& features, float scale = 1.0) const;
-
-    void _logoFilter(const vector<Rect>& logoMask, vector<ImageFeatures>& features, float scale = 1.0) const;
-
-    void _simpleBlend(const Mat& src, const Mat& mask, const Point& tl, Mat& dst, Mat& dst_mask);
-
-    void seamEstimate(const vector<Mat>& images_warped_f, const std::vector<Point>& corners,
-        std::vector<Mat>& masks) const;
+    double estimateScale(double megapix_ratio, const Size& full_img_size) const;
 
     int warp_and_compositebyblend(const std::vector<cv::Mat>& frames, const std::vector<cv::Mat>& masks,
         std::vector<cv::Mat>& images_warped, std::vector<cv::Mat>& masks_warped,

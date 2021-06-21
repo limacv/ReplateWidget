@@ -4,6 +4,7 @@
 #include <QWidget>
 #include <opencv2/core.hpp>
 #include "GRoi.h"
+#include "yaml-cpp/yaml.h"
 
 #ifndef Q_MOC_RUN
 #include <memory>
@@ -77,6 +78,9 @@ protected:
     int frame_id_start_;
     int frame_id_end_;
     bool is_backward_;
+
+    friend YAML::Emitter& operator <<(YAML::Emitter& out, const GPathPtr& path);
+    friend void operator >> (const YAML::Node& node, GPathPtr& path);
 };
 
 #endif // GPATH_H

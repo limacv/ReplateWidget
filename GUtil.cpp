@@ -331,21 +331,34 @@ void GUtil::adaptiveImages(const std::vector<cv::Mat> &matarray,
     }
     out.resize(n);
 
-    int rows = matarray[0].rows;
-    int cols = matarray[0].cols;
-
-    std::vector<cv::Mat4i> matarray4i(n);
-    cv::Mat4i sumOne(rows, cols, cv::Vec4i(0));
-    for (int i = 0; i < n; ++i) {
-        matarray[i].convertTo(matarray4i[i], CV_32SC4);
-        sumOne += matarray4i[i];
-//        cv::imwrite(QString("4i_%1.png").arg(i).toStdString(), matarray4i[i]);
+    cv::Rect globalrect;
+    std::vector<cv::Rect> rects; rects.reserve(n);
+    std::vector<cv::Point> tls; tls.reserve(n);
+    for (const auto& mat : matarray)
+    {
+        cv::Size sz = mat.size();
+        cv::Rect rect(-sz.width / 2, -sz.height / 2, sz.width, sz.height);
+        rects.push_back(rect);
+        globalrect |= rect;
     }
-    sumOne /= n;
+    for (auto& rect : rects)
+        rect -= globalrect.tl();
+    globalrect -= globalrect.tl();
+
+    std::vector<cv::Mat> matarray_f(n);
+    cv::Mat sumOne(globalrect.size(), CV_32FC4, cv::Scalar(0));
+    cv::Mat denorm(globalrect.size(), CV_32FC4, cv::Scalar(0.001));
+    for (int i = 0; i < n; ++i) {
+        matarray[i].convertTo(matarray_f[i], CV_32FC4);
+        sumOne(rects[i]) += matarray_f[i];
+        denorm(rects[i]) += cv::Scalar(1, 1, 1, 1);
+//        cv::imwrite(QString("4i_%1.png").arg(i).toStdString(), matarray_f[i]);
+    }
+    sumOne /= denorm;
 
     // I did a simple composition here instead of the original method
     for (int i = 0; i < n; ++i) {
-        cv::Mat4i avg = (matarray4i[i] + sumOne * 2) / 3;
+        cv::Mat4i avg = (matarray_f[i] + sumOne(rects[i]) * 3) / 4;
         avg.convertTo(out[i], CV_8UC4);
 //        cv::imwrite(QString("%1.png").arg(i).toStdString(), out[i]);
     }

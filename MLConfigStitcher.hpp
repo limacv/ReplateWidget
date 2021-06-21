@@ -56,15 +56,14 @@ public:
     void restore_default();
     void write(YAML::Emitter& out) const;
     void read(const YAML::Node& doc);
-    void writeBundle(YAML::Emitter& out) const;
-    void readBundle(const YAML::Node& doc);
     void setWaveCorrect(const string& str);
 
+    string stitcher_type_;
+    int stitch_skip_frame_;
     string features_type_;
     float match_conf_;
-    string matcher_type;
     int match_range_width;
-    float conf_thresh_;
+    float match_conf_thresh_;
     string wave_correct_;
     string warp_type_;
     SeamType seam_type_;
@@ -87,8 +86,6 @@ public:
     int stitcher_track_win;
     bool stitcher_verbose;
 
-    vector<CameraParams> cameras_;
-
     // no need to store
     bool save_BA_;
     bool load_BA_;
@@ -110,12 +107,13 @@ private:
 inline
 void MLConfigStitcher::restore_default()
 {
-    conf_thresh_ = 1;
+    stitcher_type_ = "Ml";
+    stitch_skip_frame_ = 10;
     features_type_ = "surf";
     warp_type_ = "cylindrical";
+    match_conf_thresh_ = 1;
     match_conf_ = 0.6f;
-    matcher_type = "";
-    match_range_width = -1;
+    match_range_width = 5;
     seam_type_ = SeamType::NO;
     blend_type_ = Blender::FEATHER;
     wave_correct_type_ = WAVE_CORRECT_HORIZ;
@@ -147,9 +145,10 @@ void MLConfigStitcher::write(YAML::Emitter& out) const
 
     out << YAML::BeginMap;
     out << YAML::Key << "MatchConf" << match_conf_;
-    out << YAML::Key << "ConfThresh" << conf_thresh_;
-    out << YAML::Key << "MatchType" << matcher_type;
+    out << YAML::Key << "ConfThresh" << match_conf_thresh_;
     out << YAML::Key << "FeatureType" << features_type_;
+    out << YAML::Key << "SkipFrame" << stitch_skip_frame_;
+    out << YAML::Key << "StitcherType" << stitcher_type_;
     out << YAML::Key << "WaveCorrect" << wave_correct_;
     out << YAML::Key << "WarpType" << warp_type_;
     out << YAML::Key << "SeamType" << seam_type_;
@@ -177,9 +176,10 @@ void MLConfigStitcher::read(const YAML::Node& doc)
     const YAML::Node& node = doc["StitchConfig"];
     if (node) {
         if (node["MatchConf"]) match_conf_ = node["MatchConf"].as<float>();
-        if (node["MatchType"]) matcher_type = node["MatchType"].as<string>();
-        if (node["ConfThresh"]) conf_thresh_ = node["ConfThresh"].as<float>();
+        if (node["ConfThresh"]) match_conf_thresh_ = node["ConfThresh"].as<float>();
         if (node["FeatureType"]) features_type_ = node["FeatureType"].as<string>();
+        if (node["SkipFrame"]) stitch_skip_frame_ = node["SkipFrame"].as<int>();
+        if (node["StitcherType"]) stitcher_type_ = node["StitcherType"].as<string>();
         if (node["WaveCorrect"]) wave_correct_ = node["WaveCorrect"].as<string>();
         if (node["WarpType"]) warp_type_ = node["WarpType"].as<string>();
         if (node["SeamType"]) seam_type_ = (SeamType)node["SeamType"].as<int>();
@@ -198,56 +198,6 @@ void MLConfigStitcher::read(const YAML::Node& doc)
         if (node["StitcherVerbose"]) stitcher_verbose = node["StitcherVerbose"].as<bool>();
 
     }
-    readBundle(doc);
-}
-
-inline
-void MLConfigStitcher::writeBundle(YAML::Emitter& out) const
-{
-    out << YAML::Key << "Bundle" << YAML::Value;
-    out << YAML::BeginSeq;
-    for (int i = 0; i < cameras_.size(); ++i) {
-        out << YAML::BeginMap;
-        out << YAML::Key << "Focal" << YAML::Value << cameras_[i].K().at<double>(0, 0);
-        out << YAML::Key << "Principal" << YAML::Value
-            << YAML::Flow << YAML::BeginSeq << cameras_[i].K().at<double>(0, 2)
-            << cameras_[i].K().at<double>(1, 2) << YAML::EndSeq;
-        out << YAML::Key << "Rotation" << YAML::Value;
-        cv::SVD svd;
-        svd(cameras_[i].R, cv::SVD::FULL_UV);
-        cv::Mat R = svd.u * svd.vt;
-        if (cv::determinant(R) < 0)
-            R *= -1;
-        cv::Mat r = R.t();
-        out << YAML::Flow;
-        out << YAML::BeginSeq;
-        for (int j = 0; j < 9; ++j)
-            out << r.at<double>(j / 3, j % 3);
-        out << YAML::EndSeq;
-        out << YAML::EndMap;
-    }
-    out << YAML::EndSeq;
-}
-
-inline
-void MLConfigStitcher::readBundle(const YAML::Node& doc)
-{
-    const YAML::Node& node = doc["Bundle"];
-    if (node) {
-        cameras_.resize(node.size());
-        for (int i = 0; i < cameras_.size(); ++i) {
-            const YAML::Node& n = node[i];
-            cameras_[i].focal = n["Focal"].as<double>();
-            cameras_[i].ppx = n["Principal"][0].as<double>();
-            cameras_[i].ppy = n["Principal"][1].as<double>();
-            double R[9];
-            double t[3] = { 0,0,0 };
-            for (int j = 0; j < 9; ++j)
-                R[j] = n["Rotation"][j].as<double>();
-            cameras_[i].R = cv::Mat(3, 3, CV_64F, R).t();
-            cameras_[i].t = cv::Mat(3, 1, CV_64F, t).clone();
-        }
-    }
 }
 
 inline
@@ -265,7 +215,7 @@ void MLConfigStitcher::parseStitchArgs()
     MLConfigStitcher& st = *this;
 
     //GCONFIGVALUE2(st.match_conf_, "match_conf", float);
-    //GCONFIGVALUE2(st.conf_thresh_, "conf_thresh", float);
+    //GCONFIGVALUE2(st.match_conf_thresh_, "conf_thresh", float);
     //GCONFIGVALUE2(st.blend_step_, "blend_step", int);
     //GCONFIGVALUE(st.load_BA_, "loadBa", bool);
     //GCONFIGVALUE(st.save_BA_, "saveBa", bool);

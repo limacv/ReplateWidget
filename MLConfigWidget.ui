@@ -35,9 +35,9 @@
       <property name="geometry">
        <rect>
         <x>0</x>
-        <y>-332</y>
+        <y>-360</y>
         <width>405</width>
-        <height>911</height>
+        <height>970</height>
        </rect>
       </property>
       <layout class="QGridLayout" name="gridLayout_5">
@@ -282,14 +282,14 @@
           </property>
           <item row="0" column="0">
            <layout class="QFormLayout" name="formLayout_3">
-            <item row="0" column="0">
+            <item row="1" column="0">
              <widget class="QLabel" name="featureTypeLabel">
               <property name="text">
                <string>Feature type</string>
               </property>
              </widget>
             </item>
-            <item row="0" column="1">
+            <item row="1" column="1">
              <widget class="QComboBox" name="featureTypeComboBox">
               <item>
                <property name="text">
@@ -303,34 +303,34 @@
               </item>
              </widget>
             </item>
-            <item row="1" column="0">
+            <item row="2" column="0">
              <widget class="QLabel" name="matchConfLabel">
               <property name="text">
                <string>Match conf</string>
               </property>
              </widget>
             </item>
-            <item row="1" column="1">
+            <item row="2" column="1">
              <widget class="QLineEdit" name="matchConfLineEdit"/>
             </item>
-            <item row="2" column="0">
+            <item row="3" column="0">
              <widget class="QLabel" name="matchRangeLabel">
               <property name="text">
                <string>Match range</string>
               </property>
              </widget>
             </item>
-            <item row="2" column="1">
+            <item row="3" column="1">
              <widget class="QLineEdit" name="matchRangeLineEdit"/>
             </item>
-            <item row="3" column="0">
+            <item row="4" column="0">
              <widget class="QLabel" name="warpTypeLabel">
               <property name="text">
                <string>Warp type</string>
               </property>
              </widget>
             </item>
-            <item row="3" column="1">
+            <item row="4" column="1">
              <widget class="QComboBox" name="warpTypeComboBox">
               <item>
                <property name="text">
@@ -374,14 +374,14 @@
               </item>
              </widget>
             </item>
-            <item row="4" column="0">
+            <item row="5" column="0">
              <widget class="QLabel" name="blendTypeLabel">
               <property name="text">
                <string>Blend type</string>
               </property>
              </widget>
             </item>
-            <item row="4" column="1">
+            <item row="5" column="1">
              <widget class="QComboBox" name="blendTypeComboBox">
               <item>
                <property name="text">
@@ -400,24 +400,24 @@
               </item>
              </widget>
             </item>
-            <item row="5" column="0">
+            <item row="6" column="0">
              <widget class="QLabel" name="blendStrengthLabel">
               <property name="text">
                <string>Blend strength</string>
               </property>
              </widget>
             </item>
-            <item row="5" column="1">
+            <item row="6" column="1">
              <widget class="QLineEdit" name="blendStrengthLineEdit"/>
             </item>
-            <item row="6" column="0">
+            <item row="7" column="0">
              <widget class="QLabel" name="waveCorrectLabel">
               <property name="text">
                <string>Wave correct</string>
               </property>
              </widget>
             </item>
-            <item row="6" column="1">
+            <item row="7" column="1">
              <widget class="QComboBox" name="waveCorrectComboBox">
               <item>
                <property name="text">
@@ -436,44 +436,44 @@
               </item>
              </widget>
             </item>
-            <item row="7" column="0">
+            <item row="8" column="0">
              <widget class="QLabel" name="workScaleLabel">
               <property name="text">
                <string>Work megapix</string>
               </property>
              </widget>
             </item>
-            <item row="7" column="1">
+            <item row="8" column="1">
              <widget class="QLineEdit" name="workScaleLineEdit"/>
             </item>
-            <item row="8" column="0">
+            <item row="9" column="0">
              <widget class="QLabel" name="seamScaleLabel">
               <property name="text">
                <string>Seam megapix</string>
               </property>
              </widget>
             </item>
-            <item row="8" column="1">
+            <item row="9" column="1">
              <widget class="QLineEdit" name="seamScaleLineEdit"/>
             </item>
-            <item row="9" column="0">
+            <item row="10" column="0">
              <widget class="QLabel" name="composeScaleLabel">
               <property name="text">
                <string>Compose megapix</string>
               </property>
              </widget>
             </item>
-            <item row="9" column="1">
+            <item row="10" column="1">
              <widget class="QLineEdit" name="composeScaleLineEdit"/>
             </item>
-            <item row="10" column="0">
+            <item row="11" column="0">
              <widget class="QLabel" name="expoCompTypeLabel">
               <property name="text">
                <string>ExpoComp type</string>
               </property>
              </widget>
             </item>
-            <item row="10" column="1">
+            <item row="11" column="1">
              <widget class="QComboBox" name="expoCompTypeComboBox">
               <item>
                <property name="text">
@@ -502,45 +502,85 @@
               </item>
              </widget>
             </item>
-            <item row="11" column="0">
+            <item row="12" column="0">
              <widget class="QLabel" name="expoCompNrfeedsLabel">
               <property name="text">
                <string>ExpoComp nrfeeds</string>
               </property>
              </widget>
             </item>
-            <item row="11" column="1">
+            <item row="12" column="1">
              <widget class="QLineEdit" name="expoCompNrfeedsLineEdit"/>
             </item>
-            <item row="12" column="0">
+            <item row="13" column="0">
              <widget class="QLabel" name="expoCompNrfilteringLabel">
               <property name="text">
                <string>ExpoComp nrfiltering</string>
               </property>
              </widget>
             </item>
-            <item row="12" column="1">
+            <item row="13" column="1">
              <widget class="QLineEdit" name="expoCompNrfilteringLineEdit"/>
             </item>
-            <item row="13" column="0">
+            <item row="14" column="0">
              <widget class="QLabel" name="expoCompBlockszLabel">
               <property name="text">
                <string>ExpoComp blocksz</string>
               </property>
              </widget>
             </item>
-            <item row="13" column="1">
+            <item row="14" column="1">
              <widget class="QLineEdit" name="expoCompBlockszLineEdit"/>
             </item>
-            <item row="14" column="0">
+            <item row="15" column="0">
+             <widget class="QLabel" name="stitcherTypeLabel">
+              <property name="text">
+               <string>Stitcher type</string>
+              </property>
+             </widget>
+            </item>
+            <item row="15" column="1">
+             <widget class="QComboBox" name="stitcherTypeComboBox">
+              <item>
+               <property name="text">
+                <string>Ml</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>Ge</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>Ssfm</string>
+               </property>
+              </item>
+             </widget>
+            </item>
+            <item row="16" column="0">
              <widget class="QLabel" name="tryGPULabel">
               <property name="text">
                <string>Try GPU</string>
               </property>
              </widget>
             </item>
-            <item row="14" column="1">
+            <item row="16" column="1">
              <widget class="QCheckBox" name="tryGPUCheckBox"/>
+            </item>
+            <item row="0" column="0">
+             <widget class="QLabel" name="skipFrameLabel">
+              <property name="text">
+               <string>Skip frame</string>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="1">
+             <widget class="QSpinBox" name="skipFrameSpinBox">
+              <property name="wrapping">
+               <bool>true</bool>
+              </property>
+             </widget>
             </item>
            </layout>
           </item>

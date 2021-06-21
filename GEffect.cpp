@@ -319,94 +319,80 @@ GEffectTrail::GEffectTrail(const GPathPtr &path)
         d_images[i] = GUtil::mat2qimage(blendImgs[i], QImage::Format_ARGB32_Premultiplied).copy();
         qDebug() << i << d_images[i] << path->roi_fg_mat_[i].rows;
     }
-
-    setSmooth(line_smooth_);
 }
 
 
 
 void GEffectTrail::preRender(QPainter &painter, int frame_id, int duration)
 {
-    if (recache || prev_length_ != effectLength()) {
-        generateTrail(painter);
-
-        recache = false;
-        prev_length_ = effectLength();
-    }
+    //if (recache || prev_length_ != effectLength()) {
+    //    generateTrail(painter);
+    //    recache = false;
+    //    prev_length_ = effectLength();
+    //}
+    setSmooth(line_smooth_); // update trail_
 }
 
 void GEffectTrail::generateTrail(QPainter& painter)
 {
-    const auto& global_data = MLDataManager::get();
-    // compute big rect
-    cv::Rect rect_union = global_data.toWorldROI(path_->roi_rect_[0]);
-    for (int i = 1; i < path_->space(); ++i)
-        rect_union = rect_union | global_data.toWorldROI(path_->roi_rect_[i]);
+
+    cached_effect_.clear();
     
-    cv::Mat img(rect_union.size(), CV_32FC4, cv::Scalar(0, 0, 0, 0));
-    cv::Mat sum(rect_union.size(), CV_32FC4, cv::Scalar(0.001));
+    QRect view_rect = painter.viewport();
+    QImage img(view_rect.width(), view_rect.height(), QImage::Format_ARGB32_Premultiplied);
+    img.fill(Qt::transparent);
+    QPainter pt(&img);
+    pt.setCompositionMode(QPainter::CompositionMode_SourceOver);
+    size_t n = effectLength();
 
-    for (int i = startFrame(); i <= endFrame(); ++i)
-    {
-        cv::Mat roi_img = path_->roi_fg_mat_[i];
-        cv::Mat roi_alpha4, roi_premultiplied;
-        roi_img.convertTo(roi_premultiplied, CV_32FC4);
-        cv::extractChannel(roi_img, roi_alpha4, 3);
-        cv::cvtColor(roi_alpha4, roi_alpha4, cv::COLOR_GRAY2RGBA);
-        roi_alpha4.convertTo(roi_alpha4, CV_32FC4);
-        cv::multiply(roi_alpha4, roi_premultiplied, roi_premultiplied);
-        
-        cv::Rect rectw = global_data.toWorldROI(path_->roi_rect_[i]);
-        
-        rectw -= rect_union.tl();
-        img(rectw) += roi_premultiplied;
-        sum(rectw) += roi_alpha4;
+    // weight by motion vector
+    std::vector<float> lens;
+    getImageAlphaByVec(trail_, lens);
+
+    std::vector<QImage> images(n);
+
+    int efx_alpha = trail_alpha_ * 255;
+    for (size_t i = 0; i < n; ++i) {
+        size_t curIdx = (render_order_ ? i : n - i - 1);
+        curIdx += startFrame();
+        QImage dst = d_images[curIdx];
+        QImage alpha(dst.size(), QImage::Format_Indexed8);
+        int alp = qMin((int)(efx_alpha * lens[curIdx] * 5), 255);
+        alpha.fill(alp);
+        dst.setAlphaChannel(alpha);  // dst.alpha *= alpha
+        QRect rect = renderLocation(curIdx);
+        rect.moveCenter(trail_[i].toPoint());
+        pt.drawImage(rect, dst);
+        //            renderImage(curIdx).save(QString("_%1.png").arg(i));
     }
-    img /= sum;
-    img.convertTo(img, CV_8UC4);
 
-    if (cached_effect_.empty()) cached_effect_.resize(1);
-    cached_effect_[0] = GUtil::mat2qimage(img.clone(), QImage::Format_ARGB32_Premultiplied);
-    cached_roi_ = rect_union;
-    //cached_effect_.clear();
-    //
-    //QRect view_rect = painter.viewport();
-    //QImage img(view_rect.width(), view_rect.height(), QImage::Format_ARGB32_Premultiplied);
-    //img.fill(Qt::transparent);
-    //QPainter pt(&img);
-    //pt.setCompositionMode(QPainter::CompositionMode_SourceOver);
-    //size_t n = effectLength();
-
-    //// weight by motion vector
-    //std::vector<float> lens;
-    //getImageAlphaByVec(trail_, lens);
-
-    //std::vector<QImage> images(n);
-
-    //int efx_alpha = trail_alpha_ * 255;
-    //for (size_t i = 0; i < n; ++i) {
-    //    size_t curIdx = (render_order_ ? i : n - i - 1);
-    //    curIdx += startFrame();
-    //    QImage dst = d_images[curIdx];
-    //    QImage alpha(dst.size(), QImage::Format_Indexed8);
-    //    int alp = qMin((int)(efx_alpha * lens[curIdx] * 5), 255);
-    //    alpha.fill(alp);
-    //    dst.setAlphaChannel(alpha);
-    //    QRect rect = renderLocation(curIdx);
-    //    rect.moveCenter(trail_[i].toPoint());
-    //    pt.drawImage(rect, dst);
-    //    //            renderImage(curIdx).save(QString("_%1.png").arg(i));
-    //}
-
-    //cached_effect_.push_back(img);
+    cached_effect_.push_back(img);
 }
 
 void GEffectTrail::render(QPainter &painter, int frame_id, int duration, bool video) const
 {
 //    qDebug() << typeid(*this).name() << cached_effect_[0];
     painter.setCompositionMode(QPainter::CompositionMode_SourceOver);
-    QRectF roi = MLDataManager::get().toPaintROI(cached_roi_, painter.viewport());
-    painter.drawImage(roi, cached_effect_[0]);
+    //QRectF roi = MLDataManager::get().toPaintROI(cached_roi_, painter.viewport());
+    //painter.drawImage(painter.viewport(), cached_effect_[0]);
+
+    size_t n = effectLength();
+    // weight by motion vector
+    std::vector<float> lens;
+    getImageAlphaByVec(trail_, lens);
+    std::vector<QImage> images(n);
+
+    int efx_alpha = trail_alpha_ * 255;
+    for (size_t i = startFrame(); i <= endFrame(); ++i) {
+        QImage dst = d_images[i];
+        QImage alpha(dst.size(), QImage::Format_Indexed8);
+        int alp = qMin((int)(efx_alpha * lens[i - startFrame()] * 5), 255);
+        alpha.fill(alp);
+        dst.setAlphaChannel(alpha);  // dst.alpha *= alpha
+        QRect rect = renderLocation(i);
+        rect.moveCenter(trail_[i - startFrame()].toPoint());
+        painter.drawImage(rect, dst);
+    }
 }
 
 void GEffectTrail::getImageAlphaByVec(const std::vector<QPointF> &path, std::vector<float> &out) const

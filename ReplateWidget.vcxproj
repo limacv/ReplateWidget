@@ -135,11 +135,11 @@
     <ClCompile Include="MLTracking.cpp" />
     <ClCompile Include="Step3Widget.cpp" />
     <ClCompile Include="Step4Widget.cpp" />
-    <ClCompile Include="StitcherCV2.cpp" />
     <ClCompile Include="MLUtil.cpp" />
     <ClCompile Include="Step1Widget.cpp" />
     <ClCompile Include="Step2Widget.cpp" />
     <ClCompile Include="StitcherGe.cpp" />
+    <ClCompile Include="StitcherMl.cpp" />
     <ClCompile Include="StitcherSsfm.cpp" />
     <QtRcc Include="breeze.qrc" />
     <QtRcc Include="ReplateWidget.qrc" />
@@ -198,8 +198,9 @@
     <ClInclude Include="PathTrackerBase.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="StitcherBase.h" />
-    <ClInclude Include="StitcherCV2.h" />
     <ClInclude Include="MLUtil.h" />
+    <ClInclude Include="StitcherGe.h" />
+    <ClInclude Include="StitcherMl.h" />
     <ClInclude Include="StitcherSsfm.h" />
     <QtMoc Include="Step2Widget.h" />
     <QtMoc Include="Step1Widget.h" />

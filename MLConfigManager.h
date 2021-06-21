@@ -54,6 +54,7 @@ public:
 
 	QString get_stitch_cache() const { return QDir(get_cache_path()).filePath("stitch"); }
 	QString get_stitch_warpedimg_path(int frameidx) const { return QDir(get_stitch_cache()).filePath(QString("frame_%1.png").arg(QString::number(frameidx))); }
+	QString get_stitch_cameraparams_path() const { return QDir(get_stitch_cache()).filePath("cameras.yaml"); }
 	QString get_stitch_optflow_path(int frameidx) const { return QDir(get_stitch_cache()).filePath(QString("flow_%1.png").arg(QString::number(frameidx))); }
 	QString get_stitch_background_path() const { return QDir(get_stitch_cache()).filePath("background.png"); }
 	QString get_stitch_rois_path() const { return QDir(get_stitch_cache()).filePath("rois.txt"); }

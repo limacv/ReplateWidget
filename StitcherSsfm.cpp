@@ -14,9 +14,9 @@ int StitcherSsfm::warp_and_composite(const std::vector<cv::Mat>& frames, const s
     std::vector<cv::Mat> masks_warped;
     std::vector<cv::Size> sizes;
     std::vector<cv::Point> corners;
-    if (blend_scheme == "seam")
-        ret = warp_and_compositebyseam(frames, masks, images_warped, masks_warped, sizes, corners, stitched);
-    else
+    //if (blend_scheme == "seam")
+        //ret = warp_and_compositebyseam(frames, masks, images_warped, masks_warped, sizes, corners, stitched);
+    //else
         ret = warp_and_compositebyblend(frames, masks, images_warped, masks_warped, sizes, corners, stitched);
     
     if (ret != 0) return ret;
@@ -38,10 +38,10 @@ int StitcherSsfm::warp_points(const int frameidx, std::vector<cv::Point>& inoutp
         return false;
     
     Mat K;
-    cameras[frameidx].K().convertTo(K, CV_32F);
+    cameras_[frameidx].K().convertTo(K, CV_32F);
     for (auto& point : inoutpoints)
     {
-        cv::Point warp = warper->warpPoint(point, K, cameras[frameidx].R);
+        cv::Point warp = warper->warpPoint(point, K, cameras_[frameidx].R);
         point = warp;
     }
     return true;
@@ -67,7 +67,7 @@ int StitcherSsfm::stitch(const std::vector<cv::Mat>& frames, const std::vector<c
     ssfm.runSfM(frames, masks);
     Ssfm::SparseModel model;
     ssfm.track_all_frames(frames, masks, model);
-    cameras = model.poses;
+    cameras_ = model.poses;
     return 0;
 }
 
@@ -85,6 +85,7 @@ int StitcherSsfm::warp_and_compositebyseam(const std::vector<cv::Mat>& frames, c
     sizes.resize(num_images);
     corners.resize(num_images);
 
+    auto warp_type = config_->warp_type_;
     // Warp images and their masks
     Ptr<WarperCreator> warper_creator;
     if (warp_type == "plane")
@@ -124,13 +125,13 @@ int StitcherSsfm::warp_and_compositebyseam(const std::vector<cv::Mat>& frames, c
         cout << "Can't create the following warper '" << warp_type << "'\n";
         return 1;
     }
-    float warped_image_scale = cameras[0].focal;
+    float warped_image_scale = cameras_[0].focal;
     warper = warper_creator->create(warped_image_scale * seam_scale);
 
     /***************
     * find seam in seam_scale and compute compensate of exposure
     *****************/
-    Ptr<ExposureCompensator> compensator = ExposureCompensator::createDefault(expos_comp_type);
+    Ptr<ExposureCompensator> compensator = ExposureCompensator::createDefault(config_->expos_comp_type_);
     vector<UMat> seammasks_warp(num_images);
     {
         vector<UMat> images_warp_4seam(num_images);
@@ -138,16 +139,16 @@ int StitcherSsfm::warp_and_compositebyseam(const std::vector<cv::Mat>& frames, c
         for (int i = 0; i < num_images; ++i)
         {
             Mat_<float> K;
-            cameras[i].K().convertTo(K, CV_32F);
+            cameras_[i].K().convertTo(K, CV_32F);
             K(0, 0) *= seam_scale; K(0, 2) *= seam_scale;
             K(1, 1) *= seam_scale; K(1, 2) *= seam_scale;
 
             cv::Mat image, mask;
             resize(frames[i], image, Size(), seam_scale, seam_scale, INTER_LINEAR_EXACT);
             resize(inmasks[i], mask, Size(), seam_scale, seam_scale, INTER_NEAREST);
-            corners[i] = warper->warp(image, K, cameras[i].R, INTER_LINEAR, BORDER_REFLECT, images_warp_4seam[i]);
+            corners[i] = warper->warp(image, K, cameras_[i].R, INTER_LINEAR, BORDER_REFLECT, images_warp_4seam[i]);
             sizes[i] = images_warp_4seam[i].size();
-            warper->warp(mask, K, cameras[i].R, INTER_NEAREST, BORDER_CONSTANT, seammasks_warp[i]);
+            warper->warp(mask, K, cameras_[i].R, INTER_NEAREST, BORDER_CONSTANT, seammasks_warp[i]);
         }
         for (int i = 0; i < num_images; ++i)
             images_warp_4seam[i].convertTo(images_warped_f[i], CV_32F);
@@ -157,24 +158,25 @@ int StitcherSsfm::warp_and_compositebyseam(const std::vector<cv::Mat>& frames, c
         if (dynamic_cast<GainCompensator*>(compensator.get()))
         {
             GainCompensator* gcompensator = dynamic_cast<GainCompensator*>(compensator.get());
-            gcompensator->setNrFeeds(expos_comp_nr_feeds);
+            gcompensator->setNrFeeds(config_->expos_comp_nr_feeds);
         }
         if (dynamic_cast<ChannelsCompensator*>(compensator.get()))
         {
             ChannelsCompensator* ccompensator = dynamic_cast<ChannelsCompensator*>(compensator.get());
-            ccompensator->setNrFeeds(expos_comp_nr_feeds);
+            ccompensator->setNrFeeds(config_->expos_comp_nr_feeds);
         }
         if (dynamic_cast<BlocksCompensator*>(compensator.get()))
         {
             BlocksCompensator* bcompensator = dynamic_cast<BlocksCompensator*>(compensator.get());
-            bcompensator->setNrFeeds(expos_comp_nr_feeds);
-            bcompensator->setNrGainsFilteringIterations(expos_comp_nr_filtering);
-            bcompensator->setBlockSize(expos_comp_block_size, expos_comp_block_size);
+            bcompensator->setNrFeeds(config_->expos_comp_nr_feeds);
+            bcompensator->setNrGainsFilteringIterations(config_->expos_comp_nr_filtering);
+            bcompensator->setBlockSize(config_->expos_comp_block_size, config_->expos_comp_block_size);
         }
         compensator->feed(corners, images_warp_4seam, seammasks_warp);
         //LOGLN("Compensating exposure, time: " << ((getTickCount() - t) / getTickFrequency()) << " sec");
 
         //LOGLN("Finding seams...");
+        std::string seam_find_type = "gc_colorgrad";
         Ptr<SeamFinder> seam_finder;
         if (seam_find_type == "no")
             seam_finder = makePtr<detail::NoSeamFinder>();
@@ -224,8 +226,8 @@ int StitcherSsfm::warp_and_compositebyseam(const std::vector<cv::Mat>& frames, c
                 // Update corner and size
                 Size sz = full_img.size();
                 Mat K;
-                cameras[i].K().convertTo(K, CV_32F);
-                Rect roi = warper->warpRoi(sz, K, cameras[i].R);
+                cameras_[i].K().convertTo(K, CV_32F);
+                Rect roi = warper->warpRoi(sz, K, cameras_[i].R);
                 corners[i] = roi.tl();
                 sizes[i] = roi.size();
             }
@@ -235,12 +237,12 @@ int StitcherSsfm::warp_and_compositebyseam(const std::vector<cv::Mat>& frames, c
         full_mask = inmasks[img_idx];
         //full_mask = cv::Mat(img_size, CV_8UC1, cv::Scalar(255));
         Mat K;
-        cameras[img_idx].K().convertTo(K, CV_32F);
+        cameras_[img_idx].K().convertTo(K, CV_32F);
         Mat img_warped, mask_warped;
         // Warp the current image
-        warper->warp(full_img, K, cameras[img_idx].R, INTER_LINEAR, BORDER_REFLECT, img_warped);
+        warper->warp(full_img, K, cameras_[img_idx].R, INTER_LINEAR, BORDER_REFLECT, img_warped);
         // Warp the current image mask
-        warper->warp(full_mask, K, cameras[img_idx].R, INTER_NEAREST, BORDER_CONSTANT, mask_warped);
+        warper->warp(full_mask, K, cameras_[img_idx].R, INTER_NEAREST, BORDER_CONSTANT, mask_warped);
         // Compensate exposure
         compensator->apply(img_idx, corners[img_idx], img_warped, mask_warped);
         img_warped.convertTo(img_warped_s, CV_16S);
@@ -253,12 +255,13 @@ int StitcherSsfm::warp_and_compositebyseam(const std::vector<cv::Mat>& frames, c
         bitwise_and(seam_mask, mask_warped, seam_mask);
         if (!blender)
         {
+            const auto blend_type = config_->blend_type_;
             blender = Blender::createDefault(blend_type);
             Size dst_sz = resultRoi(corners, sizes).size();
-            float blend_width = sqrt(static_cast<float>(dst_sz.area())) * blend_strength / 100.f;
+            float blend_width = sqrt(static_cast<float>(dst_sz.area())) * config_->blend_strength_ / 100.f;
             if (blend_width < 1.f)
                 blender = Blender::createDefault(Blender::NO);
-            else if (blend_type == Blender::MULTI_BAND)
+            else if (config_->blend_type_ == Blender::MULTI_BAND)
             {
                 MultiBandBlender* mb = dynamic_cast<MultiBandBlender*>(blender.get());
                 mb->setNumBands(static_cast<int>(ceil(log(blend_width) / log(2.)) - 1.));
@@ -302,6 +305,7 @@ int StitcherSsfm::warp_and_compositebyblend(const std::vector<cv::Mat>& frames, 
     sizes.resize(num_images);
     corners.resize(num_images);
 
+    auto warp_type = config_->warp_type_;
     // Warp images and their masks
     Ptr<WarperCreator> warper_creator;
     if (warp_type == "plane")
@@ -341,13 +345,13 @@ int StitcherSsfm::warp_and_compositebyblend(const std::vector<cv::Mat>& frames, 
         cout << "Can't create the following warper '" << warp_type << "'\n";
         return 1;
     }
-    float warped_image_scale = cameras[0].focal;
+    float warped_image_scale = cameras_[0].focal;
     warper = warper_creator->create(warped_image_scale * seam_scale);
 
     /***************
     * find seam in seam_scale and compute compensate of exposure
     *****************/
-    Ptr<ExposureCompensator> compensator = ExposureCompensator::createDefault(expos_comp_type);
+    Ptr<ExposureCompensator> compensator = ExposureCompensator::createDefault(config_->expos_comp_type_);
     {
         vector<UMat> images_warp_4seam(num_images);
         vector<UMat> images_warped_f(num_images);
@@ -356,16 +360,16 @@ int StitcherSsfm::warp_and_compositebyblend(const std::vector<cv::Mat>& frames, 
         {
             if (progress_reporter) progress_reporter->setValue(0.15 * i / num_images);
             Mat_<float> K;
-            cameras[i].K().convertTo(K, CV_32F);
+            cameras_[i].K().convertTo(K, CV_32F);
             K(0, 0) *= seam_scale; K(0, 2) *= seam_scale;
             K(1, 1) *= seam_scale; K(1, 2) *= seam_scale;
 
             cv::Mat image, mask;
             resize(frames[i], image, Size(), seam_scale, seam_scale, INTER_LINEAR_EXACT);
             resize(inmasks[i], mask, Size(), seam_scale, seam_scale, INTER_NEAREST);
-            corners[i] = warper->warp(image, K, cameras[i].R, INTER_LINEAR, BORDER_REFLECT, images_warp_4seam[i]);
+            corners[i] = warper->warp(image, K, cameras_[i].R, INTER_LINEAR, BORDER_REFLECT, images_warp_4seam[i]);
             sizes[i] = images_warp_4seam[i].size();
-            warper->warp(mask, K, cameras[i].R, INTER_NEAREST, BORDER_CONSTANT, seammasks_warp[i]);
+            warper->warp(mask, K, cameras_[i].R, INTER_NEAREST, BORDER_CONSTANT, seammasks_warp[i]);
         }
         for (int i = 0; i < num_images; ++i)
             images_warp_4seam[i].convertTo(images_warped_f[i], CV_32F);
@@ -375,19 +379,19 @@ int StitcherSsfm::warp_and_compositebyblend(const std::vector<cv::Mat>& frames, 
         if (dynamic_cast<GainCompensator*>(compensator.get()))
         {
             GainCompensator* gcompensator = dynamic_cast<GainCompensator*>(compensator.get());
-            gcompensator->setNrFeeds(expos_comp_nr_feeds);
+            gcompensator->setNrFeeds(config_->expos_comp_nr_feeds);
         }
         if (dynamic_cast<ChannelsCompensator*>(compensator.get()))
         {
             ChannelsCompensator* ccompensator = dynamic_cast<ChannelsCompensator*>(compensator.get());
-            ccompensator->setNrFeeds(expos_comp_nr_feeds);
+            ccompensator->setNrFeeds(config_->expos_comp_nr_feeds);
         }
         if (dynamic_cast<BlocksCompensator*>(compensator.get()))
         {
             BlocksCompensator* bcompensator = dynamic_cast<BlocksCompensator*>(compensator.get());
-            bcompensator->setNrFeeds(expos_comp_nr_feeds);
-            bcompensator->setNrGainsFilteringIterations(expos_comp_nr_filtering);
-            bcompensator->setBlockSize(expos_comp_block_size, expos_comp_block_size);
+            bcompensator->setNrFeeds(config_->expos_comp_nr_feeds);
+            bcompensator->setNrGainsFilteringIterations(config_->expos_comp_nr_filtering);
+            bcompensator->setBlockSize(config_->expos_comp_block_size, config_->expos_comp_block_size);
         }
         compensator->feed(corners, images_warp_4seam, seammasks_warp);
         if (progress_reporter) progress_reporter->setValue(0.2);
@@ -418,8 +422,8 @@ int StitcherSsfm::warp_and_compositebyblend(const std::vector<cv::Mat>& frames, 
                 // Update corner and size
                 Size sz = full_img.size();
                 Mat K;
-                cameras[i].K().convertTo(K, CV_32F);
-                Rect roi = warper->warpRoi(sz, K, cameras[i].R);
+                cameras_[i].K().convertTo(K, CV_32F);
+                Rect roi = warper->warpRoi(sz, K, cameras_[i].R);
                 corners[i] = roi.tl();
                 sizes[i] = roi.size();
             }
@@ -427,14 +431,14 @@ int StitcherSsfm::warp_and_compositebyblend(const std::vector<cv::Mat>& frames, 
 
         Size img_size = full_img.size();
         Mat K;
-        cameras[img_idx].K().convertTo(K, CV_32F);
+        cameras_[img_idx].K().convertTo(K, CV_32F);
         Mat img_warped, blend_mask_warped, valid_mask_warped;
         valid_mask_warped = Mat(img_size, CV_8UC1, cv::Scalar(255));
         // Warp the current image
-        warper->warp(full_img, K, cameras[img_idx].R, INTER_LINEAR, BORDER_REFLECT, img_warped);
+        warper->warp(full_img, K, cameras_[img_idx].R, INTER_LINEAR, BORDER_REFLECT, img_warped);
         // Warp the current image mask
-        warper->warp(full_mask, K, cameras[img_idx].R, INTER_NEAREST, BORDER_CONSTANT, blend_mask_warped);
-        warper->warp(valid_mask_warped, K, cameras[img_idx].R, INTER_NEAREST, BORDER_CONSTANT, masks_warped[img_idx]);
+        warper->warp(full_mask, K, cameras_[img_idx].R, INTER_NEAREST, BORDER_CONSTANT, blend_mask_warped);
+        warper->warp(valid_mask_warped, K, cameras_[img_idx].R, INTER_NEAREST, BORDER_CONSTANT, masks_warped[img_idx]);
 
         // Compensate exposure
         compensator->apply(img_idx, corners[img_idx], img_warped, blend_mask_warped);
@@ -443,9 +447,10 @@ int StitcherSsfm::warp_and_compositebyblend(const std::vector<cv::Mat>& frames, 
 
         if (!blender)
         {
+            auto blend_type = config_->blend_type_;
             blender = Blender::createDefault(blend_type);
             Size dst_sz = resultRoi(corners, sizes).size();
-            float blend_width = sqrt(static_cast<float>(dst_sz.area())) * blend_strength / 100.f;
+            float blend_width = sqrt(static_cast<float>(dst_sz.area())) * config_->blend_strength_ / 100.f;
             if (blend_width < 1.f)
                 blender = Blender::createDefault(Blender::NO);
             else if (blend_type == Blender::MULTI_BAND)

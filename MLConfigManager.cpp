@@ -46,6 +46,9 @@ void MLConfigManager::setup_ui(QWidget* parent)
 	QObject::connect(config_widget_ui->ioUThresLineEdit, &QLineEdit::textEdited, [this](const QString& str) {detectrack_cfg.detect_iou_threshold = str.toDouble(); });
 	QObject::connect(config_widget_ui->deviceComboBox, &QComboBox::currentTextChanged, [this](const QString& str) {detectrack_cfg.detect_device = str; });
 	QObject::connect(config_widget_ui->saveVisualCheckBox, &QCheckBox::toggled, [this](bool s) {detectrack_cfg.detect_save_visualization = s; });
+	
+	QObject::connect(config_widget_ui->skipFrameSpinBox, static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged), 
+		[this](int v) {stitcher_cfg.stitch_skip_frame_ = v; });
 	QObject::connect(config_widget_ui->featureTypeComboBox, &QComboBox::currentTextChanged, [this](const QString& str) {stitcher_cfg.features_type_ = str.toStdString(); });
 	QObject::connect(config_widget_ui->matchConfLineEdit, &QLineEdit::textEdited, [this](const QString& str) {stitcher_cfg.match_conf_ = str.toDouble(); });
 	QObject::connect(config_widget_ui->matchRangeLineEdit, &QLineEdit::textEdited, [this](const QString& str) {stitcher_cfg.match_range_width = str.toInt(); });
@@ -62,6 +65,7 @@ void MLConfigManager::setup_ui(QWidget* parent)
 	QObject::connect(config_widget_ui->expoCompNrfeedsLineEdit, &QLineEdit::textEdited, [this](const QString& str) {stitcher_cfg.expos_comp_nr_feeds = str.toInt(); });
 	QObject::connect(config_widget_ui->expoCompNrfilteringLineEdit, &QLineEdit::textEdited, [this](const QString& str) {stitcher_cfg.expos_comp_nr_filtering = str.toInt(); });
 	QObject::connect(config_widget_ui->expoCompBlockszLineEdit, &QLineEdit::textEdited, [this](const QString& str) {stitcher_cfg.expos_comp_block_size = str.toInt(); });
+	QObject::connect(config_widget_ui->stitcherTypeComboBox, &QComboBox::currentTextChanged, [this](const QString& str) {stitcher_cfg.stitcher_type_ = str.toStdString(); });
 	QObject::connect(config_widget_ui->tryGPUCheckBox, &QCheckBox::toggled, [this](bool s) {stitcher_cfg.try_gpu_ = s; });
 
 	QObject::connect(config_widget_ui->setdefaultButton, &QPushButton::clicked, [this]() {restore_to_default(); });
@@ -96,6 +100,7 @@ void MLConfigManager::update_ui()
 	config_widget_ui->deviceComboBox->setCurrentText(detectrack_cfg.detect_device);
 	config_widget_ui->saveVisualCheckBox->setChecked(detectrack_cfg.detect_save_visualization);
 
+	config_widget_ui->skipFrameSpinBox->setValue(stitcher_cfg.stitch_skip_frame_);
 	config_widget_ui->featureTypeComboBox->setCurrentText(QString::fromStdString(stitcher_cfg.features_type_));
 	config_widget_ui->matchConfLineEdit->setText(QString::number(stitcher_cfg.match_conf_));
 	config_widget_ui->matchRangeLineEdit->setText(QString::number(stitcher_cfg.match_range_width));
@@ -110,6 +115,7 @@ void MLConfigManager::update_ui()
 	config_widget_ui->expoCompNrfeedsLineEdit->setText(QString::number(stitcher_cfg.expos_comp_nr_feeds));
 	config_widget_ui->expoCompNrfilteringLineEdit->setText(QString::number(stitcher_cfg.expos_comp_nr_filtering));
 	config_widget_ui->expoCompBlockszLineEdit->setText(QString::number(stitcher_cfg.expos_comp_block_size));
+	config_widget_ui->stitcherTypeComboBox->setCurrentText(QString::fromStdString(stitcher_cfg.stitcher_type_));
 	config_widget_ui->tryGPUCheckBox->setChecked(stitcher_cfg.try_gpu_);
 }
 

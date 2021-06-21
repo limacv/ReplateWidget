@@ -78,7 +78,7 @@ void Step3Widget::showEvent(QShowEvent* event)
             for (auto efx: efxs.second)
                 timeline_widget_->addTimeline(efx);
     }
-	//platesp->initialize_cut(45);
+	platesp->initialize_cut(globaldata.get_framecount() / 2 + 1);
 }
 
 void Step3Widget::hideEvent(QHideEvent* event)

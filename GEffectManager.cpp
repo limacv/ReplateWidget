@@ -5,6 +5,7 @@
 #include "InpainterCV.h"
 #include "GUtil.h"
 #include <fstream>
+#include "GPath.h"
 
 //qreal GEffectManager::M_STREAK_LENGTH = 3;
 qreal GEffectManager::M_BLEND_ALPHA = 0.5;
@@ -325,10 +326,12 @@ void GEffectManager::loadOldPathData(const YAML::Node &node, GPathPtr &path)
 YAML::Emitter& operator <<(YAML::Emitter &out, const GPathPtr &path)
 {
     out << YAML::BeginMap;
-    out << YAML::Key << "Length" << YAML::Value << path->length();
+    out << YAML::Key << "Space" << YAML::Value << path->space();
 //    out << YAML::Key << "Type" << YAML::Value << path->type_;
     out << YAML::Key << "Backward" << YAML::Value << path->isBackward();
     out << YAML::Key << "Start_id" << YAML::Value << path->startFrame();
+    out << YAML::Key << "End_id" << YAML::Value << path->endFrame();
+    out << YAML::Key << "World_offset" << YAML::Value << path->world_offset_;
 //    out << YAML::Key << "Wnd_size" << YAML::Value << path->window_size_;
     out << YAML::Key << "Roi_Rects"  << YAML::Value << path->roi_rect_;
     //    out << YAML::Key << "BB_Rects" << YAML::Value << path->window_boundbox_rect_;
@@ -341,10 +344,13 @@ YAML::Emitter& operator <<(YAML::Emitter &out, const GPathPtr &path)
 
 void operator >> (const YAML::Node &node, GPathPtr &path)
 {
-    int size = node["Length"].as<int>();
+    int size = node["Space"].as<int>();
     path->resize(size);
     path->setBackward(node["Backward"].as<bool>());
     path->setStartFrame( node["Start_id"].as<int>() );
+    path->setEndFrame(node["End_id"].as<int>());
+    path->world_offset_ = node["World_offset"].as<int>();
+    
     node["Roi_Rects"] >> path->roi_rect_;
     node["Painter_Path"] >> path->painter_path_;
     node["Manual"] >> path->manual_adjust_;

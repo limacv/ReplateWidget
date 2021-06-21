@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>845</width>
-    <height>622</height>
+    <width>1106</width>
+    <height>815</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -194,8 +194,8 @@
       </widget>
      </item>
      <item row="0" column="0">
-      <layout class="QGridLayout" name="gridLayout_3" rowstretch="1,1" columnstretch="1,1" rowminimumheight="0,0" columnminimumwidth="0,0">
-       <item row="1" column="1">
+      <layout class="QGridLayout" name="gridLayout_3" rowstretch="1,1,0" columnstretch="1,1" rowminimumheight="0,0,0" columnminimumwidth="0,0">
+       <item row="2" column="1">
         <widget class="QPushButton" name="buttonInpaintBg">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Minimum" vsizetype="Maximum">
@@ -233,17 +233,31 @@
          </property>
         </widget>
        </item>
-       <item row="0" column="0">
+       <item row="2" column="0">
+        <widget class="QPushButton" name="buttonTracking">
+         <property name="text">
+          <string>Run Tracking</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="1">
+        <widget class="QPushButton" name="buttonEstimateCam">
+         <property name="text">
+          <string>Run Estimate Camera</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="0">
         <widget class="QPushButton" name="buttonDetection">
          <property name="text">
           <string>Run Detection</string>
          </property>
         </widget>
        </item>
-       <item row="1" column="0">
-        <widget class="QPushButton" name="buttonTracking">
+       <item row="0" column="0">
+        <widget class="QPushButton" name="buttonRunall">
          <property name="text">
-          <string>Run Tracking</string>
+          <string>Rerun All</string>
          </property>
         </widget>
        </item>

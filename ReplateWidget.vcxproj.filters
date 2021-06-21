@@ -64,9 +64,6 @@
     <ClCompile Include="Step2Widget.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="StitcherCV2.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="StitcherSsfm.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -152,6 +149,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="MLConfigManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="StitcherMl.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -244,9 +244,6 @@
     <ClInclude Include="MLDataStructure.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="StitcherCV2.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="StitcherBase.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -320,6 +317,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="MLConfigDetectTrack.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="StitcherGe.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="StitcherMl.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

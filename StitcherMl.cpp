@@ -1,4 +1,4 @@
-#include "StitcherGe.h"
+#include "StitcherMl.h"
 #include <QProgressDialog>
 #include <QApplication>
 #include <QThread>
@@ -14,34 +14,93 @@
 #include "GeCeresBA.hpp"
 #include "MLProgressDialog.hpp"
 
-int StitcherGe::stitch(const std::vector<cv::Mat>& frames, const std::vector<cv::Mat>& masks)
+int StitcherMl::stitch(const std::vector<cv::Mat>& frames, const std::vector<cv::Mat>& masks)
 {
     int num_images_ = frames.size();
     full_img_size = frames[0].size();
 
     QElapsedTimer timer; 
     timer.start();
-    estimateWorkScale(work_scale, config()->work_megapix_, full_img_size);
+    work_scale = estimateScale(config()->work_megapix_, full_img_size);
 
     featureFinder(frames, m_features);
-
     qDebug() << "featureFinder";
 
-    pairwiseMatch(m_features, m_pairwise_matches);
+    progress_reporter->beginStage("Analying camera parameters");
+    auto& cameras_out = cameras_;
+    cameras_out.resize(num_images_);
+    const int skip_frame = config_->stitch_skip_frame_ < 1 ? 1 : config_->stitch_skip_frame_;
 
-    qDebug() << "pairwiseMatch";
+    // level 0
+    vector<int> level0_idx;
+    for (int i = 0; i < num_images_; i += skip_frame)
+        level0_idx.push_back(i);
+    if (level0_idx[level0_idx.size() - 1] != num_images_ - 1) 
+        level0_idx.push_back(num_images_ - 1);
 
-    initialIntrinsics(m_features, m_pairwise_matches, cameras_);
+    vector<ImageFeatures> features_l0; features_l0.reserve(level0_idx.size());
+    vector<MatchesInfo> matches_l0;
 
-    qInfo() << "initialIntrinsics: " << timer.elapsed() << " ms";
+    for (int idx: level0_idx)
+        features_l0.push_back(m_features[idx]);
 
-    //if (saveBA)
-    //    saveCamerasAndMatch(bundle_adjust_file, m_cameras, m_features, m_pairwise_matches);
-    timer.restart();
-    bundleAdjustCeres(m_features, m_pairwise_matches, cameras_);
-    // bundleAdjust(m_features, m_pairwise_matches, cameras_);
+    pairwiseMatch(features_l0, matches_l0);
+    if (progress_reporter->wasCanceled()) return -1;
+    progress_reporter->setValue(0.5f / skip_frame);
 
-    qInfo() << "bundleAdjustCeres: " << timer.elapsed() << " ms";
+    vector<CameraParams> cameras_l0;
+    initialIntrinsics(features_l0, matches_l0, cameras_l0);
+    bundleAdjustCeres(features_l0, matches_l0, cameras_l0);
+    if (progress_reporter->wasCanceled()) return -1;
+    progress_reporter->setValue(1.f / skip_frame);
+
+    for (int i = 0; i < level0_idx.size(); ++i)
+        cameras_out[level0_idx[i]] = cameras_l0[i];
+
+    // level 1
+    for (int i = 0; i < level0_idx.size() - 1; ++i)
+    {
+        int idx0 = level0_idx[i];
+        int idx1 = std::min(level0_idx[i + 1], num_images_);
+        vector<int> fixed_camera({ 0 });
+        vector<int> fixed_camera_globally({ idx0 });
+
+        vector<ImageFeatures> features_l1; features_l1.reserve(idx1 - idx0 + 3);
+        features_l1.insert(features_l1.begin(), m_features.begin() + idx0, m_features.begin() + idx1);
+
+        features_l1.push_back(m_features[idx1]);
+        fixed_camera.push_back(features_l1.size() - 1);
+        fixed_camera_globally.push_back(idx1);
+
+        if (i >= 1)
+        {
+            features_l1.push_back(m_features[level0_idx[i - 1]]);
+            fixed_camera.push_back(features_l1.size() - 1);
+            fixed_camera_globally.push_back(level0_idx[i - 1]);
+        }
+        if (i < level0_idx.size() - 2)
+        {
+            features_l1.push_back(m_features[level0_idx[i + 2]]);
+            fixed_camera.push_back(features_l1.size() - 1);
+            fixed_camera_globally.push_back(level0_idx[i + 2]);
+        }
+
+        vector<MatchesInfo> matches_l1;
+        pairwiseMatch(features_l1, matches_l1);
+
+        vector<CameraParams> cameras_l1;
+        initialIntrinsics(features_l1, matches_l1, cameras_l1, cameras_out[idx0].R);
+        for (int j = 0; j < fixed_camera.size(); ++j)
+            cameras_l1[fixed_camera[j]] = cameras_out[fixed_camera_globally[j]];
+
+        bundleAdjustCeres(features_l1, matches_l1, cameras_l1, fixed_camera);
+
+        for (int j = idx0; j < idx1; ++j)
+            cameras_out[j] = cameras_l1[j - idx0];
+
+        if (progress_reporter->wasCanceled()) return -1;
+        progress_reporter->setValue(1.f / skip_frame + (1.f - 1.f / skip_frame) * (float)i / (level0_idx.size() - 1));
+    }
 
     if (config()->wave_correct_ != "no")
     {
@@ -52,6 +111,8 @@ int StitcherGe::stitch(const std::vector<cv::Mat>& frames, const std::vector<cv:
         for (size_t i = 0; i < cameras_.size(); ++i)
             cameras_[i].R = rmats[i];
     }
+
+    qInfo() << "Finish analying camera parameters: " << (double)timer.elapsed() / 1000 << " s";
     // the cameras_ is the config in the work scale, now we convert back to the original scale
     for (auto& camera_param : cameras_)
     {
@@ -59,11 +120,12 @@ int StitcherGe::stitch(const std::vector<cv::Mat>& frames, const std::vector<cv:
         camera_param.ppx = (float)full_img_size.width / 2;
         camera_param.ppy = (float)full_img_size.height / 2;
     }
+
+    progress_reporter->setValue(1.f);
     return 0;
 }
 
-
-int StitcherGe::warp_and_composite(const std::vector<cv::Mat>& frames, const std::vector<cv::Mat>& masks, std::vector<cv::Mat>& warped, std::vector<cv::Rect>& windows, cv::Mat& stitched)
+int StitcherMl::warp_and_composite(const std::vector<cv::Mat>& frames, const std::vector<cv::Mat>& masks, std::vector<cv::Mat>& warped, std::vector<cv::Rect>& windows, cv::Mat& stitched)
 {
     int ret;
     std::vector<cv::Mat> images_warped;
@@ -85,7 +147,7 @@ int StitcherGe::warp_and_composite(const std::vector<cv::Mat>& frames, const std
     return 0;
 }
 
-void StitcherGe::featureFinder(const vector<Mat>& fullImages, vector<ImageFeatures>& features) const
+void StitcherMl::featureFinder(const vector<Mat>& fullImages, vector<ImageFeatures>& features) const
 {
     int num_images_ = fullImages.size();
     features.resize(num_images_);
@@ -150,311 +212,21 @@ void StitcherGe::featureFinder(const vector<Mat>& fullImages, vector<ImageFeatur
     qDebug() << "Finding features";
 }
 
-void StitcherGe::estimateWorkScale(double& work_scale, double megapix_ratio,
-    const Size& full_img_size) const
+double StitcherMl::estimateScale(double megapix_ratio, const Size& full_img_size) const
 {
-    work_scale = min(1.0, sqrt(megapix_ratio * 1e6 / full_img_size.area()));
+    return min(1.0, sqrt(megapix_ratio * 1e6 / full_img_size.area()));
 }
 
-void StitcherGe::estimateSeamScale(double& seam_scale, double megapix_ratio,
-    const Size& full_img_size) const
-{
-    seam_scale = min(1.0, sqrt(megapix_ratio * 1e6 / full_img_size.area()));
-}
-
-void StitcherGe::estimateWarpScale(double& warp_scale, double megapix_ratio,
-    const Size& full_img_size) const
-{
-    warp_scale = min(1.0, sqrt(megapix_ratio * 1e6 / full_img_size.area()));
-}
-
-void StitcherGe::saveCameras(const string& filename, const vector<CameraParams>& cameras) const
-{
-    qDebug() << "Saving Cameras...";
-
-    ofstream fout(filename);
-    //fout << cameras;
-    fout << cameras.size() << endl;
-    for (size_t i = 0; i < cameras.size(); ++i)
-    {
-        fout << cameras[i].K().at<double>(0, 0) << " " << cameras[i].K().at<double>(0, 2) << " "
-            << cameras[i].K().at<double>(1, 2) << " ";
-        SVD svd;
-        svd(cameras[i].R, SVD::FULL_UV);
-        Mat R = svd.u * svd.vt;
-        if (determinant(R) < 0)
-            R *= -1;
-        Mat r = R.t();
-        for (int j = 0; j < 9; ++j)
-            fout << r.at<float>(j / 3, j % 3) << " ";
-        fout << endl;
-    }
-    fout.close();
-
-    qDebug() << "Save Cameras";
-}
-
-void StitcherGe::saveCamerasAndMatch(const string& filename, const vector<CameraParams>& cameras,
-    const vector<ImageFeatures>& features, const vector<MatchesInfo>& pairwise_matches) const
-{
-    qDebug() << "Saving Cameras & Matches...";
-
-    ofstream fout(filename);
-    int num = 0;
-    for (size_t i = 0; i < pairwise_matches.size(); ++i)
-    {
-        if (pairwise_matches[i].confidence < config()->match_conf_thresh_)
-            continue;
-        num += pairwise_matches[i].num_inliers;
-    }
-    fout << cameras.size() << " " << num << endl;
-    //save cameras
-    for (size_t i = 0; i < cameras.size(); ++i)
-    {
-        // focal ppx ppy
-        fout << cameras[i].focal << " " << features[i].img_size.width / 2.0
-            << " " << features[i].img_size.height / 2.0 << " ";
-        //for (int j = 0; j < 9; ++j)
-        //    fout << cameras[i].K().at<double>(j/3, j%3) << " ";
-        SVD svd;
-        svd(cameras[i].R, SVD::FULL_UV);
-        Mat R = svd.u * svd.vt;
-        if (determinant(R) < 0)
-            R *= -1;
-        Mat r = R.t();
-        for (int j = 0; j < 9; ++j)
-            fout << (double)(r.at<float>(j / 3, j % 3)) << " ";
-        //for (int j = 0; j < 3; ++j)
-        //    fout << cameras[i].t.at<double>(j, 0) << " ";
-        fout << endl;
-    }
-
-    //double errSum = 0;
-    for (size_t idx = 0; idx < pairwise_matches.size(); ++idx)
-    {
-        const MatchesInfo& matches_info = pairwise_matches[idx];
-        if (matches_info.confidence < config()->match_conf_thresh_)
-            continue;
-        int i = matches_info.src_img_idx;
-        int j = matches_info.dst_img_idx;
-        const ImageFeatures& features1 = features[i];
-        const ImageFeatures& features2 = features[j];
-
-        Mat r1;
-        cameras[i].R.convertTo(r1, CV_64F);
-        SVD svd;
-        svd(r1, SVD::FULL_UV);
-        Mat R1 = svd.u * svd.vt;
-        if (determinant(R1) < 0)
-            R1 *= -1;
-        Mat rvec;
-        Rodrigues(R1, rvec);
-        Mat R1_(3, 3, CV_64F);
-        Rodrigues(rvec, R1_);
-        Mat_<double> H1 = R1_ * cameras[i].K().inv();
-
-        Mat r2;
-        cameras[j].R.convertTo(r2, CV_64F);
-        svd(r2, SVD::FULL_UV);
-        Mat R2 = svd.u * svd.vt;
-        if (determinant(R2) < 0)
-            R2 *= -1;
-        Mat rvec2;
-        Rodrigues(R2, rvec2);
-        Mat R2_(3, 3, CV_64F);
-        Rodrigues(rvec2, R2_);
-        Mat_<double> H2 = R2_ * cameras[j].K().inv();
-
-        for (size_t k = 0; k < matches_info.matches.size(); ++k)
-        {
-            if (matches_info.inliers_mask[k] <= 0)
-                continue;
-            const DMatch& m = matches_info.matches[k];
-            Point2f p1 = features1.keypoints[m.queryIdx].pt;
-            Point2f p2 = features2.keypoints[m.trainIdx].pt;
-            fout << i << " " << j << " " << p1.x << " " << p1.y << " "\
-                << p2.x << " " << p2.y << endl;/**/
-
-                /*double x1 = H1(0,0)*p1.x + H1(0,1)*p1.y + H1(0,2);
-                double y1 = H1(1,0)*p1.x + H1(1,1)*p1.y + H1(1,2);
-                double z1 = H1(2,0)*p1.x + H1(2,1)*p1.y + H1(2,2);
-                double len = sqrt(x1*x1 + y1*y1 + z1*z1);
-                x1 /= len; y1 /= len; z1 /= len;
-
-                double x2 = H2(0,0)*p2.x + H2(0,1)*p2.y + H2(0,2);
-                double y2 = H2(1,0)*p2.x + H2(1,1)*p2.y + H2(1,2);
-                double z2 = H2(2,0)*p2.x + H2(2,1)*p2.y + H2(2,2);
-                len = sqrt(x2*x2 + y2*y2 + z2*z2);
-                x2 /= len; y2 /= len; z2 /= len;
-                double len2 = sqrt(x2*x2 + y2*y2 + z2*z2);
-                x2 /= len2; y2 /= len2; z2 /= len2;
-
-                double err = (x1 - x2)*(x1 - x2) + (y1 - y2)*(y1 - y2) + (y1 - y2)*(y1 - y2);
-                fout << i << " " << j << " " << err << " ";
-                fout << setprecision(1) << std::fixed << p1.x << " " << p1.y << " " << p2.x << " " << p2.y << "    ";
-                fout << setprecision(4) << std::fixed << x1 << " " << y1 << " " << z1 << " " \
-                    << x2 << " " << y2 << " " << z2 << endl;*/
-                    //errSum += err;
-        }
-    }
-    //cout << errSum << endl;
-
-    fout.flush();
-    fout.close();
-
-    qDebug() << "Save Cameras & Matches";
-}
-
-void StitcherGe::_loadCameras(const string& filename, vector<CameraParams>& cameras) const
-{
-    ifstream fin(filename);
-    if (!fin)
-    {
-        cout << "Can't load file " << filename << endl;
-        return;
-    }
-
-    int nCameras;
-    fin >> nCameras;
-    cameras.resize(nCameras);
-    for (int i = 0; i < nCameras; ++i)
-    {
-        double k[9], R[9], t[3];
-        for (int j = 0; j < 9; ++j)
-            fin >> k[j];
-        for (int j = 0; j < 9; ++j)
-            fin >> R[j];
-        for (int j = 0; j < 3; ++j)
-            fin >> t[j];
-        cameras[i].focal = k[0];
-        cameras[i].ppx = k[2];
-        cameras[i].ppy = k[5];
-        cameras[i].R = Mat(3, 3, CV_64F, R).clone();
-        //double a = cameras[i].R.at<double>(0, 0);
-        cameras[i].t = Mat(3, 1, CV_64F, t).clone();
-    }
-    fin.close();
-}
-
-void StitcherGe::_loadRotCameras(const string& filename, vector<CameraParams>& cameras) const
-{
-    ifstream fin(filename);
-    if (!fin)
-    {
-        cout << "Can't load file " << filename << endl;
-        return;
-    }
-
-    int nCameras;
-    fin >> nCameras;
-    cameras.resize(nCameras);
-    for (int i = 0; i < nCameras; ++i)
-    {
-        double focal, ppx, ppy;
-        fin >> focal >> ppx >> ppy;
-        double k[9], R[9];
-        double t[3] = { 0,0,0 };
-        //for (int j = 0; j < 9; ++j)
-        //    fin >> k[j];
-        for (int j = 0; j < 9; ++j)
-            fin >> R[j];
-        //for (int j = 0; j < 3; ++j)
-        //    fin >>t[j];
-        cameras[i].focal = focal;
-        cameras[i].ppx = ppx;
-        cameras[i].ppy = ppy;
-        cameras[i].R = Mat(3, 3, CV_64F, R).t();
-        cameras[i].t = Mat(3, 1, CV_64F, t).clone();
-    }
-    fin.close();
-}
-
-void StitcherGe::loadCameras(const string& filename, vector<CameraParams>& cameras) const
-{
-    qDebug() << "Loading cameras...";
-
-    if (strstr(filename.c_str(), ".cam"))
-        _loadCameras(filename, cameras);
-    else if (strstr(filename.c_str(), ".rotcam"))
-        _loadRotCameras(filename, cameras);
-    else if (strstr(filename.c_str(), ".ba"))
-        _loadRotCameras(filename, cameras);
-
-    qDebug() << "Load cameras ";
-
-}
-
-void StitcherGe::_pairwiseMatch1(const vector<ImageFeatures>& features, vector<MatchesInfo>& pairwise_matches) const
-{
-    //vector<MatchesInfo> pairwise_matches;
-    //int neighborRange = 4;
-    progress_reporter->beginStage("Matching features. Very slow at 50%, be patient");
-
-    BestOf2NearestMatcher matcher(config()->try_gpu_, config()->match_conf_);
-    int nFeatures = features.size();
-    Mat1b match_mask(nFeatures, nFeatures);
-    match_mask.setTo(cv::Scalar::all(0));
-    const static int FT_NEIGHBOR = 33;
-    const static int Fibonacci[] = { 1,2,3,5,8,13,21,34,55,89 };
-
-    progress_reporter->setValue(0);
-    QApplication::processEvents();
-    if (progress_reporter->wasCanceled()) {
-        qWarning() << "Programe canceled. Detecting Features";
-        exit(-1);
-    }
-
-    for (size_t i = 0; i < features.size(); ++i)
-    {
-
-        for (size_t j = 0; j < 10 && (i + Fibonacci[j]) < features.size(); ++j)
-            match_mask[i][i + Fibonacci[j]] = 255;
-        //        for( size_t j = 1 ; i + j < features.size(); ++j)
-        //            match_mask[i][i + j] = 255;
-    }
-
-
-    matcher(features, pairwise_matches, match_mask.getUMat(cv::ACCESS_READ));
-
-    progress_reporter->setValue(1);
-}
-
-void StitcherGe::_pairwiseMatch2(const vector<ImageFeatures>& features, vector<MatchesInfo>& pairwise_matches) const
-{
-    //vector<MatchesInfo> pairwise_matches;
-    //int neighborRange = 4;
-    BestOf2NearestMatcher matcher(config()->try_gpu_, config()->match_conf_);
-    int nFeatures = features.size();
-    Mat1b match_mask(nFeatures, nFeatures);
-    match_mask.setTo(cv::Scalar::all(0));
-    const static int FT_NEIGHBOR = 5;
-    const static int test[] = { 1,2,3,4,5,10,20 };
-    for (size_t i = 0; i < features.size(); ++i)
-    {
-        for (size_t j = 1; j < FT_NEIGHBOR && (i + j) < features.size(); j *= 2)
-            match_mask[i][i + j] = 255;
-        //        for (size_t j = 0; j < 7 && (i+test[j]) < features.size(); ++j)
-        //            match_mask[i][i+test[j]] = 255;
-
-        //        for (size_t j = 1; i + j < features.size(); ++j)
-        //            match_mask[i][i+j] = 255;
-    }
-    matcher(features, pairwise_matches, match_mask.getUMat(cv::ACCESS_READ));
-}
-
-
-void StitcherGe::pairwiseMatch(const vector<ImageFeatures>& features,
+void StitcherMl::pairwiseMatch(const vector<ImageFeatures>& features,
     vector<MatchesInfo>& pairwise_matches) const
 {
 
     qDebug() << "Pairwise matchings..."; 
 
     // _pairwiseMatch1(features, pairwise_matches);
-    Ptr<FeaturesMatcher> matcher;
-    if (config()->match_range_width <= 0)
-        matcher = makePtr<BestOf2NearestMatcher>(true, config()->match_conf_);
-    else
-        matcher = makePtr<BestOf2NearestRangeMatcher>(config()->match_range_width, true, config()->match_conf_);
+    Ptr<FeaturesMatcher> matcher = makePtr<BestOf2NearestMatcher>(true, config()->match_conf_);
+    //else
+        //matcher = makePtr<BestOf2NearestRangeMatcher>(config()->match_range_width, true, config()->match_conf_);
     (*matcher)(features, pairwise_matches);
     matcher->collectGarbage();
      
@@ -471,24 +243,8 @@ void StitcherGe::pairwiseMatch(const vector<ImageFeatures>& features,
     qDebug() << "# Pairwise matching: " << pairwise_matches.size();
 }
 
-void StitcherGe::restrictMatchNumber(MatchesInfo& info) const
-{
-    int NDST_INLINERS = 500;
-    if (info.num_inliers < NDST_INLINERS)
-        return;
-    std::vector<DMatch> matches;
-    for (size_t i = 0; i < info.inliers_mask.size(); ++i)
-        if (info.inliers_mask[i])
-            matches.push_back(info.matches[i]);
-    std::sort(matches.begin(), matches.end());
-    std::vector<uchar> mask(NDST_INLINERS, 1);
-    info.matches.assign(matches.begin(), matches.begin() + NDST_INLINERS);
-    info.inliers_mask.assign(mask.begin(), mask.end());
-    info.num_inliers = NDST_INLINERS;
-}
-
-void StitcherGe::initialIntrinsics(const vector<ImageFeatures>& features,
-    vector<MatchesInfo>& pairwise_matches, vector<CameraParams>& cameras) const
+void StitcherMl::initialIntrinsics(const vector<ImageFeatures>& features,
+    vector<MatchesInfo>& pairwise_matches, vector<CameraParams>& cameras, const Mat& iniR) const
 {
     HomographyBasedEstimator estimator;
     if (!estimator(features, pairwise_matches, cameras))
@@ -497,48 +253,32 @@ void StitcherGe::initialIntrinsics(const vector<ImageFeatures>& features,
         cout << "Homography estimation failed\n" << endl;
         exit(-1);
     }
-
+    
+    Mat init_rot;
+    
     for (size_t i = 0; i < cameras.size(); ++i)
     {
         Mat R;
         cameras[i].R.convertTo(R, CV_32F);
         cameras[i].R = R;
+
+        if (i == 0)
+        {
+            if (iniR.empty()) init_rot = Mat::eye(3, 3, CV_32F);
+            else init_rot = cameras[0].R.inv() * iniR;
+            //else init_rot = iniR * cameras[0].R.inv();
+        }
+        cameras[i].R = cameras[i].R * init_rot;
+        //cameras[i].R = init_rot * cameras[i].R;
         qDebug() << "Initial camera intrinsics #" << i + 1 << ":\nK:\n";
     }
 
     qDebug() << "Initial intrinsics finished";
 }
 
-
-void StitcherGe::bundleAdjust(const vector<ImageFeatures>& features,
-    const vector<MatchesInfo>& pairwise_matches,
-    vector<CameraParams>& cameras) const
-{
-    qDebug() << "Bundle Adjusting... ";
-    Ptr<detail::BundleAdjusterBase> adjuster;
-    
-    adjuster = makePtr<detail::BundleAdjusterReproj>();
-    adjuster->setConfThresh(config()->match_conf_thresh_);
-
-    Mat_<uchar> refine_mask = Mat::zeros(3, 3, CV_8U);
-    refine_mask(0, 0) = 1;
-    refine_mask(0, 2) = 1;
-    refine_mask(1, 2) = 1;
-    adjuster->setRefinementMask(refine_mask);
-    if (!(*adjuster)(features, pairwise_matches, cameras))
-    {
-        cout << "camera parameters adjusting failed" << endl;
-        qCritical() << "BA Failed" << endl;
-        exit(-1);
-    }
-    qDebug() << "After BA, parameters of # 1: " << endl;
-    qDebug() << "Bundle Adjust, time: ";
-}
-
-
-void StitcherGe::bundleAdjustCeres(const vector<ImageFeatures>& features,
-    const vector<MatchesInfo>& pairwise_matches,
-    vector<CameraParams>& cameras) const
+void StitcherMl::bundleAdjustCeres(const vector<ImageFeatures>& features,
+    const vector<MatchesInfo>& pairwise_matches, vector<CameraParams>& cameras, 
+    const vector<int>& fixed_camera_idx) const
 {
     qDebug() << "Bundle Adjusting... ";
     ceres::Problem problem;
@@ -581,7 +321,7 @@ void StitcherGe::bundleAdjustCeres(const vector<ImageFeatures>& features,
     for (size_t match_idx = 0; match_idx < pairwise_matches.size(); ++match_idx)
     {
         const MatchesInfo& matches_info = pairwise_matches[match_idx];
-        if (matches_info.confidence < config()->match_conf_thresh_)
+        if (matches_info.num_inliers < 20)
             continue;
         int i = matches_info.src_img_idx;
         int j = matches_info.dst_img_idx;
@@ -625,11 +365,14 @@ void StitcherGe::bundleAdjustCeres(const vector<ImageFeatures>& features,
         );
     }
 
+    for (int idx : fixed_camera_idx)
+        problem.SetParameterBlockConstant(camera_inout.data() + 4 * idx);
+
     ceres::Solver::Options options;
     //    options.linear_solver_type = ceres::SPARSE_SCHUR;
     options.linear_solver_type = ceres::DENSE_SCHUR;
     options.max_num_iterations = 1000;
-    options.num_threads = 4;
+    options.num_threads = 8;
     //IterErrorCallback *cb = new IterErrorCallback(&pano_problem);
     //options.callbacks.push_back(cb);
     //options.update_state_every_iteration = true;
@@ -668,7 +411,7 @@ void StitcherGe::bundleAdjustCeres(const vector<ImageFeatures>& features,
 /// require: cameras
 /// write to: images_warped, masks_warped, sizes, corners
 /// </summary>
-int StitcherGe::warp_and_compositebyblend(const std::vector<cv::Mat>& frames, const std::vector<cv::Mat>& inmasks,
+int StitcherMl::warp_and_compositebyblend(const std::vector<cv::Mat>& frames, const std::vector<cv::Mat>& inmasks,
     std::vector<cv::Mat>& images_warped, std::vector<cv::Mat>& masks_warped,
     std::vector<cv::Size>& sizes, std::vector<cv::Point>& corners, cv::Mat& stitch_result)
 {
@@ -739,7 +482,7 @@ int StitcherGe::warp_and_compositebyblend(const std::vector<cv::Mat>& frames, co
         return 1;
     }
     
-    estimateWarpScale(seam_scale, config()->seam_megapix_, full_img_size);
+    seam_scale = estimateScale(config()->seam_megapix_, full_img_size);
     m_warper = warper_creator->create(warped_image_scale * seam_scale);
 
     /***************
@@ -790,7 +533,7 @@ int StitcherGe::warp_and_compositebyblend(const std::vector<cv::Mat>& frames, co
 
     qInfo() << "Exposure Compensate finished: " << timer.elapsed() << "ms" << endl;
     // Compute relative scales
-    estimateWarpScale(compose_scale, config()->compose_megapix_, full_img_size);
+    compose_scale = estimateScale(config()->compose_megapix_, full_img_size);
     m_warper = warper_creator->create(warped_image_scale * compose_scale);
 
     //LOGLN("Compositing...");
@@ -882,7 +625,7 @@ int StitcherGe::warp_and_compositebyblend(const std::vector<cv::Mat>& frames, co
 }
 
 
-int StitcherGe::warp_points(const int frameidx, std::vector<cv::Point>& inoutpoints) const
+int StitcherMl::warp_points(const int frameidx, std::vector<cv::Point>& inoutpoints) const
 {
     if (m_warper == nullptr)
         return false;
@@ -897,7 +640,7 @@ int StitcherGe::warp_points(const int frameidx, std::vector<cv::Point>& inoutpoi
     return true;
 }
 
-void StitcherGe::drawMatches(const vector<Mat3b>& images, vector<ImageFeatures>& features,
+void StitcherMl::drawMatches(const vector<Mat3b>& images, vector<ImageFeatures>& features,
     vector<MatchesInfo>& pairwise_matches) const
 {
     qDebug() << "Drawing Matches to JPG";
@@ -927,126 +670,3 @@ void StitcherGe::drawMatches(const vector<Mat3b>& images, vector<ImageFeatures>&
     
     qDebug() << "Draw Matches to JPG, time:  ";
 }
-
-void StitcherGe::_logoFilter(const vector<Rect>& logoMask, ImageFeatures& features, float scale) const
-{
-    if (features.keypoints.size() == 0 || logoMask.size() == 0)
-        return;
-
-    vector<KeyPoint> newKeyPoint;
-    vector<uchar> mask;
-    for (size_t i = 0; i < features.keypoints.size(); ++i)
-    {
-        const KeyPoint& kp = features.keypoints[i];
-        bool in = false;
-        for (size_t j = 0; j < logoMask.size(); ++j)
-        {
-            if (logoMask[j].contains(kp.pt * (1.0 / scale)))
-            {
-                in = true;
-                break;
-            }
-        }
-        mask.push_back(!in);
-        if (!in)
-            newKeyPoint.push_back(kp);
-    }
-    if (newKeyPoint.size() < features.keypoints.size())
-    {
-        Mat newDesc = Mat(newKeyPoint.size(), features.descriptors.cols, features.descriptors.type());
-        for (size_t i = 0, k = 0; i < mask.size(); ++i)
-        {
-            if (mask[i])
-                features.descriptors.row(i).copyTo(newDesc.row(k++));
-        }
-        features.keypoints.assign(newKeyPoint.begin(), newKeyPoint.end());
-        features.descriptors.release();
-        features.descriptors = newDesc.clone().getUMat(ACCESS_RW);
-    }
-}
-
-void StitcherGe::_logoFilter(const vector<Rect>& logoMask, vector<ImageFeatures>& features, float scale) const
-{
-    for (size_t i = 0; i < features.size(); ++i)
-    {
-        _logoFilter(logoMask, features[i]);
-    }
-}
-
-void StitcherGe::_simpleBlend(const Mat& src, const Mat& mask, const Point& tl, Mat& dst, Mat& dst_mask)
-{
-    // codes from opencv
-    CV_Assert(src.type() == CV_16SC3);
-    CV_Assert(mask.type() == CV_8U);
-    int dx = tl.x;
-    int dy = tl.y;
-
-    for (int y = 0; y < src.rows; ++y)
-    {
-        const Point3_<short>* src_row = src.ptr<Point3_<short> >(y);
-        Point3_<short>* dst_row = dst.ptr<Point3_<short> >(dy + y);
-        const uchar* mask_row = mask.ptr<uchar>(y);
-        uchar* dst_mask_row = dst_mask.ptr<uchar>(dy + y);
-
-        for (int x = 0; x < src.cols; ++x)
-        {
-            if (mask_row[x])
-                dst_row[dx + x] = src_row[x];
-            dst_mask_row[dx + x] |= mask_row[x];
-        }
-    }
-}
-
-void StitcherGe::seamEstimate(const vector<Mat>& images_warped_f, const std::vector<Point>& corners,
-    std::vector<Mat>& masks) const
-{
-    SeamType seam_type_ = config()->seam_type_;
-    qDebug() << "Seam Finding... type: " << G_SEAM_STR[seam_type_ * 2];
-    
-
-    Ptr<SeamFinder> seam_finder;
-    if (seam_type_ == SeamType::NO)
-        seam_finder = new detail::NoSeamFinder();
-    else if (seam_type_ == SeamType::VORONOI)
-        seam_finder = new detail::VoronoiSeamFinder();
-    else if (seam_type_ == SeamType::GC_COLOR)
-    {
-#ifdef HAVE_OPENCV_GPU
-        qDebug() << "GPU!!!!!!!" << config()->try_gpu_ << "--" << gpu::getCudaEnabledDeviceCount();
-        if (config()->try_gpu_ && gpu::getCudaEnabledDeviceCount() > 0)
-            seam_finder = new detail::GraphCutSeamFinderGpu(GraphCutSeamFinderBase::COST_COLOR);
-        else
-#endif
-            seam_finder = new detail::GraphCutSeamFinder(GraphCutSeamFinderBase::COST_COLOR);
-    }
-    else if (seam_type_ == SeamType::GC_COLORGRAD)
-    {
-#ifdef HAVE_OPENCV_GPU
-        if (config()->try_gpu_ && gpu::getCudaEnabledDeviceCount() > 0)
-            seam_finder = new detail::GraphCutSeamFinderGpu(GraphCutSeamFinderBase::COST_COLOR_GRAD);
-        else
-#endif
-            seam_finder = new detail::GraphCutSeamFinder(GraphCutSeamFinderBase::COST_COLOR_GRAD);
-    }
-    else if (seam_type_ == SeamType::DP_COLOR)
-        seam_finder = new detail::DpSeamFinder(DpSeamFinder::COLOR);
-    else if (seam_type_ == SeamType::DP_COLORGRAD)
-        seam_finder = new detail::DpSeamFinder(DpSeamFinder::COLOR_GRAD);
-    if (seam_finder.empty())
-    {
-        cout << "Can't create the following seam finder '" << G_SEAM_STR[seam_type_ * 2] << "'\n";
-    }
-
-    vector<UMat> images_warped_f_UMat, masks_UMat;
-    for (auto mat : images_warped_f)
-        images_warped_f_UMat.emplace_back(mat.getUMat(ACCESS_READ));
-    seam_finder->find(images_warped_f_UMat, corners, masks_UMat);
-
-    masks.resize(0);
-    for (auto mat : masks_UMat)
-        masks.emplace_back(mat.getMat(ACCESS_RW));
-
-    
-    qDebug() << "Seam Finding, time ";
-}
-

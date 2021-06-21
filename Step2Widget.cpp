@@ -19,9 +19,9 @@
 #include "MLCacheStitching.h"
 #include "MLUtil.h"
 #include "SphericalSfm/SphericalSfm.h"
-#include "StitcherCV2.h"
 #include "StitcherSsfm.h"
 #include "StitcherGe.h"
+#include "StitcherMl.h"
 #include "MLPythonWarpper.h"
 
 Step2Widget::Step2Widget(QWidget* parent)
@@ -231,9 +231,10 @@ void Step2Widget::runSegmentation()
 
 void Step2Widget::tryRunStitching()
 {
+	MLProgressDialog bar(this);
 	if (!trajp->tryLoadGlobalTrackBoxes()
 		|| !trajp->tryLoadGlobalDetectBoxes()
-		|| !stitchdatap->tryLoadAllFromFiles())
+		|| !stitchdatap->tryLoadAllFromFiles(&bar))
 		runStitching();
 }
 
@@ -242,6 +243,7 @@ void Step2Widget::runStitching()
 	const cv::Size& framesz = MLDataManager::get().raw_video_cfg.size;
 	const auto rawframes = MLDataManager::get().raw_frames.toStdVector();
 	const auto rawmasks = MLDataManager::get().masks.toStdVector();
+	const auto& global_cfg = MLConfigManager::get();
 
 	if (stitchdatap->isPrepared())
 	{
@@ -256,15 +258,24 @@ void Step2Widget::runStitching()
 	}
 	
 	std::unique_ptr<StitcherBase> st;
-	if (true)
-		st = std::make_unique<StitcherGe>(&MLConfigManager::get().stitcher_cfg);
+	auto st_cfg = &global_cfg.stitcher_cfg;
+	if (st_cfg->stitcher_type_ == "Ml")
+		st = std::make_unique<StitcherMl>(st_cfg);
+	else if (st_cfg->stitcher_type_ == "Ge")
+		st = std::make_unique<StitcherGe>(st_cfg);
+	else if (st_cfg->stitcher_type_ == "Ssfm")
+		st = std::make_unique<StitcherSsfm>(st_cfg);
 	else
-		st = std::make_unique<StitcherSsfm>();
-		//st = std::make_unique<StitcherCV2>();
+	{
+		qCritical("Stitcher type not recognized");
+		return;
+	}
 
 	MLProgressDialog bar(this);
 	st->set_progress_observer(&bar);
+	st->loadCameraParams(global_cfg.get_stitch_cameraparams_path().toStdString());
 	st->stitch(rawframes, rawmasks);
+	st->saveCameraParams(global_cfg.get_stitch_cameraparams_path().toStdString());
 	st->warp_and_composite(rawframes, rawmasks,
 		stitchdatap->warped_frames, stitchdatap->rois, stitchdatap->background);
 	// warp rectangles
