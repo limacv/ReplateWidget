@@ -44,6 +44,7 @@ Step2Widget::Step2Widget(QWidget* parent)
 	connect(ui->buttonInpaintBg, &QPushButton::clicked, this, &Step2Widget::runInpainting);
 	connect(ui->buttonDetection, &QPushButton::clicked, this, &Step2Widget::runDetect);
 	connect(ui->buttonTracking, &QPushButton::clicked, this, &Step2Widget::runTrack);
+	connect(ui->buttonRunall, &QPushButton::clicked, this, &Step2Widget::forceRunAll);
 	
 	connect(ui->checkShowBg, SIGNAL(stateChanged(int)), this->ui->imageWidget, SLOT(update()));
 	connect(ui->checkShowFrames, SIGNAL(stateChanged(int)), this->ui->imageWidget, SLOT(update()));
@@ -78,12 +79,19 @@ void Step2Widget::showEvent(QShowEvent* event)
 		|| !trajp->isTrackGlobalBoxOk()
 		|| !stitchdatap->isPrepared())
 	{
-		global_data.initMasks();
 		runSegmentation();
 		tryRunStitching();
 	}
 	//if (!flowdatap->tryLoadFlows() || !flowdatap->isprepared())
 		//runOptflow();
+}
+
+void Step2Widget::forceRunAll()
+{
+	runDetect();
+	runTrack();
+	runSegmentation();
+	runStitching();
 }
 
 inline bool Step2Widget::display_showbackground() { return ui->checkShowBg->isChecked(); }
@@ -201,6 +209,7 @@ void Step2Widget::runTrack()
 
 void Step2Widget::runSegmentation()
 {
+	MLDataManager::get().initMasks();
 	const auto& pathcfg = MLConfigManager::get();
 	const auto& globaldata = MLDataManager::get();
 	const int framecount = globaldata.get_framecount();
@@ -273,11 +282,17 @@ void Step2Widget::runStitching()
 
 	MLProgressDialog bar(this);
 	st->set_progress_observer(&bar);
-	st->loadCameraParams(global_cfg.get_stitch_cameraparams_path().toStdString());
-	st->stitch(rawframes, rawmasks);
-	st->saveCameraParams(global_cfg.get_stitch_cameraparams_path().toStdString());
+
+	bool loaded = st->loadCameraParams(global_cfg.get_stitch_cameraparams_path().toStdString());
+	if (ui->checkReCameraParameter->isChecked() || !loaded)
+	{
+		st->stitch(rawframes, rawmasks);
+		st->saveCameraParams(global_cfg.get_stitch_cameraparams_path().toStdString());
+	}
+
 	st->warp_and_composite(rawframes, rawmasks,
 		stitchdatap->warped_frames, stitchdatap->rois, stitchdatap->background);
+
 	// warp rectangles
 	for (int frameidx = 0; frameidx < rawframes.size(); ++frameidx)
 	{

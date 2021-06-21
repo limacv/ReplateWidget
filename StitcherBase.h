@@ -70,12 +70,12 @@ bool StitcherBase::loadCameraParams(const std::string& path)
         cameras_[i].focal = n["Focal"].as<double>();
         cameras_[i].ppx = n["Principal"][0].as<double>();
         cameras_[i].ppy = n["Principal"][1].as<double>();
-        double R[9];
-        double t[3] = { 0,0,0 };
+        float R[9];
+        float t[3] = { 0,0,0 };
         for (int j = 0; j < 9; ++j)
-            R[j] = n["Rotation"][j].as<double>();
-        cameras_[i].R = cv::Mat(3, 3, CV_64F, R).t();
-        cameras_[i].t = cv::Mat(3, 1, CV_64F, t).clone();
+            R[j] = n["Rotation"][j].as<float>();
+        cameras_[i].R = cv::Mat(3, 3, CV_32F, R).clone();
+        cameras_[i].t = cv::Mat(3, 1, CV_32F, t).clone();
     }
     return true;
 }
@@ -84,30 +84,27 @@ inline
 bool StitcherBase::saveCameraParams(const std::string& path) const
 {
 	YAML::Emitter out;
+    out << YAML::BeginMap;
 	out << YAML::Key << "Bundle" << YAML::Value;
     out << YAML::BeginSeq;
     for (int i = 0; i < cameras_.size(); ++i) {
         out << YAML::BeginMap;
-        out << YAML::Key << "Focal" << YAML::Value << cameras_[i].K().at<double>(0, 0);
+        out << YAML::Key << "Focal" << YAML::Value << cameras_[i].focal;
         out << YAML::Key << "Principal" << YAML::Value
-            << YAML::Flow << YAML::BeginSeq << cameras_[i].K().at<double>(0, 2)
-            << cameras_[i].K().at<double>(1, 2) << YAML::EndSeq;
+            << YAML::Flow << YAML::BeginSeq << cameras_[i].ppx << cameras_[i].ppy << YAML::EndSeq;
+
         out << YAML::Key << "Rotation" << YAML::Value;
-        cv::SVD svd;
-        svd(cameras_[i].R, cv::SVD::FULL_UV);
-        cv::Mat R = svd.u * svd.vt;
-        if (cv::determinant(R) < 0)
-            R *= -1;
-        cv::Mat r = R.t();
         out << YAML::Flow;
         out << YAML::BeginSeq;
+        cv::Mat_<float> Rf;
+        cameras_[i].R.convertTo(Rf, Rf.type());
         for (int j = 0; j < 9; ++j)
-            out << r.at<double>(j / 3, j % 3);
+            out << *((float*)Rf.data + j);
         out << YAML::EndSeq;
         out << YAML::EndMap;
     }
     out << YAML::EndSeq;
-
+    out << YAML::EndMap;
 	ofstream f(path);
 	if (!f.is_open()) return false;
 

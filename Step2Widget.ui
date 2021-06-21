@@ -240,13 +240,6 @@
          </property>
         </widget>
        </item>
-       <item row="1" column="1">
-        <widget class="QPushButton" name="buttonEstimateCam">
-         <property name="text">
-          <string>Run Estimate Camera</string>
-         </property>
-        </widget>
-       </item>
        <item row="1" column="0">
         <widget class="QPushButton" name="buttonDetection">
          <property name="text">
@@ -258,6 +251,16 @@
         <widget class="QPushButton" name="buttonRunall">
          <property name="text">
           <string>Rerun All</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="1">
+        <widget class="QCheckBox" name="checkReCameraParameter">
+         <property name="text">
+          <string>Re-estimate camera</string>
+         </property>
+         <property name="checked">
+          <bool>false</bool>
          </property>
         </widget>
        </item>
