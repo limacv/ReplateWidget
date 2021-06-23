@@ -22,6 +22,7 @@
 #include "StitcherSsfm.h"
 #include "StitcherGe.h"
 #include "StitcherMl.h"
+#include "StitcherNone.h"
 #include "MLPythonWarpper.h"
 
 Step2Widget::Step2Widget(QWidget* parent)
@@ -281,6 +282,8 @@ void Step2Widget::runStitching()
 		st = std::make_unique<StitcherGe>(st_cfg);
 	else if (st_cfg->stitcher_type_ == "Ssfm")
 		st = std::make_unique<StitcherSsfm>(st_cfg);
+	else if (st_cfg->stitcher_type_ == "No")
+		st = std::make_unique<StitcherNone>(st_cfg);
 	else
 	{
 		qCritical("Stitcher type not recognized");
@@ -291,14 +294,14 @@ void Step2Widget::runStitching()
 	st->set_progress_observer(&bar);
 
 	bool loaded = st->loadCameraParams(global_cfg.get_stitch_cameraparams_path().toStdString());
+	std::vector<cv::Mat> rawmasks;
+	generateMask(rawmasks);
 	if (ui->checkReCameraParameter->isChecked() || !loaded)
 	{
-		st->stitch(rawframes, std::vector<cv::Mat>());
+		st->stitch(rawframes, rawmasks);
 		st->saveCameraParams(global_cfg.get_stitch_cameraparams_path().toStdString());
 	}
 
-	std::vector<cv::Mat> rawmasks;
-	generateMask(rawmasks);
 	st->warp_and_composite(rawframes, rawmasks,
 		stitchdatap->warped_frames, stitchdatap->rois, stitchdatap->background);
 

@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>428</width>
-    <height>581</height>
+    <width>429</width>
+    <height>621</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -35,43 +35,12 @@
       <property name="geometry">
        <rect>
         <x>0</x>
-        <y>-414</y>
-        <width>405</width>
-        <height>993</height>
+        <y>-322</y>
+        <width>406</width>
+        <height>1077</height>
        </rect>
       </property>
       <layout class="QGridLayout" name="gridLayout_5">
-       <item row="0" column="0">
-        <layout class="QHBoxLayout" name="horizontalLayout" stretch="1,1,1">
-         <item>
-          <widget class="QPushButton" name="saveButton">
-           <property name="text">
-            <string>Save(ctrl+s)</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <spacer name="horizontalSpacer">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>30</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-         <item>
-          <widget class="QPushButton" name="setdefaultButton">
-           <property name="text">
-            <string>Set to default</string>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </item>
        <item row="1" column="0">
         <widget class="QGroupBox" name="groupBox">
          <property name="title">
@@ -268,6 +237,37 @@
          </layout>
         </widget>
        </item>
+       <item row="0" column="0">
+        <layout class="QHBoxLayout" name="horizontalLayout" stretch="1,1,1">
+         <item>
+          <widget class="QPushButton" name="saveButton">
+           <property name="text">
+            <string>Save(ctrl+s)</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <spacer name="horizontalSpacer">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>30</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item>
+          <widget class="QPushButton" name="setdefaultButton">
+           <property name="text">
+            <string>Set to default</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
        <item row="3" column="0">
         <widget class="QGroupBox" name="groupBox_3">
          <property name="title">
@@ -303,34 +303,34 @@
               </item>
              </widget>
             </item>
-            <item row="2" column="0">
+            <item row="3" column="0">
              <widget class="QLabel" name="matchConfLabel">
               <property name="text">
                <string>Match conf</string>
               </property>
              </widget>
             </item>
-            <item row="2" column="1">
+            <item row="3" column="1">
              <widget class="QLineEdit" name="matchConfLineEdit"/>
             </item>
-            <item row="3" column="0">
+            <item row="4" column="0">
              <widget class="QLabel" name="matchRangeLabel">
               <property name="text">
                <string>Match range</string>
               </property>
              </widget>
             </item>
-            <item row="3" column="1">
+            <item row="4" column="1">
              <widget class="QLineEdit" name="matchRangeLineEdit"/>
             </item>
-            <item row="4" column="0">
+            <item row="5" column="0">
              <widget class="QLabel" name="warpTypeLabel">
               <property name="text">
                <string>Warp type</string>
               </property>
              </widget>
             </item>
-            <item row="4" column="1">
+            <item row="5" column="1">
              <widget class="QComboBox" name="warpTypeComboBox">
               <item>
                <property name="text">
@@ -374,14 +374,14 @@
               </item>
              </widget>
             </item>
-            <item row="5" column="0">
+            <item row="6" column="0">
              <widget class="QLabel" name="blendTypeLabel">
               <property name="text">
                <string>Blend type</string>
               </property>
              </widget>
             </item>
-            <item row="5" column="1">
+            <item row="6" column="1">
              <widget class="QComboBox" name="blendTypeComboBox">
               <item>
                <property name="text">
@@ -398,26 +398,31 @@
                 <string>Multiband</string>
                </property>
               </item>
+              <item>
+               <property name="text">
+                <string>Simple</string>
+               </property>
+              </item>
              </widget>
             </item>
-            <item row="6" column="0">
+            <item row="7" column="0">
              <widget class="QLabel" name="blendStrengthLabel">
               <property name="text">
                <string>Blend strength</string>
               </property>
              </widget>
             </item>
-            <item row="6" column="1">
+            <item row="7" column="1">
              <widget class="QLineEdit" name="blendStrengthLineEdit"/>
             </item>
-            <item row="7" column="0">
+            <item row="8" column="0">
              <widget class="QLabel" name="waveCorrectLabel">
               <property name="text">
                <string>Wave correct</string>
               </property>
              </widget>
             </item>
-            <item row="7" column="1">
+            <item row="8" column="1">
              <widget class="QComboBox" name="waveCorrectComboBox">
               <item>
                <property name="text">
@@ -436,44 +441,44 @@
               </item>
              </widget>
             </item>
-            <item row="8" column="0">
+            <item row="9" column="0">
              <widget class="QLabel" name="workScaleLabel">
               <property name="text">
                <string>Work megapix</string>
               </property>
              </widget>
             </item>
-            <item row="8" column="1">
+            <item row="9" column="1">
              <widget class="QLineEdit" name="workScaleLineEdit"/>
             </item>
-            <item row="9" column="0">
+            <item row="10" column="0">
              <widget class="QLabel" name="seamScaleLabel">
               <property name="text">
                <string>Seam megapix</string>
               </property>
              </widget>
             </item>
-            <item row="9" column="1">
+            <item row="10" column="1">
              <widget class="QLineEdit" name="seamScaleLineEdit"/>
             </item>
-            <item row="10" column="0">
+            <item row="11" column="0">
              <widget class="QLabel" name="composeScaleLabel">
               <property name="text">
                <string>Compose megapix</string>
               </property>
              </widget>
             </item>
-            <item row="10" column="1">
+            <item row="11" column="1">
              <widget class="QLineEdit" name="composeScaleLineEdit"/>
             </item>
-            <item row="11" column="0">
+            <item row="12" column="0">
              <widget class="QLabel" name="expoCompTypeLabel">
               <property name="text">
                <string>ExpoComp type</string>
               </property>
              </widget>
             </item>
-            <item row="11" column="1">
+            <item row="12" column="1">
              <widget class="QComboBox" name="expoCompTypeComboBox">
               <item>
                <property name="text">
@@ -502,48 +507,53 @@
               </item>
              </widget>
             </item>
-            <item row="12" column="0">
+            <item row="13" column="0">
              <widget class="QLabel" name="expoCompNrfeedsLabel">
               <property name="text">
                <string>ExpoComp nrfeeds</string>
               </property>
              </widget>
             </item>
-            <item row="12" column="1">
+            <item row="13" column="1">
              <widget class="QLineEdit" name="expoCompNrfeedsLineEdit"/>
             </item>
-            <item row="13" column="0">
+            <item row="14" column="0">
              <widget class="QLabel" name="expoCompNrfilteringLabel">
               <property name="text">
                <string>ExpoComp nrfiltering</string>
               </property>
              </widget>
             </item>
-            <item row="13" column="1">
+            <item row="14" column="1">
              <widget class="QLineEdit" name="expoCompNrfilteringLineEdit"/>
             </item>
-            <item row="14" column="0">
+            <item row="15" column="0">
              <widget class="QLabel" name="expoCompBlockszLabel">
               <property name="text">
                <string>ExpoComp blocksz</string>
               </property>
              </widget>
             </item>
-            <item row="14" column="1">
+            <item row="15" column="1">
              <widget class="QLineEdit" name="expoCompBlockszLineEdit"/>
             </item>
-            <item row="15" column="0">
+            <item row="16" column="0">
              <widget class="QLabel" name="stitcherTypeLabel">
               <property name="text">
                <string>Stitcher type</string>
               </property>
              </widget>
             </item>
-            <item row="15" column="1">
+            <item row="16" column="1">
              <widget class="QComboBox" name="stitcherTypeComboBox">
               <item>
                <property name="text">
                 <string>Ml</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>No</string>
                </property>
               </item>
               <item>
@@ -558,14 +568,14 @@
               </item>
              </widget>
             </item>
-            <item row="16" column="0">
+            <item row="17" column="0">
              <widget class="QLabel" name="tryGPULabel">
               <property name="text">
                <string>Try GPU</string>
               </property>
              </widget>
             </item>
-            <item row="16" column="1">
+            <item row="17" column="1">
              <widget class="QCheckBox" name="tryGPUCheckBox"/>
             </item>
             <item row="0" column="0">
@@ -582,15 +592,51 @@
               </property>
              </widget>
             </item>
-            <item row="17" column="0">
+            <item row="18" column="0">
              <widget class="QLabel" name="verboseLabel">
               <property name="text">
                <string>Verbose</string>
               </property>
              </widget>
             </item>
-            <item row="17" column="1">
+            <item row="18" column="1">
              <widget class="QCheckBox" name="verboseCheckBox"/>
+            </item>
+            <item row="2" column="0">
+             <widget class="QLabel" name="featureThresLabel">
+              <property name="text">
+               <string>Feature Thres</string>
+              </property>
+             </widget>
+            </item>
+            <item row="2" column="1">
+             <widget class="QLineEdit" name="featureThresLineEdit"/>
+            </item>
+           </layout>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item row="4" column="0">
+        <widget class="QGroupBox" name="groupBox_4">
+         <property name="title">
+          <string>Miscellaneous</string>
+         </property>
+         <layout class="QGridLayout" name="gridLayout_6">
+          <property name="bottomMargin">
+           <number>0</number>
+          </property>
+          <item row="0" column="0">
+           <layout class="QFormLayout" name="formLayout_4">
+            <item row="0" column="0">
+             <widget class="QLabel" name="removeBorderLabel">
+              <property name="text">
+               <string>Remove border</string>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="1">
+             <widget class="QCheckBox" name="removeBorderCheckBox"/>
             </item>
            </layout>
           </item>

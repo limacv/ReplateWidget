@@ -7,6 +7,11 @@
 #include <algorithm>
 #include <opencv2/imgproc.hpp>
 
+void bound_rect(QRectF& rect)
+{
+    rect &= QRectF(0, 0, 1., 1.);
+}
+
 BBox* findDetectBox(int frameidx, const cv::Rect& query_rect, int class_id = -1)
 {
     const auto& boxes = MLDataManager::get().trajectories.frameidx2detectboxes[frameidx];
@@ -148,6 +153,7 @@ GPathPtr MLPathTracker::trackPath(int start_frame, const QRectF& start_rectF, in
     if (trackedbox.empty()) // if track failed, use naive solution
     {
         path.roi_rect_[start_frame] = start_rectF;
+        bound_rect(path.roi_rect_[start_frame]);
         if (start_frame == 0)  // this is to guarantee that the returned path has length longer than 2 frames
         {
             path.setStartFrame(start_frame);
@@ -166,7 +172,7 @@ GPathPtr MLPathTracker::trackPath(int start_frame, const QRectF& start_rectF, in
     {
         cv::Rect dilated = GUtil::addMarginToRect(pbox->rect_global, RECT_MARGIN);
         path.roi_rect_[pbox->frameidx] = global_data.toPaintROI(dilated, QRect(), true);
-        boundRectF(path.roi_rect_[pbox->frameidx]);
+        bound_rect(path.roi_rect_[pbox->frameidx]);
     }
     fillsInvalidPath(path, trackedbox.front()->frameidx, trackedbox.back()->frameidx);
     // deciding start frame and end frame
@@ -216,7 +222,7 @@ void MLPathTracker::updateTrack(GPath* path_data)
             {
                 cv::Rect dilated = GUtil::addMarginToRect(pbox->rect_global, RECT_MARGIN);
                 path.roi_rect_[backward_idx] = global_data.toPaintROI(dilated, QRect(), true);
-                boundRectF(path.roi_rect_[backward_idx]);
+                bound_rect(path.roi_rect_[backward_idx]);
             }
             else
                 path.roi_rect_[backward_idx] = path.roi_rect_[backward_idx + 1];
@@ -234,7 +240,7 @@ void MLPathTracker::updateTrack(GPath* path_data)
             {
                 cv::Rect dilated = GUtil::addMarginToRect(pbox->rect_global, RECT_MARGIN);
                 path.roi_rect_[forward_idx] = global_data.toPaintROI(dilated, QRect(), true);
-                boundRectF(path.roi_rect_[forward_idx]);
+                bound_rect(path.roi_rect_[forward_idx]);
             }
             else
                 path.roi_rect_[forward_idx] = path.roi_rect_[forward_idx - 1];

@@ -432,7 +432,7 @@ bool GEffectTrail::setSmooth(int s)
         trail_[i] = this->renderLocation(i + startFrame()).center();
     }
     trail_ = GUtil::smooth(trail_, line_smooth_);
-    qDebug() << "setSmooth" << line_smooth_;
+    //qDebug() << "setSmooth" << line_smooth_;
     return true;
 }
 
@@ -556,20 +556,15 @@ void GEffectMotion::render(QPainter &painter, int frame_id, int duration, bool v
             int marker_pos = local_id;
             QPointF pos = scaleMat().map(marker_trail_[marker_pos]);
             pos.setY(pos.y() - rad);
-            float scale = painter.viewport().width() / 900.0; // TODO: a bit hacking
+            float scale = painter.viewport().height() / 300.0; // TODO: a bit hacking
 //            qDebug() << "anchor_id" << anchor_id;
             GUtil::addTriangle(painter, pos.toPoint(), anchor_id, scale);
-
-//            if (opaque_.empty() || anchor_id == 0)
-            if (anchor_id == 0)
-                trail_length = qMax(local_id, trail_length);
-        }
-        else if (marker_mode_ < 1)
-//            if (anchor_id == 0)
+        }       
+        if (anchor_id == 0)
             trail_length = qMax(local_id, trail_length);
     }
     if (draw_line_) {
-        int linewidth = video?5: 2;
+        int linewidth = painter.viewport().height() / 100;
         QColor pencolor(line_color_);
         pencolor.setAlpha(qAlpha(line_color_));
         painter.setPen(QPen(QColor(pencolor), linewidth, Qt::DotLine));
@@ -602,7 +597,7 @@ bool GEffectMotion::setSmooth(int s)
     marker_trail_.assign(trail_.begin(), trail_.end());
     trail_ = GUtil::smooth(trail_, line_smooth_);
     marker_trail_ = GUtil::smooth2(trail_, 50);
-    qDebug() << "setSmooth" << line_smooth_;
+    //qDebug() << "setSmooth" << line_smooth_;
     return true;
 }
 

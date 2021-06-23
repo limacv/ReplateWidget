@@ -15,6 +15,8 @@
 #include "MLProgressDialog.hpp"
 #include "MLDataManager.h"
 
+#include "MLBlender.hpp"
+
 int StitcherMl::stitch(const std::vector<cv::Mat>& frames, const std::vector<cv::Mat>& masks)
 {
     int num_images_ = frames.size();
@@ -24,7 +26,7 @@ int StitcherMl::stitch(const std::vector<cv::Mat>& frames, const std::vector<cv:
     timer.start();
     work_scale = estimateScale(config()->work_megapix_, full_img_size);
 
-    featureFinder(frames, m_features);
+    featureFinder(frames, m_features, masks);
     qDebug() << "featureFinder";
 
     progress_reporter->beginStage("Analying camera parameters");
@@ -156,7 +158,7 @@ int StitcherMl::warp_and_composite(const std::vector<cv::Mat>& frames, const std
     return 0;
 }
 
-void StitcherMl::featureFinder(const vector<Mat>& fullImages, vector<ImageFeatures>& features) const
+void StitcherMl::featureFinder(const vector<Mat>& fullImages, vector<ImageFeatures>& features, const vector<Mat>& fullMasks) const
 {
     int num_images_ = fullImages.size();
     features.resize(num_images_);
@@ -164,7 +166,7 @@ void StitcherMl::featureFinder(const vector<Mat>& fullImages, vector<ImageFeatur
     Ptr<Feature2D> finder;
     if (config()->features_type_ == "surf")
     {
-        finder = xfeatures2d::SURF::create(400.);
+        finder = xfeatures2d::SURF::create(config_->features_thres_);
     }
     else if (config()->features_type_ == "orb")
     {
@@ -178,6 +180,7 @@ void StitcherMl::featureFinder(const vector<Mat>& fullImages, vector<ImageFeatur
 
     progress_reporter->beginStage("Detecting Features");
     Mat work_img;
+    Mat work_mask;
 
     QMatrix mat;
     mat.scale(full_img_size.width, full_img_size.height);
@@ -191,11 +194,12 @@ void StitcherMl::featureFinder(const vector<Mat>& fullImages, vector<ImageFeatur
             exit(-1);
         }
 
+        resize(fullMasks[i], work_mask, Size(), work_scale, work_scale, cv::INTER_NEAREST);
         resize(fullImages[i], work_img, Size(), work_scale, work_scale);
-        computeImageFeatures(finder, work_img, features[i]);
+        computeImageFeatures(finder, work_img, features[i], work_mask);
         features[i].img_idx = i;
 
-        if (config()->preview_)
+        if (config_->preview_)
         {
             for (size_t j = 0; j < features[i].keypoints.size(); j++)
                 circle(work_img, features[i].keypoints[j].pt, 3, Scalar(255, 0, 0), -1, 8);
@@ -220,18 +224,18 @@ void StitcherMl::featureFinder(const vector<Mat>& fullImages, vector<ImageFeatur
     progress_reporter->setValue(1.);
     qDebug() << "Finding features";
     
-    // filter logos
-    if (!MLDataManager::get().manual_masks.isEmpty())
-    {
-        vector<Rect> logos;
-        const auto& qlogos = MLDataManager::get().manual_masks;
-        for (const auto& qlogo : qlogos)
-        {
-            QRectF rect = mat.mapRect(qlogo);
-            logos.push_back(Rect(rect.x(), rect.y(), rect.width(), rect.height()));
-        }
-        _logoFilter(logos, features, work_scale);
-    }
+    //// filter logos
+    //if (!MLDataManager::get().manual_masks.isEmpty())
+    //{
+    //    vector<Rect> logos;
+    //    const auto& qlogos = MLDataManager::get().manual_masks;
+    //    for (const auto& qlogo : qlogos)
+    //    {
+    //        QRectF rect = mat.mapRect(qlogo);
+    //        logos.push_back(Rect(rect.x(), rect.y(), rect.width(), rect.height()));
+    //    }
+    //    _logoFilter(logos, features, work_scale);
+    //}
 
 }
 
@@ -618,7 +622,10 @@ int StitcherMl::warp_and_compositebyblend(const std::vector<cv::Mat>& frames, co
         //if (!blender)
         //{
             const auto& blend_type = config()->blend_type_;
-            blender = Blender::createDefault(blend_type, config_->try_gpu_);
+            if (blend_type >= 3)
+                blender = MLBlender::createDefault();
+            else
+                blender = Blender::createDefault(blend_type, false);
             Size dst_sz = resultRoi(corners, sizes).size();
             float blend_width = sqrt(static_cast<float>(dst_sz.area())) * config()->blend_strength_ / 100.f;
             if (blend_width < 1.f)
@@ -652,9 +659,7 @@ int StitcherMl::warp_and_compositebyblend(const std::vector<cv::Mat>& frames, co
     return 0;
 }
 
-
-
-void StitcherMl::_logoFilter(const vector<Rect>& logoMask, ImageFeatures& features, float scale) const
+void StitcherMl::_boxesFilter(const vector<Rect>& logoMask, ImageFeatures& features, float scale) const
 {
     if (features.keypoints.size() == 0 || logoMask.size() == 0)
         return;
@@ -691,11 +696,24 @@ void StitcherMl::_logoFilter(const vector<Rect>& logoMask, ImageFeatures& featur
     }
 }
 
+
+void StitcherMl::_detectionFilter(vector<ImageFeatures>& features) const
+{
+    const auto& allboxes = MLDataManager::get().trajectories.frameidx2detectboxes;
+    for (int i = 0; i < features.size(); ++i)
+    {
+        vector<Rect> boxes; boxes.reserve(allboxes[i].size());
+        for (const auto& box : allboxes[i])
+            if (!box->empty()) boxes.push_back(box->rect);
+        _boxesFilter(boxes, features[i], work_scale);
+    }
+}
+
 void StitcherMl::_logoFilter(const vector<Rect>& logoMask, vector<ImageFeatures>& features, float scale) const
 {
     for (size_t i = 0; i < features.size(); ++i)
     {
-        _logoFilter(logoMask, features[i], scale);
+        _boxesFilter(logoMask, features[i], scale);
     }
 }
 

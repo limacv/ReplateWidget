@@ -270,8 +270,6 @@ class GEffectLoop : public GEffect
 public:
     explicit GEffectLoop(const GPathPtr& path);
 
-    virtual void renderSlowVideo(QPainter& painter, int frame_id, int duration) const;
-
     virtual void renderSlow(QPainter& painter, int frame_id, int duration, bool video = false) const;
 
     virtual void preRender(QPainter& painter, int frame_id,

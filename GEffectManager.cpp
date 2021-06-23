@@ -93,7 +93,19 @@ void GEffectManager::applyBlack(const GPathPtr &path)
     path->roi_fg_mat_[0] = cv::Vec4b(0,0,0,0);
     black.copyTo(path->roi_fg_mat_[0], mask);
     path->roi_fg_qimg_[0] = GUtil::mat2qimage(path->roi_fg_mat_[0],
-            QImage::Format_ARGB32_Premultiplied).copy();
+        QImage::Format_ARGB32_Premultiplied).copy();
+}
+
+void GEffectManager::refreshAllPathImage()
+{
+    for (auto it = prioritied_effects_.begin(); it != prioritied_effects_.end(); ++it)
+    {
+        for (auto iit = it->second.begin(); iit != it->second.end(); ++iit)
+        {
+            auto& path = (*iit)->path();
+            path->forceUpdateImages();
+        }
+    }
 }
 
 

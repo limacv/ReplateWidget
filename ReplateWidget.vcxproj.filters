@@ -154,6 +154,12 @@
     <ClCompile Include="StitcherMl.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="StitcherNone.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="MLBlender.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="Step1Widget.h">
@@ -323,6 +329,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="StitcherMl.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="StitcherNone.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MLBlender.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

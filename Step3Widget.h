@@ -72,6 +72,8 @@ public slots:
     QAction* showControlAction() const;
     QAction* showTimeLineAction() const;
 
+    void setSamePathRoiTilEnd();
+
 private:
     void CreateConnections();
     void PrepStyleSheet();
@@ -112,6 +114,8 @@ private:
     GTimelineWidget* timeline_widget_;
     QWidget* control_widget_;
     Ui::GControlWidget* control_widget_ui_;
+
+    QAction* force_update_all_path_image_;
     //QGroupBox* control_widget_;
 
     // style sheet

@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1228</width>
-    <height>141</height>
+    <width>1301</width>
+    <height>165</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -163,18 +163,6 @@
                <string>Select Mode</string>
               </property>
               <layout class="QGridLayout" name="gridLayout">
-               <property name="leftMargin">
-                <number>8</number>
-               </property>
-               <property name="topMargin">
-                <number>2</number>
-               </property>
-               <property name="rightMargin">
-                <number>8</number>
-               </property>
-               <property name="bottomMargin">
-                <number>2</number>
-               </property>
                <item row="0" column="0">
                 <widget class="QComboBox" name="combo_autoselection">
                  <property name="minimumSize">
@@ -274,10 +262,13 @@
             </item>
             <item>
              <layout class="QVBoxLayout" name="verticalLayout_7">
+              <property name="spacing">
+               <number>2</number>
+              </property>
               <item>
                <widget class="QPushButton" name="button_auto_add">
                 <property name="sizePolicy">
-                 <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                 <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
                   <horstretch>0</horstretch>
                   <verstretch>0</verstretch>
                  </sizepolicy>
@@ -331,6 +322,22 @@
                 </property>
                </widget>
               </item>
+              <item>
+               <widget class="QCheckBox" name="check_showtrace">
+                <property name="minimumSize">
+                 <size>
+                  <width>70</width>
+                  <height>0</height>
+                 </size>
+                </property>
+                <property name="text">
+                 <string>trace</string>
+                </property>
+                <property name="checked">
+                 <bool>true</bool>
+                </property>
+               </widget>
+              </item>
              </layout>
             </item>
            </layout>
@@ -359,25 +366,6 @@
                <number>1</number>
               </property>
               <item>
-               <widget class="QPushButton" name="control_modify_widthbiger">
-                <property name="enabled">
-                 <bool>false</bool>
-                </property>
-                <property name="maximumSize">
-                 <size>
-                  <width>25</width>
-                  <height>16777215</height>
-                 </size>
-                </property>
-                <property name="text">
-                 <string>w+</string>
-                </property>
-                <property name="shortcut">
-                 <string>Right</string>
-                </property>
-               </widget>
-              </item>
-              <item>
                <widget class="QPushButton" name="control_modify_widthsmaller">
                 <property name="enabled">
                  <bool>false</bool>
@@ -385,7 +373,7 @@
                 <property name="maximumSize">
                  <size>
                   <width>25</width>
-                  <height>16777215</height>
+                  <height>20</height>
                  </size>
                 </property>
                 <property name="text">
@@ -397,40 +385,82 @@
                </widget>
               </item>
               <item>
-               <widget class="QPushButton" name="control_modify_heightbigger">
+               <layout class="QVBoxLayout" name="verticalLayout_4">
+                <property name="spacing">
+                 <number>1</number>
+                </property>
+                <item>
+                 <widget class="QPushButton" name="control_modify_heightbigger">
+                  <property name="enabled">
+                   <bool>false</bool>
+                  </property>
+                  <property name="maximumSize">
+                   <size>
+                    <width>25</width>
+                    <height>20</height>
+                   </size>
+                  </property>
+                  <property name="text">
+                   <string>h+</string>
+                  </property>
+                  <property name="shortcut">
+                   <string>Up</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QPushButton" name="control_modify_heightsmaller">
+                  <property name="enabled">
+                   <bool>false</bool>
+                  </property>
+                  <property name="maximumSize">
+                   <size>
+                    <width>25</width>
+                    <height>20</height>
+                   </size>
+                  </property>
+                  <property name="text">
+                   <string>h-</string>
+                  </property>
+                  <property name="shortcut">
+                   <string>Down</string>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </item>
+              <item>
+               <widget class="QPushButton" name="control_modify_widthbiger">
                 <property name="enabled">
                  <bool>false</bool>
                 </property>
                 <property name="maximumSize">
                  <size>
                   <width>25</width>
-                  <height>16777215</height>
+                  <height>20</height>
                  </size>
                 </property>
                 <property name="text">
-                 <string>h+</string>
+                 <string>w+</string>
                 </property>
                 <property name="shortcut">
-                 <string>Up</string>
+                 <string>Right</string>
                 </property>
                </widget>
               </item>
               <item>
-               <widget class="QPushButton" name="control_modify_heightsmaller">
+               <widget class="QPushButton" name="control_modify_sametoend">
                 <property name="enabled">
                  <bool>false</bool>
                 </property>
                 <property name="maximumSize">
                  <size>
-                  <width>25</width>
+                  <width>30</width>
                   <height>16777215</height>
                  </size>
                 </property>
                 <property name="text">
-                 <string>h-</string>
-                </property>
-                <property name="shortcut">
-                 <string>Down</string>
+                 <string>=&gt;</string>
                 </property>
                </widget>
               </item>

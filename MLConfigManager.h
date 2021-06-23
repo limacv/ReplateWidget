@@ -78,4 +78,7 @@ public:
 	// variable config
 	MLConfigDetectTrack detectrack_cfg;
 	MLConfigStitcher stitcher_cfg;
+
+	// put to an individual class;
+	bool border_elimination;
 };

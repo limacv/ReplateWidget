@@ -25,15 +25,18 @@ public:
 public:
     bool checkInside(int frame_id, QPointF pos);
 
+    // modifier
     void translateRect(int frame_id, QPointF offset);
     void moveRectCenter(int frame_id, QPointF center, bool trycopyfromneighbor=false);
     void setPathRoi(int frame_id, const GRoiPtr &roi);
     void setPathRoi(int frame_id, float dx, float dy);
+    void copyFrameState(int frame_from, int frame_to);
 
     QRectF frameRoiRect(int frame_id) const;
     QImage frameRoiImage(int frame_id) const;
     cv::Mat4b frameRoiMat4b(int frame_id) const;
     
+    void forceUpdateImages();
     void updateimages();
 
     int startFrame() const {return frame_id_start_;}
@@ -52,11 +55,12 @@ public:
 
     void paint(QPainter &painter, int frame_id) const;
 
-    static bool is_draw_flow;
+    static bool is_draw_trajectory;
 
 private:
     int worldid2thisid(int frameidx) const { return frameidx - world_offset_; }
     void updateImage(int idx);
+    void paintTrace(QPainter& painter, int frame_id) const;
 
 public:
     std::vector<QRectF> roi_rect_;

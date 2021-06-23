@@ -7,6 +7,19 @@
 #include "MLConfigManager.h"
 #include "GUtil.h"
 
+void generateFeaterMask(cv::Mat& feater, float marginpct)
+{
+	int hei = feater.rows, wid = feater.cols;
+	feater.forEach<uchar>([&](uchar& pix, const int* pos) {
+		int x = pos[1], y = pos[0];
+		float ax = (float)x / wid;
+		ax = ax < marginpct ? ax / marginpct : (ax > (1 - marginpct) ? (1 - ax) / marginpct : 1);
+		float ay = (float)y / hei;
+		ay = ay < marginpct ? ay / marginpct : (ay > (1 - marginpct) ? (1 - ay) / marginpct : 1);
+		pix = cv::saturate_cast<uchar>((float)pix * ax * ay);
+		});
+}
+
 void calForegroundBorder(cv::Mat& fg, const cv::Mat& bg, const cv::Mat& mask)
 {
 	CV_Assert(fg.channels() == 4 && bg.channels() == 3 && mask.channels() == 1);
@@ -51,6 +64,64 @@ void calForegroundBorder(cv::Mat& fg, const cv::Mat& bg, const cv::Mat& mask)
 		}
 	}
 }
+
+void calForegroundBorderMy(cv::Mat& fg, const cv::Mat& bg, const cv::Mat& mask)
+{
+	CV_Assert(fg.channels() == 4 && bg.channels() == 3 && mask.channels() == 1);
+	CV_Assert(fg.size() == bg.size());
+
+	cv::Mat diff(fg.size(), CV_32FC1);
+
+	diff.forEach<float>([&](float& pix, const int* pos) {
+			cv::Vec4b fpix = fg.at<cv::Vec4b>(pos[0], pos[1]);
+			cv::Vec3b bpix = bg.at<cv::Vec3b>(pos[0], pos[1]);
+			int err = 0;
+			for (int i = 0; i < 3; ++i)
+				err += (fpix[i] > bpix[i] ? fpix[i] - bpix[i] : bpix[i] - fpix[i]);
+
+			if (err < 10) err = 0;
+			else if (err < 25) err = (err - 10) * 4;
+			else if (err < 35) err = (err - 25) * 20 + 60;
+			else err = 255;
+			pix = err * fpix[3] / 255;
+			err = MIN(255, err);
+		});
+
+	diff.convertTo(diff, CV_8UC1);
+	auto in_border = [&](double x, double y) -> bool
+	{
+		x /= fg.cols; y /= fg.rows;
+		return !(x > 0.15 && x < 0.85 && y > 0.15 && y < 0.85);
+	};
+
+	do
+	{
+		if (!MLConfigManager::get().border_elimination)
+			break;
+
+		cv::Mat ma = diff > 100;
+		cv::erode(ma, ma, cv::Mat());
+		cv::Mat connected, centers;
+		cv::connectedComponentsWithStats(ma, ma, connected, centers);
+		for (int i = 1; i < connected.rows; ++i)
+		{
+			auto p = static_cast<double*>(centers.ptr<double>(i));
+			//auto p1 = static_cast<int*>(connected.ptr<int>(i));
+			if (in_border(p[0], p[1]))
+			{
+				cv::Mat in_ma = ma == i;
+				cv::dilate(in_ma, in_ma, cv::Mat(), cv::Point(-1, -1), 2);
+				cv::GaussianBlur(in_ma, in_ma, cv::Size(5, 5), 2, 2, cv::BORDER_REPLICATE);
+				cv::subtract(diff, in_ma, diff);
+			}
+		}
+	} while (false);
+	
+	generateFeaterMask(diff, 0.1);
+	cv::cvtColor(fg, fg, cv::COLOR_BGRA2BGR);
+	cv::merge(std::vector<cv::Mat>({ fg, diff }), fg);
+}
+
 
 bool MLDataManager::load_raw_video(const QString& path)
 {
@@ -169,7 +240,8 @@ cv::Mat4b MLDataManager::getForeground(int i, QRectF rectF, const cv::Mat1b mask
 {
 	cv::Mat4b fg = getRoiofFrame(i, rectF);
 	cv::Mat3b bg = getRoiofBackground(rectF);
-	calForegroundBorder(fg, bg, mask);
+	//calForegroundBorder(fg, bg, mask);
+	calForegroundBorderMy(fg, bg, mask);
 	return fg;
 }
 

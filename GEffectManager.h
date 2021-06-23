@@ -38,6 +38,8 @@ public:
     void applyStill(const GPathPtr &path);
     void applyBlack(const GPathPtr &path);
 
+    void refreshAllPathImage();
+
 //    void cvtPathData(GPathPtr &path) const;
     GEffectPtr addEffect(const GPathPtr &path, G_EFFECT_ID type);
 

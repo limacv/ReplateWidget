@@ -57,7 +57,7 @@ void GMainDisplay::mousePressEvent(QMouseEvent *event)
 {
     mouse_pos_ = getMousePosNorm(event->pos());
 
-    if (is_modify_ && event->button() == Qt::LeftButton)
+    if (is_modify_ && event->button() == Qt::LeftButton && step3widget->cur_tracked_path)
     {
         step3widget->cur_tracked_path->moveRectCenter(step3widget->cur_frameidx, mouse_pos_, true);
         is_adjust_path_ = true;

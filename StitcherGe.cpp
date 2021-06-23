@@ -12,6 +12,7 @@
 #include <iomanip>
 #include <sstream>
 #include "GeCeresBA.hpp"
+#include "MLBlender.hpp"
 #include "MLProgressDialog.hpp"
 
 int StitcherGe::stitch(const std::vector<cv::Mat>& frames, const std::vector<cv::Mat>& masks)
@@ -847,7 +848,10 @@ int StitcherGe::warp_and_compositebyblend(const std::vector<cv::Mat>& frames, co
         //if (!blender)
         //{
             const auto& blend_type = config()->blend_type_;
-            blender = Blender::createDefault(blend_type, config_->try_gpu_);
+            if (blend_type >= 3)
+                blender = MLBlender::createDefault();
+            else
+                blender = Blender::createDefault(blend_type, config_->try_gpu_);
             Size dst_sz = resultRoi(corners, sizes).size();
             float blend_width = sqrt(static_cast<float>(dst_sz.area())) * config()->blend_strength_ / 100.f;
             if (blend_width < 1.f)

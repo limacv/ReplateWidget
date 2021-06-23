@@ -8,6 +8,7 @@ void MLConfigManager::restore_to_default()
 {
 	stitcher_cfg.restore_default();
 	detectrack_cfg.restore_default();
+	border_elimination = true;
 	update_ui();
 }
 
@@ -22,10 +23,11 @@ void MLConfigManager::setup_ui(QWidget* parent)
 	config_widget_ui = new Ui::MLConfigWidget();
 	config_widget_ui->setupUi(config_widget->widget());
 	
-	QDoubleValidator* validatorf01 = new QDoubleValidator(0, 1, 1000, parent);
+	QDoubleValidator* validatorf01 = new QDoubleValidator(0, 1, 5, parent);
 	QIntValidator* validatorint = new QIntValidator(-1, 10000, parent);
-	QDoubleValidator* validatorf0 = new QDoubleValidator(0, 100, 1000, parent);
+	QDoubleValidator* validatorf0 = new QDoubleValidator(0, 9999, 5, parent);
 	config_widget_ui->workSizeLineEdit->setValidator(validatorint);
+	config_widget_ui->featureThresLineEdit->setValidator(validatorf0);
 	config_widget_ui->confThresLineEdit->setValidator(validatorf01);
 	config_widget_ui->ioUThresLineEdit->setValidator(validatorf01);
 	config_widget_ui->matchConfLineEdit->setValidator(validatorf01);
@@ -50,6 +52,7 @@ void MLConfigManager::setup_ui(QWidget* parent)
 	QObject::connect(config_widget_ui->skipFrameSpinBox, static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged), 
 		[this](int v) {stitcher_cfg.stitch_skip_frame_ = v; });
 	QObject::connect(config_widget_ui->featureTypeComboBox, &QComboBox::currentTextChanged, [this](const QString& str) {stitcher_cfg.features_type_ = str.toStdString(); });
+	QObject::connect(config_widget_ui->featureThresLineEdit, &QLineEdit::textEdited, [this](const QString& str) {stitcher_cfg.features_thres_ = str.toDouble(); });
 	QObject::connect(config_widget_ui->matchConfLineEdit, &QLineEdit::textEdited, [this](const QString& str) {stitcher_cfg.match_conf_ = str.toDouble(); });
 	QObject::connect(config_widget_ui->matchRangeLineEdit, &QLineEdit::textEdited, [this](const QString& str) {stitcher_cfg.match_range_width = str.toInt(); });
 	QObject::connect(config_widget_ui->warpTypeComboBox, &QComboBox::currentTextChanged, [this](const QString& str) {stitcher_cfg.warp_type_ = str.toStdString(); });
@@ -71,6 +74,8 @@ void MLConfigManager::setup_ui(QWidget* parent)
 
 	QObject::connect(config_widget_ui->setdefaultButton, &QPushButton::clicked, [this]() {restore_to_default(); });
 	QObject::connect(config_widget_ui->saveButton, &QPushButton::clicked, [this]() {writeToFile(get_localconfig_path()); });
+
+	QObject::connect(config_widget_ui->removeBorderCheckBox, &QCheckBox::clicked, [this](bool s) {border_elimination = s; });
 }
 
 void MLConfigManager::update_videopath(const QString& video_path)
@@ -103,6 +108,7 @@ void MLConfigManager::update_ui()
 
 	config_widget_ui->skipFrameSpinBox->setValue(stitcher_cfg.stitch_skip_frame_);
 	config_widget_ui->featureTypeComboBox->setCurrentText(QString::fromStdString(stitcher_cfg.features_type_));
+	config_widget_ui->featureThresLineEdit->setText(QString::number(stitcher_cfg.features_thres_));
 	config_widget_ui->matchConfLineEdit->setText(QString::number(stitcher_cfg.match_conf_));
 	config_widget_ui->matchRangeLineEdit->setText(QString::number(stitcher_cfg.match_range_width));
 	config_widget_ui->warpTypeComboBox->setCurrentText(QString::fromStdString(stitcher_cfg.warp_type_));
@@ -119,6 +125,8 @@ void MLConfigManager::update_ui()
 	config_widget_ui->stitcherTypeComboBox->setCurrentText(QString::fromStdString(stitcher_cfg.stitcher_type_));
 	config_widget_ui->tryGPUCheckBox->setChecked(stitcher_cfg.try_gpu_);
 	config_widget_ui->verboseCheckBox->setChecked(stitcher_cfg.stitcher_verbose);
+
+	config_widget_ui->removeBorderCheckBox->setChecked(border_elimination);
 }
 
 void MLConfigManager::readFromFile(const QString& cfgpath)
@@ -139,10 +147,12 @@ void MLConfigManager::readFromFile(const QString& cfgpath)
 	catch (const YAML::ParserException& e)
 	{
 		qWarning() << e.what();
+		restore_to_default();
 	}
 	catch (const YAML::BadFile& e)
 	{
-		qWarning() << "cannot find file" << cfgpath;
+		qWarning() << "MLConfigManager::cannot find file" << cfgpath << ", restore to default";
+		restore_to_default();
 	}
 	update_ui();
 }

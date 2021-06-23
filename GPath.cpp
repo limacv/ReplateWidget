@@ -37,7 +37,7 @@ GPath::GPath(int startframe, const QRectF & rect0, const QPainterPath & painterp
 
 GPath::~GPath() { release(); }
 
-bool GPath::is_draw_flow = true;
+bool GPath::is_draw_trajectory = true;
 
 bool GPath::checkInside(int frame_id, QPointF pos)
 {
@@ -98,6 +98,13 @@ void GPath::updateImage(int idx)
         roi_fg_mat_[idx], QImage::Format_ARGB32_Premultiplied);
 }
 
+void GPath::forceUpdateImages()
+{
+    for (int i = 0; i < space(); ++i)
+        dirty_[i] = true;
+    updateimages();
+}
+
 void GPath::updateimages()
 {
     for (int i = 0; i < space(); ++i)
@@ -132,7 +139,7 @@ cv::Mat4b GPath::frameRoiMat4b(int frame_id) const
 void GPath::paint(QPainter &painter, int frame_id) const
 {
     if (frame_id < startFrame() || frame_id > endFrame()) {
-        qDebug() << "Out of current path range";
+        paintTrace(painter, frame_id);
         return;
     }
     if (this->isEmpty()) return;
@@ -173,22 +180,44 @@ void GPath::paint(QPainter &painter, int frame_id) const
             painter.drawPath(pp);
         }
     }
+    paintTrace(painter, frame_id);
+}
 
-    QRect ori_rect = mat.mapRect(roi_rect_[idx]).toRect();
-    // draw flow points
-    if (is_draw_flow && this->number_flow_points_[idx] > 0) {
-        QPen points_pen = (this->isBackward()? QPen(QColor(255,0,0,110), 1, Qt::SolidLine) :
-                                 QPen(QColor(0,255,1), 1, Qt::SolidLine));
-        QMatrix orig = painter.worldMatrix();
-        painter.translate(ori_rect.topLeft());
-        painter.setPen(points_pen);
-        std::vector<QPointF> points(number_flow_points_[idx]);
-        for(int i = 0; i < points.size(); ++i)
-            points[i] = mat.map(flow_points_[idx][i]);
-        painter.drawPoints(points.data(),
-                           number_flow_points_[idx]);
-        painter.setWorldMatrix(orig);
+void GPath::paintTrace(QPainter& painter, int frame_id) const
+{
+    // draw trajectories
+    if (is_draw_trajectory
+        && painter_path_.isEmpty()
+        && roi_rect_.size() > 1)
+    {
+        QSize size = painter.viewport().size();
+        QMatrix mat;
+        mat.scale(size.width(), size.height());
+        const auto& color_auto = QColor(143, 170, 220, 150);
+        const auto& color_manual = QColor(255, 217, 102, 150);
+        for (int i = startFrame(); i < endFrame(); ++i)
+        {
+            QPointF currpt = mat.map(roi_rect_[i].center());
+            QPointF nextpt = mat.map(roi_rect_[i + 1].center());
+
+            float width = qAbs<float>(i - frame_id) / 4;
+            width = MIN(width, size.width() / 200);
+            painter.setPen(QPen(manual_adjust_[i] ? color_manual : color_auto,
+                width, Qt::PenStyle::SolidLine));
+            painter.drawLine(currpt, nextpt);
+        }
     }
+}
+
+void GPath::copyFrameState(int frame_from, int frame_to)
+{
+    frame_from = worldid2thisid(frame_from);
+    frame_to = worldid2thisid(frame_to);
+    if (frame_from < 0 || frame_to < 0 || frame_from >= roi_rect_.size() || frame_to >= roi_rect_.size())
+        return;
+    roi_rect_[frame_to] = roi_rect_[frame_from];
+    manual_adjust_[frame_to] = manual_adjust_[frame_from];
+    dirty_[frame_to] = true;
 }
 
 void GPath::setPathRoi(int frame_id, const GRoiPtr &roi)

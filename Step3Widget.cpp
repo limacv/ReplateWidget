@@ -28,6 +28,10 @@ Step3Widget::Step3Widget(QWidget *parent)
     //control_widget_ = CreateControlGroup(this);
     timeline_widget_ = new GTimelineWidget(this, this);
 
+    force_update_all_path_image_ = new QAction(this);
+    force_update_all_path_image_->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_5));
+    addAction(force_update_all_path_image_);
+
     ui->dockMain->setWidget(display_widget_);
 	ui->dockResult->setWidget(result_widget_);
     ui->dockControl->setWidget(control_widget_);
@@ -110,7 +114,7 @@ void Step3Widget::CreateConnections()
     connect(control_widget_ui_->layer_spinbox, static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged), this, &Step3Widget::changePriority);
     connect(control_widget_ui_->speed_spinbox, static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged), this, &Step3Widget::changeSpeed);
 
-    connect(control_widget_ui_->control_modify_path_button_, &QPushButton::toggled, this, &Step3Widget::toggleModify);
+    connect(control_widget_ui_->control_modify_path_button_, &QPushButton::clicked, this, &Step3Widget::toggleModify);
     
     connect(this, &Step3Widget::frameChanged, timeline_widget_, &GTimelineWidget::updateFrameId);
     
@@ -129,6 +133,11 @@ void Step3Widget::CreateConnections()
     connect(control_widget_ui_->control_modify_widthbiger, &QPushButton::clicked, [this]() {morphPathRoi(5, 0); });
     connect(control_widget_ui_->control_modify_heightsmaller, &QPushButton::clicked, [this]() {morphPathRoi(0, -5); });
     connect(control_widget_ui_->control_modify_heightbigger, &QPushButton::clicked, [this]() {morphPathRoi(0, 5); });
+    connect(control_widget_ui_->control_modify_sametoend, &QPushButton::clicked, this, &Step3Widget::setSamePathRoiTilEnd);
+
+    connect(control_widget_ui_->check_showtrace, &QCheckBox::toggled, [this](bool s) {GPath::is_draw_trajectory = s; display_widget_->update(); });
+
+    connect(force_update_all_path_image_, &QAction::triggered, [](bool s) { MLDataManager::get().effect_manager_.refreshAllPathImage(); qWarning("force refresh all frames");});
 }
 
 int Step3Widget::get_selection_mode() const { return control_widget_ui_->combo_autoselection->currentIndex(); }
@@ -155,6 +164,16 @@ void Step3Widget::morphPathRoi(int dx, int dy)
     if (!cur_tracked_path) return;
     const auto& data = MLDataManager::get();
     cur_tracked_path->setPathRoi(cur_frameidx, (float)dx / data.VideoWidth(), (float)dy / data.VideoHeight());
+    cur_tracked_path->updateimages();
+    display_widget_->update();
+}
+
+void Step3Widget::setSamePathRoiTilEnd()
+{
+    if (!cur_tracked_path) return;
+    const auto& data = MLDataManager::get();
+    for (int i = cur_frameidx + 1; i < data.get_framecount(); ++i)
+        cur_tracked_path->copyFrameState(cur_frameidx, i);
     cur_tracked_path->updateimages();
     display_widget_->update();
 }
@@ -490,6 +509,8 @@ void Step3Widget::onCurrentEffectChanged()
         control_widget_ui_->speed_spinbox->setEnabled(true);
         control_widget_ui_->speed_spinbox->setValue(cur_effect->speed());
     }
+
+    toggleModify(false);
 }
 
 void Step3Widget::addSingleFramePath()
@@ -498,10 +519,12 @@ void Step3Widget::addSingleFramePath()
     QPainterPath select_path;
     if (!display_widget_->curSelectRectF().isEmpty()) {
         select_rect = display_widget_->curSelectRectF();
+        select_rect &= QRectF(0, 0, 1., 1.);
         select_path = display_widget_->curSelectPath();
     }
     else if (!result_widget_display_->curSelectRectF().isEmpty()) {
         select_rect = result_widget_display_->curSelectRectF();
+        select_rect &= QRectF(0, 0, 1., 1.);
         select_path = result_widget_display_->curSelectPath();
     }
     else {
@@ -608,27 +631,31 @@ void Step3Widget::toggleModify(bool checked)
             control_widget_ui_->control_modify_path_button_->setChecked(false);
             return;
         }
-        display_widget_->toggleModifyMode(true);
-        
         // set button
         control_widget_ui_->comboMode->setEnabled(false);
         control_widget_ui_->button_auto_add->setEnabled(false);
         control_widget_ui_->button_manual_add->setEnabled(false);
+        control_widget_ui_->control_modify_path_button_->setChecked(true);
         control_widget_ui_->control_modify_path_button_->setText("Apply");
         control_widget_ui_->control_modify_widthbiger->setEnabled(true);
         control_widget_ui_->control_modify_widthsmaller->setEnabled(true);
         control_widget_ui_->control_modify_heightbigger->setEnabled(true);
         control_widget_ui_->control_modify_heightsmaller->setEnabled(true);
+        control_widget_ui_->control_modify_sametoend->setEnabled(true);
+
+        display_widget_->toggleModifyMode(true);
     }
     else {
         control_widget_ui_->comboMode->setEnabled(true);
         control_widget_ui_->button_auto_add->setEnabled(true);
         control_widget_ui_->button_manual_add->setEnabled(true);
+        control_widget_ui_->control_modify_path_button_->setChecked(false);
         control_widget_ui_->control_modify_path_button_->setText("Modify");
         control_widget_ui_->control_modify_widthbiger->setEnabled(false);
         control_widget_ui_->control_modify_widthsmaller->setEnabled(false);
         control_widget_ui_->control_modify_heightbigger->setEnabled(false);
         control_widget_ui_->control_modify_heightsmaller->setEnabled(false);
+        control_widget_ui_->control_modify_sametoend->setEnabled(false);
         if (!cur_tracked_path) return;
 
         display_widget_->toggleModifyMode(false);

@@ -61,6 +61,7 @@ public:
     string stitcher_type_;
     int stitch_skip_frame_;
     string features_type_;
+    float features_thres_;
     float match_conf_;
     int match_range_width;
     float match_conf_thresh_;
@@ -108,14 +109,15 @@ inline
 void MLConfigStitcher::restore_default()
 {
     stitcher_type_ = "Ml";
-    stitch_skip_frame_ = 10;
+    stitch_skip_frame_ = 7;
     features_type_ = "surf";
+    features_thres_ = 200;
     warp_type_ = "spherical";
     match_conf_thresh_ = 1;
     match_conf_ = 0.6f;
     match_range_width = 5;
     seam_type_ = SeamType::NO;
-    blend_type_ = Blender::FEATHER;
+    blend_type_ = Blender::MULTI_BAND;
     wave_correct_type_ = WAVE_CORRECT_HORIZ;
     blend_strength_ = 1;
     work_megapix_ = 0.7;
@@ -147,6 +149,7 @@ void MLConfigStitcher::write(YAML::Emitter& out) const
     out << YAML::Key << "MatchConf" << match_conf_;
     out << YAML::Key << "ConfThresh" << match_conf_thresh_;
     out << YAML::Key << "FeatureType" << features_type_;
+    out << YAML::Key << "FeatureThres" << features_thres_;
     out << YAML::Key << "SkipFrame" << stitch_skip_frame_;
     out << YAML::Key << "StitcherType" << stitcher_type_;
     out << YAML::Key << "WaveCorrect" << wave_correct_;
@@ -178,6 +181,7 @@ void MLConfigStitcher::read(const YAML::Node& doc)
         if (node["MatchConf"]) match_conf_ = node["MatchConf"].as<float>();
         if (node["ConfThresh"]) match_conf_thresh_ = node["ConfThresh"].as<float>();
         if (node["FeatureType"]) features_type_ = node["FeatureType"].as<string>();
+        if (node["FeatureThres"]) features_thres_ = node["FeatureThres"].as<float>();
         if (node["SkipFrame"]) stitch_skip_frame_ = node["SkipFrame"].as<int>();
         if (node["StitcherType"]) stitcher_type_ = node["StitcherType"].as<string>();
         if (node["WaveCorrect"]) wave_correct_ = node["WaveCorrect"].as<string>();

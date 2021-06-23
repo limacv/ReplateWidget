@@ -46,10 +46,11 @@ public:
     virtual int warp_points(const int frameidx, std::vector<cv::Point>& inoutpoints) const;
 
 private:
-    void featureFinder(const vector<Mat>& fullImages, vector<ImageFeatures>& features) const;
+    void featureFinder(const vector<Mat>& fullImages, vector<ImageFeatures>& features, const vector<Mat>& masks) const;
 
     void _logoFilter(const vector<Rect>& logoMask, vector<ImageFeatures>& features, float scale) const;
-    void _logoFilter(const vector<Rect>& logoMask, ImageFeatures& features, float scale) const;
+    void _detectionFilter(vector<ImageFeatures>& features) const;
+    void _boxesFilter(const vector<Rect>& logoMask, ImageFeatures& features, float scale) const;
 
     void pairwiseMatch(const vector<ImageFeatures>& features,
         vector<MatchesInfo>& pairwise_matches) const;

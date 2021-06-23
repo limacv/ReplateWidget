@@ -124,6 +124,7 @@
     <ClCompile Include="GUtil.cpp" />
     <ClCompile Include="GVideoPlayer.cpp" />
     <ClCompile Include="InpainterCV.cpp" />
+    <ClCompile Include="MLBlender.cpp" />
     <ClCompile Include="MLCacheFlow.cpp" />
     <ClCompile Include="MLCachePlatesConfig.cpp" />
     <ClCompile Include="MLConfigManager.cpp" />
@@ -140,6 +141,7 @@
     <ClCompile Include="Step2Widget.cpp" />
     <ClCompile Include="StitcherGe.cpp" />
     <ClCompile Include="StitcherMl.cpp" />
+    <ClCompile Include="StitcherNone.cpp" />
     <ClCompile Include="StitcherSsfm.cpp" />
     <QtRcc Include="breeze.qrc" />
     <QtRcc Include="ReplateWidget.qrc" />
@@ -179,6 +181,7 @@
     <ClInclude Include="GUtil.h" />
     <ClInclude Include="InpainterBase.h" />
     <ClInclude Include="InpainterCV.h" />
+    <ClInclude Include="MLBlender.hpp" />
     <ClInclude Include="MLCacheFlow.h" />
     <ClInclude Include="MLCachePlatesConfig.h" />
     <ClInclude Include="MLConfigDetectTrack.hpp" />
@@ -201,6 +204,7 @@
     <ClInclude Include="MLUtil.h" />
     <ClInclude Include="StitcherGe.h" />
     <ClInclude Include="StitcherMl.h" />
+    <ClInclude Include="StitcherNone.h" />
     <ClInclude Include="StitcherSsfm.h" />
     <QtMoc Include="Step2Widget.h" />
     <QtMoc Include="Step1Widget.h" />
