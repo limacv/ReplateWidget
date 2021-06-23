@@ -67,6 +67,7 @@ void MLConfigManager::setup_ui(QWidget* parent)
 	QObject::connect(config_widget_ui->expoCompBlockszLineEdit, &QLineEdit::textEdited, [this](const QString& str) {stitcher_cfg.expos_comp_block_size = str.toInt(); });
 	QObject::connect(config_widget_ui->stitcherTypeComboBox, &QComboBox::currentTextChanged, [this](const QString& str) {stitcher_cfg.stitcher_type_ = str.toStdString(); });
 	QObject::connect(config_widget_ui->tryGPUCheckBox, &QCheckBox::toggled, [this](bool s) {stitcher_cfg.try_gpu_ = s; });
+	QObject::connect(config_widget_ui->verboseCheckBox, &QCheckBox::toggled, [this](bool s) {stitcher_cfg.stitcher_verbose = s; });
 
 	QObject::connect(config_widget_ui->setdefaultButton, &QPushButton::clicked, [this]() {restore_to_default(); });
 	QObject::connect(config_widget_ui->saveButton, &QPushButton::clicked, [this]() {writeToFile(get_localconfig_path()); });
@@ -117,6 +118,7 @@ void MLConfigManager::update_ui()
 	config_widget_ui->expoCompBlockszLineEdit->setText(QString::number(stitcher_cfg.expos_comp_block_size));
 	config_widget_ui->stitcherTypeComboBox->setCurrentText(QString::fromStdString(stitcher_cfg.stitcher_type_));
 	config_widget_ui->tryGPUCheckBox->setChecked(stitcher_cfg.try_gpu_);
+	config_widget_ui->verboseCheckBox->setChecked(stitcher_cfg.stitcher_verbose);
 }
 
 void MLConfigManager::readFromFile(const QString& cfgpath)

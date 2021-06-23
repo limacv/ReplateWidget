@@ -19,7 +19,7 @@ static int G_EFX_PRIORITY[] = {
     1, // still
     5, // multi
     2, // trail
-    4, // loop
+    2, // loop
     0, // trash
     0, // inpaint
     6 // border

@@ -48,10 +48,13 @@ public:
 private:
     void featureFinder(const vector<Mat>& fullImages, vector<ImageFeatures>& features) const;
 
+    void _logoFilter(const vector<Rect>& logoMask, vector<ImageFeatures>& features, float scale) const;
+    void _logoFilter(const vector<Rect>& logoMask, ImageFeatures& features, float scale) const;
+
     void pairwiseMatch(const vector<ImageFeatures>& features,
         vector<MatchesInfo>& pairwise_matches) const;
 
-    void drawMatches(const vector<Mat3b>& fullImages, vector<ImageFeatures>& features,
+    void drawMatches(const vector<Mat>& fullImages, vector<ImageFeatures>& features,
         vector<MatchesInfo>& pairwise_matches) const;
 
     void initialIntrinsics(const vector<ImageFeatures>& features,

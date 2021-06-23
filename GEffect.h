@@ -263,4 +263,31 @@ public:
     virtual bool setSpeed(int a) {speed_factor_ = a; return true;}
 };
 
+
+class GEffectLoop : public GEffect
+{
+    static int max_loop_num;
+public:
+    explicit GEffectLoop(const GPathPtr& path);
+
+    virtual void renderSlowVideo(QPainter& painter, int frame_id, int duration) const;
+
+    virtual void renderSlow(QPainter& painter, int frame_id, int duration, bool video = false) const;
+
+    virtual void preRender(QPainter& painter, int frame_id,
+        int duration);
+
+    virtual void render(QPainter& painter, int frame_id, int duration, bool video = false) const;
+
+    virtual void write(YAML::Emitter& out) const;
+
+    virtual bool setFadeLevel(int a) { fade_level_ = a; return true; }
+    virtual int getFadeLevel() const { return fade_level_; }
+
+    virtual bool setTransLevel(int a) { trans_level_ = a; return true; }
+    virtual int getTransLevel() const { return trans_level_; }
+
+    virtual bool setSpeed(int a) { speed_factor_ = a; return true; }
+};
+
 #endif // GEFFECT_H

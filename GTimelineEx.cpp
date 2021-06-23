@@ -342,10 +342,7 @@ void GTimelineEx::addEffect(GEffectPtr &efx)
     else {
         int start = efx->startFrame();
         int end = efx->endFrame();
-        if (start != end)
-            addIntervalEx(efx, start, end);
-        else
-            qDebug() << "Interval region too small!: " << start << " -- " << end;
+        addIntervalEx(efx, start, end);
     }
 }
 

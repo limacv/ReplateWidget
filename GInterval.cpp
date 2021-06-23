@@ -19,7 +19,7 @@ GInterval::GInterval(GEffectPtr &efx, double step_length, QWidget *parent)
     ,effect_(efx)
 {
     duration_used = MLDataManager::get().plates_cache.replate_duration / effect()->speed();
-    if (duration_used <= 0) duration_used = efx->effectLength() - 1;
+    if (duration_used <= 0) duration_used = 1;
     presetColor();
     presetGradient(duration_used, step_length);
     setColor(interval_colorset_[efx->type()]);

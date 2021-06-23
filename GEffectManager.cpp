@@ -42,6 +42,8 @@ void GEffectManager::applyInpaint(const GPathPtr& path)
     {
         QPainterPath painter_path = data.imageScale().map(path->painter_path_);
         mask = GUtil::cvtPainterPath2Mask(painter_path);
+        rect.width = mask.cols;
+        rect.height = mask.rows;
     }
     else
         mask = cv::Mat(rect.size(), CV_8UC1, 255);
@@ -50,9 +52,12 @@ void GEffectManager::applyInpaint(const GPathPtr& path)
     InpainterCV inpainter(10);
     cv::Rect dilate_rect = GUtil::addMarginToRect(rect, 10);
     cv::Rect roi = dilate_rect & cv::Rect(0, 0, data.VideoWidth(), data.VideoHeight());
-    cv::Mat context = data.getRoiofFrame(path->startFrame(), roi);
-    cv::Mat context_mask;  cv::extractChannel(context, context_mask, 3);
-    cv::bitwise_not(context_mask, context_mask);
+    cv::Mat context = data.getRoiofBackground(roi);
+    cv::Mat context_mask(context.size(), CV_8UC1, cv::Scalar(0));
+    //cv::Mat context_mask;  cv::extractChannel(context, context_mask, 3);
+    //cv::Mat context = data.getRoiofFrame(path->startFrame(), roi);
+    //cv::Mat context_mask;  cv::extractChannel(context, context_mask, 3);
+    //cv::bitwise_not(context_mask, context_mask);
     mask.copyTo(context_mask(rect - roi.tl()));
 
     cv::Mat inpainted;

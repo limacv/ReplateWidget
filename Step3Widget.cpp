@@ -62,6 +62,7 @@ void Step3Widget::showEvent(QShowEvent* event)
     auto& globaldata = MLDataManager::get();
     trajp = &globaldata.trajectories;
     platesp = &globaldata.plates_cache;
+    if (platesp->replate_duration <= 0) platesp->replate_duration = globaldata.get_framecount() / 2 + 1;
 
     UpdateDisplay(0);
     result_widget_->play();
@@ -78,7 +79,6 @@ void Step3Widget::showEvent(QShowEvent* event)
             for (auto efx: efxs.second)
                 timeline_widget_->addTimeline(efx);
     }
-	platesp->initialize_cut(globaldata.get_framecount() / 2 + 1);
 }
 
 void Step3Widget::hideEvent(QHideEvent* event)
@@ -162,6 +162,7 @@ void Step3Widget::morphPathRoi(int dx, int dy)
 GEffectPtr Step3Widget::createEffectFromPath(const GPathPtr& path, G_EFFECT_ID type)
 {
     if (!path) return 0;
+
     auto& effect_manager = MLDataManager::get().effect_manager_;
     GEffectPtr efx = effect_manager.addEffect(path, type);
     if (type != EFX_ID_TRASH)

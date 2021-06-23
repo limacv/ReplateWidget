@@ -110,7 +110,7 @@ void MLConfigStitcher::restore_default()
     stitcher_type_ = "Ml";
     stitch_skip_frame_ = 10;
     features_type_ = "surf";
-    warp_type_ = "cylindrical";
+    warp_type_ = "spherical";
     match_conf_thresh_ = 1;
     match_conf_ = 0.6f;
     match_range_width = 5;

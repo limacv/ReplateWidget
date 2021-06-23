@@ -13,6 +13,7 @@
 #include <sstream>
 #include "GeCeresBA.hpp"
 #include "MLProgressDialog.hpp"
+#include "MLDataManager.h"
 
 int StitcherMl::stitch(const std::vector<cv::Mat>& frames, const std::vector<cv::Mat>& masks)
 {
@@ -47,6 +48,14 @@ int StitcherMl::stitch(const std::vector<cv::Mat>& frames, const std::vector<cv:
     pairwiseMatch(features_l0, matches_l0);
     if (progress_reporter->wasCanceled()) return -1;
     progress_reporter->setValue(0.5f / skip_frame);
+
+    if (config_->stitcher_verbose)
+    {
+        vector<cv::Mat> img;
+        for (int idx: level0_idx)
+            img.push_back(frames[idx]);
+        drawMatches(img, features_l0, matches_l0);
+    }
 
     vector<CameraParams> cameras_l0;
     initialIntrinsics(features_l0, matches_l0, cameras_l0);
@@ -210,6 +219,20 @@ void StitcherMl::featureFinder(const vector<Mat>& fullImages, vector<ImageFeatur
 
     progress_reporter->setValue(1.);
     qDebug() << "Finding features";
+    
+    // filter logos
+    if (!MLDataManager::get().manual_masks.isEmpty())
+    {
+        vector<Rect> logos;
+        const auto& qlogos = MLDataManager::get().manual_masks;
+        for (const auto& qlogo : qlogos)
+        {
+            QRectF rect = mat.mapRect(qlogo);
+            logos.push_back(Rect(rect.x(), rect.y(), rect.width(), rect.height()));
+        }
+        _logoFilter(logos, features, work_scale);
+    }
+
 }
 
 double StitcherMl::estimateScale(double megapix_ratio, const Size& full_img_size) const
@@ -321,7 +344,7 @@ void StitcherMl::bundleAdjustCeres(const vector<ImageFeatures>& features,
     for (size_t match_idx = 0; match_idx < pairwise_matches.size(); ++match_idx)
     {
         const MatchesInfo& matches_info = pairwise_matches[match_idx];
-        if (matches_info.num_inliers < 20)
+        if (matches_info.num_inliers < 5)
             continue;
         int i = matches_info.src_img_idx;
         int j = matches_info.dst_img_idx;
@@ -363,10 +386,15 @@ void StitcherMl::bundleAdjustCeres(const vector<ImageFeatures>& features,
             camera_inout.data() + 4 * i,
             camera_inout.data() + 4 * j
         );
-    }
 
-    for (int idx : fixed_camera_idx)
-        problem.SetParameterBlockConstant(camera_inout.data() + 4 * idx);
+        auto i_idx = std::find(fixed_camera_idx.begin(), fixed_camera_idx.end(), i),
+            j_idx = std::find(fixed_camera_idx.begin(), fixed_camera_idx.end(), j);
+
+        if (i_idx != fixed_camera_idx.end())
+            problem.SetParameterBlockConstant(camera_inout.data() + 4 * (*i_idx));
+        if (j_idx != fixed_camera_idx.end())
+            problem.SetParameterBlockConstant(camera_inout.data() + 4 * (*j_idx));
+    }
 
     ceres::Solver::Options options;
     //    options.linear_solver_type = ceres::SPARSE_SCHUR;
@@ -625,6 +653,53 @@ int StitcherMl::warp_and_compositebyblend(const std::vector<cv::Mat>& frames, co
 }
 
 
+
+void StitcherMl::_logoFilter(const vector<Rect>& logoMask, ImageFeatures& features, float scale) const
+{
+    if (features.keypoints.size() == 0 || logoMask.size() == 0)
+        return;
+
+    vector<KeyPoint> newKeyPoint;
+    vector<uchar> mask;
+    for (size_t i = 0; i < features.keypoints.size(); ++i)
+    {
+        const KeyPoint& kp = features.keypoints[i];
+        bool in = false;
+        for (size_t j = 0; j < logoMask.size(); ++j)
+        {
+            if (logoMask[j].contains(kp.pt * (1.0 / scale)))
+            {
+                in = true;
+                break;
+            }
+        }
+        mask.push_back(!in);
+        if (!in)
+            newKeyPoint.push_back(kp);
+    }
+    if (newKeyPoint.size() < features.keypoints.size())
+    {
+        Mat newDesc = Mat(newKeyPoint.size(), features.descriptors.cols, features.descriptors.type());
+        for (size_t i = 0, k = 0; i < mask.size(); ++i)
+        {
+            if (mask[i])
+                features.descriptors.row(i).copyTo(newDesc.row(k++));
+        }
+        features.keypoints.assign(newKeyPoint.begin(), newKeyPoint.end());
+        features.descriptors.release();
+        features.descriptors = newDesc.clone().getUMat(ACCESS_RW);
+    }
+}
+
+void StitcherMl::_logoFilter(const vector<Rect>& logoMask, vector<ImageFeatures>& features, float scale) const
+{
+    for (size_t i = 0; i < features.size(); ++i)
+    {
+        _logoFilter(logoMask, features[i], scale);
+    }
+}
+
+
 int StitcherMl::warp_points(const int frameidx, std::vector<cv::Point>& inoutpoints) const
 {
     if (m_warper == nullptr)
@@ -640,7 +715,7 @@ int StitcherMl::warp_points(const int frameidx, std::vector<cv::Point>& inoutpoi
     return true;
 }
 
-void StitcherMl::drawMatches(const vector<Mat3b>& images, vector<ImageFeatures>& features,
+void StitcherMl::drawMatches(const vector<Mat>& images, vector<ImageFeatures>& features,
     vector<MatchesInfo>& pairwise_matches) const
 {
     qDebug() << "Drawing Matches to JPG";
@@ -656,8 +731,6 @@ void StitcherMl::drawMatches(const vector<Mat3b>& images, vector<ImageFeatures>&
         {
             cv::Mat m;
             MatchesInfo& mi = pairwise_matches[i * num_images_ + j];
-            if (mi.confidence < config()->match_conf_thresh_)
-                continue;
 
             cv::drawMatches(imageWork[i], features[i].keypoints, imageWork[j],
                 features[j].keypoints, mi.matches, m);

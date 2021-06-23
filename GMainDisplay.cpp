@@ -57,12 +57,17 @@ void GMainDisplay::mousePressEvent(QMouseEvent *event)
 {
     mouse_pos_ = getMousePosNorm(event->pos());
 
-    if (is_modify_ && event->button() == Qt::RightButton)
+    if (is_modify_ && event->button() == Qt::LeftButton)
     {
-        step3widget->cur_tracked_path->moveRectCenter(step3widget->cur_frameidx, mouse_pos_);
+        step3widget->cur_tracked_path->moveRectCenter(step3widget->cur_frameidx, mouse_pos_, true);
         is_adjust_path_ = true;
         clearMouseSelection();
         setCursor(Qt::SizeAllCursor);
+    }
+    else if (is_modify_ && event->button() == Qt::RightButton)
+    {
+        auto& flag = step3widget->cur_tracked_path->manual_adjust_[step3widget->cur_frameidx];
+        flag = !flag;
     }
     else if (step3widget->is_auto_selection())
     {

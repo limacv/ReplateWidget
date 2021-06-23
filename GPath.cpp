@@ -62,11 +62,21 @@ void GPath::translateRect(int frame_id, QPointF offset)
     }
 }
 
-void GPath::moveRectCenter(int frame_id, QPointF center)
+void GPath::moveRectCenter(int frame_id, QPointF center, bool trycopyfromneighbor)
 {
     if (space() > 0 && frame_id >= frame_id_start_ && frame_id <= frame_id_end_)
     {
         int idx = worldid2thisid(frame_id);
+
+        if (trycopyfromneighbor && !manual_adjust_[idx])
+        {
+            if (idx + 1 < roi_rect_.size() 
+                && manual_adjust_[idx + 1])
+                roi_rect_[idx] = roi_rect_[idx + 1];
+            else if (idx - 1 >= 0)
+                roi_rect_[idx] = roi_rect_[idx - 1];
+        }
+
         roi_rect_[idx].moveCenter(center);
         manual_adjust_[idx] = true;
         dirty_[idx] = true;

@@ -35,9 +35,9 @@
       <property name="geometry">
        <rect>
         <x>0</x>
-        <y>-360</y>
+        <y>-414</y>
         <width>405</width>
-        <height>970</height>
+        <height>993</height>
        </rect>
       </property>
       <layout class="QGridLayout" name="gridLayout_5">
@@ -581,6 +581,16 @@
                <bool>true</bool>
               </property>
              </widget>
+            </item>
+            <item row="17" column="0">
+             <widget class="QLabel" name="verboseLabel">
+              <property name="text">
+               <string>Verbose</string>
+              </property>
+             </widget>
+            </item>
+            <item row="17" column="1">
+             <widget class="QCheckBox" name="verboseCheckBox"/>
             </item>
            </layout>
           </item>

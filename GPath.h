@@ -26,7 +26,7 @@ public:
     bool checkInside(int frame_id, QPointF pos);
 
     void translateRect(int frame_id, QPointF offset);
-    void moveRectCenter(int frame_id, QPointF center);
+    void moveRectCenter(int frame_id, QPointF center, bool trycopyfromneighbor=false);
     void setPathRoi(int frame_id, const GRoiPtr &roi);
     void setPathRoi(int frame_id, float dx, float dy);
 

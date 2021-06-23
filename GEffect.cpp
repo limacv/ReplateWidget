@@ -444,7 +444,6 @@ GEffectMotion::GEffectMotion(const GPathPtr &path)
     effect_type_ = EFX_ID_MOTION;
     priority_level_ = G_EFX_PRIORITY[effect_type_] * G_EFX_PRIORITY_STEP;
     marker_mode_ = 0;
-    setSmooth(line_smooth_);
 }
 
 void GEffectMotion::renderSlowVideo(QPainter &painter, int frame_id,
@@ -506,6 +505,9 @@ void GEffectMotion::preRender(QPainter &painter, int frame_id, int duration)
     if (duration <= 0) duration = effectLength();
     int loop_num = std::ceil(this->effectLength() / (float) duration);
     max_loop_num = qMax(loop_num, max_loop_num);
+
+    if (marker_mode_ != 0 || draw_line_)
+        setSmooth(line_smooth_);
 }
 
 void GEffectMotion::render(QPainter &painter, int frame_id, int duration, bool video) const
@@ -551,7 +553,7 @@ void GEffectMotion::render(QPainter &painter, int frame_id, int duration, bool v
 
         if (marker_mode_ == 2 || (marker_mode_ == 1 && anchor_id == 0)) {
             float rad = qMax(rect.width(), rect.height()) / 2.5;
-            int marker_pos = local_id + startFrame();
+            int marker_pos = local_id;
             QPointF pos = scaleMat().map(marker_trail_[marker_pos]);
             pos.setY(pos.y() - rad);
             float scale = painter.viewport().width() / 900.0; // TODO: a bit hacking
@@ -577,7 +579,7 @@ void GEffectMotion::render(QPainter &painter, int frame_id, int duration, bool v
             trail[i] = scaleMat().map(trail_[i]);
 //        qDebug() << "Draw line" << trail_length << trail_.size() << trail_[0] << trail[0];
 //        trail_length -= (startFrame() - path()->startFrame());
-        painter.drawPolyline(trail.data() + startFrame(), trail_length + 1);
+        painter.drawPolyline(trail.data(), trail_length + 1);
     }
 }
 
@@ -594,7 +596,7 @@ bool GEffectMotion::setSmooth(int s)
     line_smooth_ = s;
     trail_.resize(n);
     for (size_t i = 0; i < n; ++i) {
-        trail_[i] = this->path()->frameRoiRect(i).center();
+        trail_[i] = this->path()->frameRoiRect(i + startFrame()).center();
 //        trail_[i] = this->renderLocation(i + startFrame()).center();
     }
     marker_trail_.assign(trail_.begin(), trail_.end());
@@ -617,4 +619,108 @@ bool GEffectMotion::setMarker(int a)
     qDebug() << "Set Marker mode" << a;
     marker_mode_ = a;
     return true;
+}
+
+
+//////////////////////////////////////////////////////////////////////////////////////////
+
+int GEffectLoop::max_loop_num = 0;
+
+GEffectLoop::GEffectLoop(const GPathPtr& path)
+    : GEffect(path)
+{
+    effect_type_ = EFX_ID_LOOP;
+    priority_level_ = G_EFX_PRIORITY[effect_type_] * G_EFX_PRIORITY_STEP;
+}
+
+// TODO this function is modified, not sure it's correct
+void GEffectLoop::renderSlow(QPainter& painter, int frame_id, int duration, bool video) const
+{
+    //if (video) {
+    //    renderSlowVideo(painter, frame_id, duration);
+    //    return;
+    //}
+
+    int base_id = getSyncLocalIndex2(
+        frame_id, startFrame(), duration,
+        sync_id_, speed_factor_);
+    base_id = (base_id + async_offset_) % duration;
+
+    //    qDebug() << "BB";
+    //    int length = qMin(duration + FadeDuration[fade_level_], effectLength());
+    //    for (int idx = base_id; idx < length; idx += duration)
+    for (int idx = base_id; idx < this->effectLength(); idx += duration)
+    {
+        //        qDebug() << "CC" << idx << duration << FadeDuration[fade_level_];
+        int render_frame = idx + startFrame();
+        int fade = getFadeAlpha(this->effectLength(), idx, fade_level_);
+        if (fade == 0) continue;
+        QRect rect = renderLocation(render_frame);
+        QImage dst = renderImage(render_frame);
+        QImage alpha(dst.size(), QImage::Format_Indexed8);
+        alpha.fill(fade * G_TRANS_LEVEL[trans_level_]);
+        dst.setAlphaChannel(alpha);
+        painter.drawImage(rect, dst);
+    }
+    //    qDebug() << "DD";
+}
+
+void GEffectLoop::preRender(QPainter& painter, int frame_id, int duration)
+{
+    if (duration <= 0) duration = effectLength();
+    int loop_num = std::ceil(this->effectLength() / (float)duration);
+    max_loop_num = qMax(loop_num, max_loop_num);
+
+    if (marker_mode_ != 0 || draw_line_)
+        setSmooth(line_smooth_);
+}
+
+void GEffectLoop::render(QPainter& painter, int frame_id, int duration, bool video) const
+{
+    const auto& global_data = MLDataManager::get();
+    if (duration <= 0)
+        duration = this->effectLength();
+
+    if (speed_factor_ > 1) {
+        renderSlow(painter, frame_id, duration);
+        return;
+    }
+
+    int base_id = getSyncLocalIndex(frame_id, startFrame(), duration) + async_offset_;
+    base_id %= duration;
+    base_id = base_id >= 0 ? base_id : base_id + duration;
+
+    int inv_id = ((effectLength() - 1) / duration) * duration + base_id;
+    if (inv_id >= effectLength()) inv_id -= duration;
+    int sum_id = inv_id + base_id;
+
+    //    int loop_num = std::ceil(effectLength() / (float)duration);
+    int trail_length = 0;
+    for (int idx = base_id; idx < this->effectLength(); idx += duration) {
+        int local_id = (render_order_ ? idx : sum_id - idx);
+        int render_frame = local_id + startFrame();
+        int anchor_id = (base_id / duration +
+            (render_frame - frame_id) / duration) % max_loop_num;
+        if (anchor_id < 0) anchor_id += max_loop_num;
+
+        QRect rect = renderLocation(render_frame);
+        QImage dst = renderImage(render_frame);
+        //QImage dst = (video? video->loadOriImageFg(render_frame, rect)
+                           //: renderImage(render_frame));
+
+        QImage alpha(dst.size(), QImage::Format_Indexed8);
+        int fade = getFadeAlpha(this->effectLength(), local_id, fade_level_);
+        float trans = G_TRANS_LEVEL[trans_level_];
+        alpha.fill(fade * trans);
+        dst.setAlphaChannel(alpha);
+
+        painter.drawImage(rect, dst);
+    }
+}
+
+void GEffectLoop::write(YAML::Emitter& out) const
+{
+    out << YAML::BeginMap;
+    writeBasic(out);
+    out << YAML::EndMap;
 }

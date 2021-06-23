@@ -20,7 +20,7 @@ public:
 	Step2Widget(QWidget *parent = Q_NULLPTR);
 	virtual ~Step2Widget();
 	virtual void showEvent(QShowEvent* event);
-
+	void generateMask(std::vector<cv::Mat>& masks);
 
 private slots:
 	// this set of funcs will block the main window and launch progress bar
@@ -28,7 +28,6 @@ private slots:
 	void runTrack();
 	void runStitching();
 	void runInpainting();
-	void runSegmentation();
 	void forceRunAll();
 
 	// this set of funcs will check necessarities and then launch run***() 

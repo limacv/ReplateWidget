@@ -75,18 +75,14 @@ public:
 	void paintWorldDetectBoxes(QPainter& painter, int frameidx, bool paint_name = true) const;
 	void paintReplateFrame(QPainter& painter, int frameidx) const;
 
-	// step1 <-> step2
-	void initMasks();
-
 	bool is_prepared(int step) const;
 
 public:
 	VideoConfig raw_video_cfg;
 	QVector<cv::Mat> raw_frames;
-	QVector<cv::Rect> manual_masks;
+	QVector<QRectF> manual_masks;
 
 	MLCacheTrajectories trajectories;
-	QVector<cv::Mat> masks;
 	MLCacheStitching stitch_cache;
 	MLCacheFlow flow_cache;
 

@@ -79,7 +79,6 @@ void Step2Widget::showEvent(QShowEvent* event)
 		|| !trajp->isTrackGlobalBoxOk()
 		|| !stitchdatap->isPrepared())
 	{
-		runSegmentation();
 		tryRunStitching();
 	}
 	//if (!flowdatap->tryLoadFlows() || !flowdatap->isprepared())
@@ -90,7 +89,6 @@ void Step2Widget::forceRunAll()
 {
 	runDetect();
 	runTrack();
-	runSegmentation();
 	runStitching();
 }
 
@@ -207,12 +205,17 @@ void Step2Widget::runTrack()
 }
 
 
-void Step2Widget::runSegmentation()
+void Step2Widget::generateMask(std::vector<cv::Mat>& masks)
 {
-	MLDataManager::get().initMasks();
 	const auto& pathcfg = MLConfigManager::get();
 	const auto& globaldata = MLDataManager::get();
 	const int framecount = globaldata.get_framecount();
+	masks.resize(framecount);
+	for (int i = 0; i < framecount; ++i)
+	{
+		masks[i].create(globaldata.raw_video_cfg.size, CV_8UC1);
+		masks[i].setTo(255);
+	}
 
 	if (!trajp->isDetectOk() && !trajp->isTrackOk())
 	{
@@ -226,14 +229,19 @@ void Step2Widget::runSegmentation()
 
 	for (int i = 0; i < framecount; ++i)
 	{
-		auto& mask = globaldata.masks[i];
+		auto& mask = masks[i];
 		for (auto pbox : trajp->frameidx2detectboxes[i])
 			mask(pbox->rect & cv::Rect(cv::Point(0, 0), mask.size())).setTo(0);
 		//for (auto pbox : trajp->frameidx2trackboxes[i])
 			//mask(pbox->rect).setTo(0);
 
-		for (const cv::Rect& rect : globaldata.manual_masks)
-			mask(rect).setTo(0);
+		for (const QRectF& rect : globaldata.manual_masks)
+		{
+			int hei = globaldata.raw_video_cfg.size.height,
+				wid = globaldata.raw_video_cfg.size.width;
+			cv::Rect rectcv(rect.x() * wid, rect.y() * hei, rect.width() * wid, rect.height() * hei);
+			mask(rectcv).setTo(0);
+		}
 	}
 	ui->imageWidget->update();
 }
@@ -251,7 +259,6 @@ void Step2Widget::runStitching()
 {
 	const cv::Size& framesz = MLDataManager::get().raw_video_cfg.size;
 	const auto rawframes = MLDataManager::get().raw_frames.toStdVector();
-	const auto rawmasks = MLDataManager::get().masks.toStdVector();
 	const auto& global_cfg = MLConfigManager::get();
 
 	if (stitchdatap->isPrepared())
@@ -286,10 +293,12 @@ void Step2Widget::runStitching()
 	bool loaded = st->loadCameraParams(global_cfg.get_stitch_cameraparams_path().toStdString());
 	if (ui->checkReCameraParameter->isChecked() || !loaded)
 	{
-		st->stitch(rawframes, rawmasks);
+		st->stitch(rawframes, std::vector<cv::Mat>());
 		st->saveCameraParams(global_cfg.get_stitch_cameraparams_path().toStdString());
 	}
 
+	std::vector<cv::Mat> rawmasks;
+	generateMask(rawmasks);
 	st->warp_and_composite(rawframes, rawmasks,
 		stitchdatap->warped_frames, stitchdatap->rois, stitchdatap->background);
 

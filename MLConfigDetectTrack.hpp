@@ -31,7 +31,7 @@ void MLConfigDetectTrack::restore_default()
 	detect_conf_threshold = 0.3;
 	detect_iou_threshold = 0.7;
 	detect_device = "0";
-	detect_save_visualization = false;
+	detect_save_visualization = true;
 }
 
 inline 

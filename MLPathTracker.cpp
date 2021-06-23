@@ -132,6 +132,7 @@ void fillsInvalidPath(GPath& path, int startidx, int endidx)
         path.roi_rect_[i] = path.roi_rect_[i - 1];
 }
 
+// return the path length that is longer than two frames (or errors may occur)
 GPathPtr MLPathTracker::trackPath(int start_frame, const QRectF& start_rectF, int end_frame, const QRectF& end_rectF)
 {
     const auto& global_data = MLDataManager::get();
@@ -147,8 +148,16 @@ GPathPtr MLPathTracker::trackPath(int start_frame, const QRectF& start_rectF, in
     if (trackedbox.empty()) // if track failed, use naive solution
     {
         path.roi_rect_[start_frame] = start_rectF;
-        path.setStartFrame(start_frame);
-        path.setEndFrame(start_frame);
+        if (start_frame == 0)  // this is to guarantee that the returned path has length longer than 2 frames
+        {
+            path.setStartFrame(start_frame);
+            path.setEndFrame(start_frame + 1);
+        }
+        else
+        {
+            path.setStartFrame(start_frame - 1);
+            path.setEndFrame(start_frame);
+        }
         fillsInvalidPath(path, start_frame, start_frame);
         return path_data;
     }
@@ -171,6 +180,12 @@ GPathPtr MLPathTracker::trackPath(int start_frame, const QRectF& start_rectF, in
         path.setStartFrame(std::min(start_frame, end_frame));
         path.setEndFrame(std::max(start_frame, end_frame));
     }
+
+    // this is to guarantee that the returned path has length longer than 2 frames
+    if (path.startFrame() == path.endFrame())
+        path.endFrame() < path.space() - 1 ? path.setEndFrame(path.endFrame() + 1)
+        : path.setStartFrame(path.startFrame() - 1);
+
     return path_data;
 }
 

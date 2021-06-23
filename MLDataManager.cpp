@@ -249,9 +249,11 @@ cv::Rect MLDataManager::toCropROI(const QRectF& rect_norm) const
 
 void MLDataManager::paintManualMask(QPainter& painter) const
 {
+	auto viewport = painter.viewport();
+
 	for (const auto& rect : manual_masks)
 	{
-		painter.drawRect(GUtil::cvtRect(rect));
+		painter.drawRect(rect.x() * viewport.width(), rect.y() * viewport.height(), rect.width() * viewport.width(), rect.height() * viewport.height());
 	}
 }
 
@@ -392,17 +394,6 @@ void MLDataManager::paintReplateFrame(QPainter& painter, int frameidx) const
 {
 	painter.drawImage(painter.viewport(), getBackgroundQImg());
 	effect_manager_.drawEffects(painter, frameidx);
-}
-
-void MLDataManager::initMasks()
-{
-	const int framecount = get_framecount();
-	masks.resize(framecount);
-	for (int i = 0; i < framecount; ++i)
-	{
-		masks[i].create(raw_video_cfg.size, CV_8UC1);
-		masks[i].setTo(255);
-	}
 }
 
 bool MLDataManager::is_prepared(int step) const

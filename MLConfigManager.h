@@ -52,7 +52,12 @@ public:
 	QString get_detect_result_cache(int frameidx) const { return QDir(get_cache_path()).filePath(QString("%1_%2.txt").arg(get_raw_video_base(), QString::number(frameidx))); }
 	QString get_track_result_cache() const { return QDir(get_cache_path()).filePath("tracking.txt"); }
 
-	QString get_stitch_cache() const { return QDir(get_cache_path()).filePath("stitch"); }
+	QString get_stitch_cache() const { 
+		auto path = QDir(get_cache_path()).filePath("stitch"); 
+		if (!QDir().mkpath(path))
+			qWarning("MLConfigManager::failed to create directory %s", qPrintable(path));
+		return path;
+	}
 	QString get_stitch_warpedimg_path(int frameidx) const { return QDir(get_stitch_cache()).filePath(QString("frame_%1.png").arg(QString::number(frameidx))); }
 	QString get_stitch_cameraparams_path() const { return QDir(get_stitch_cache()).filePath("cameras.yaml"); }
 	QString get_stitch_optflow_path(int frameidx) const { return QDir(get_stitch_cache()).filePath(QString("flow_%1.png").arg(QString::number(frameidx))); }

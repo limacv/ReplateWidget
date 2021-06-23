@@ -55,10 +55,11 @@ void Step1Widget::showEvent(QShowEvent* event)
 
 void Step1Widget::addmask()
 {
-	QRect rect = ui->imageLabel->curSelectRect();
+	QRectF rect = ui->imageLabel->curSelectRectF();
 	if (rect.isEmpty())
 		return;
-	MLDataManager::get().manual_masks.push_back(GUtil::cvtRect(rect));
+	
+	MLDataManager::get().manual_masks.push_back(rect);
 	ui->imageLabel->clearMouseSelection();
 }
 
