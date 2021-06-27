@@ -53,6 +53,8 @@ void MLConfigManager::setup_ui(QWidget* parent)
 		[this](int v) {stitcher_cfg.stitch_skip_frame_ = v; });
 	QObject::connect(config_widget_ui->featureTypeComboBox, &QComboBox::currentTextChanged, [this](const QString& str) {stitcher_cfg.features_type_ = str.toStdString(); });
 	QObject::connect(config_widget_ui->featureThresLineEdit, &QLineEdit::textEdited, [this](const QString& str) {stitcher_cfg.features_thres_ = str.toDouble(); });
+	QObject::connect(config_widget_ui->featureFilterComboBox, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
+		[this](int i) {stitcher_cfg.filter_logo_mode_ = i; });
 	QObject::connect(config_widget_ui->matchConfLineEdit, &QLineEdit::textEdited, [this](const QString& str) {stitcher_cfg.match_conf_ = str.toDouble(); });
 	QObject::connect(config_widget_ui->matchRangeLineEdit, &QLineEdit::textEdited, [this](const QString& str) {stitcher_cfg.match_range_width = str.toInt(); });
 	QObject::connect(config_widget_ui->warpTypeComboBox, &QComboBox::currentTextChanged, [this](const QString& str) {stitcher_cfg.warp_type_ = str.toStdString(); });
@@ -109,6 +111,7 @@ void MLConfigManager::update_ui()
 	config_widget_ui->skipFrameSpinBox->setValue(stitcher_cfg.stitch_skip_frame_);
 	config_widget_ui->featureTypeComboBox->setCurrentText(QString::fromStdString(stitcher_cfg.features_type_));
 	config_widget_ui->featureThresLineEdit->setText(QString::number(stitcher_cfg.features_thres_));
+	config_widget_ui->featureFilterComboBox->setCurrentIndex(stitcher_cfg.filter_logo_mode_);
 	config_widget_ui->matchConfLineEdit->setText(QString::number(stitcher_cfg.match_conf_));
 	config_widget_ui->matchRangeLineEdit->setText(QString::number(stitcher_cfg.match_range_width));
 	config_widget_ui->warpTypeComboBox->setCurrentText(QString::fromStdString(stitcher_cfg.warp_type_));

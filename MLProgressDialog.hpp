@@ -2,6 +2,7 @@
 #include "SphericalSfm/MLProgressObserverBase.h"
 #include <qwidget.h>
 #include <qprogressdialog.h>
+#include "MLUtil.h"
 
 class MLProgressDialog :
     public MLProgressObserverBase
@@ -23,7 +24,11 @@ public:
         dialog.show();
     }
     virtual void setValue(float value) { dialog.setValue(100 * value); }
-    virtual bool wasCanceled() { return dialog.wasCanceled(); }
+    virtual bool wasCanceled() 
+    { 
+        if (dialog.wasCanceled()) throw MLUtil::UserCancelException(); 
+        return dialog.wasCanceled();
+    }
     
 private:
     QProgressDialog dialog;

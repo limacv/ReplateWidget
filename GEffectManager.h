@@ -37,6 +37,7 @@ public:
     void applyTrash(const GPathPtr &path);
     void applyStill(const GPathPtr &path);
     void applyBlack(const GPathPtr &path);
+    void applyLoop(const GPathPtr& path);
 
     void refreshAllPathImage();
 

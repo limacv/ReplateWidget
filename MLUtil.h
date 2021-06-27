@@ -3,6 +3,7 @@
 #include <qimage.h>
 #include <qicon.h>
 #include <string>
+#include <exception>
 
 namespace MLUtil
 {
@@ -21,5 +22,43 @@ namespace MLUtil
 	};
 	QIcon getIcon(ICON_ID id);
 	QRect scaleViewportWithRatio(const QRect& viewport, float wid_hei);
+
+	struct UserCancelException : public std::exception
+	{
+		virtual const char* what() const throw()
+		{
+			return "Canceled by user";
+		}
+	};
+
+
+	/** Namespace containing all necessary objects and methods for CIEDE2000 */
+	namespace CIEDE2000
+	{
+		struct LAB
+		{
+			/** Lightness */
+			float l;
+			/** Color-opponent a dimension */
+			float a;
+			/** Color-opponent b dimension */
+			float b;
+		};
+		/** Convenience definition for struct LAB */
+		using LAB = struct LAB;
+
+		float
+			CIEDE2000(
+				const LAB& lab1,
+				const LAB& lab2);
+
+		constexpr float
+			deg2Rad(
+				const float deg);
+
+		constexpr float
+			rad2Deg(
+				const float rad);
+	}
 };
 

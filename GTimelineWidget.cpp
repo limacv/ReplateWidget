@@ -41,6 +41,10 @@ void GTimelineWidget::updateDuration()
 
 void GTimelineWidget::changeCurrentEffectTo(GEffectPtr &effect)
 {
+    if (effect)
+        button_group_->setExclusive(true);
+    else
+        button_group_->setExclusive(false);
     step3widget->setCurrentEffect(effect);
 }
 

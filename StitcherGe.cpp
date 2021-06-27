@@ -13,6 +13,7 @@
 #include <sstream>
 #include "GeCeresBA.hpp"
 #include "MLBlender.hpp"
+#include "MLEdgeBlender.hpp"
 #include "MLProgressDialog.hpp"
 
 int StitcherGe::stitch(const std::vector<cv::Mat>& frames, const std::vector<cv::Mat>& masks)
@@ -27,8 +28,8 @@ int StitcherGe::stitch(const std::vector<cv::Mat>& frames, const std::vector<cv:
     featureFinder(frames, m_features);
 
     qDebug() << "featureFinder";
-
-    pairwiseMatch(m_features, m_pairwise_matches);
+    _pairwiseMatch1(m_features, m_pairwise_matches);
+    //pairwiseMatch(m_features, m_pairwise_matches);
 
     qDebug() << "pairwiseMatch";
 
@@ -94,7 +95,7 @@ void StitcherGe::featureFinder(const vector<Mat>& fullImages, vector<ImageFeatur
     Ptr<Feature2D> finder;
     if (config()->features_type_ == "surf")
     {
-        finder = xfeatures2d::SURF::create(400.);
+        finder = xfeatures2d::SURF::create(config_->features_thres_);
     }
     else if (config()->features_type_ == "orb")
     {
@@ -848,10 +849,12 @@ int StitcherGe::warp_and_compositebyblend(const std::vector<cv::Mat>& frames, co
         //if (!blender)
         //{
             const auto& blend_type = config()->blend_type_;
-            if (blend_type >= 3)
+            if (blend_type == MLBlender::Simple)
                 blender = MLBlender::createDefault();
+            else if (blend_type == MLEdgeBlender::SimpleEdge)
+                blender = MLEdgeBlender::createDefault();
             else
-                blender = Blender::createDefault(blend_type, config_->try_gpu_);
+                blender = Blender::createDefault(blend_type, false);
             Size dst_sz = resultRoi(corners, sizes).size();
             float blend_width = sqrt(static_cast<float>(dst_sz.area())) * config()->blend_strength_ / 100.f;
             if (blend_width < 1.f)

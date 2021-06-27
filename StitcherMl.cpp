@@ -16,6 +16,7 @@
 #include "MLDataManager.h"
 
 #include "MLBlender.hpp"
+#include "MLEdgeBlender.hpp"
 
 int StitcherMl::stitch(const std::vector<cv::Mat>& frames, const std::vector<cv::Mat>& masks)
 {
@@ -292,11 +293,11 @@ void StitcherMl::initialIntrinsics(const vector<ImageFeatures>& features,
         if (i == 0)
         {
             if (iniR.empty()) init_rot = Mat::eye(3, 3, CV_32F);
-            else init_rot = cameras[0].R.inv() * iniR;
-            //else init_rot = iniR * cameras[0].R.inv();
+            //else init_rot = cameras[0].R.inv() * iniR;
+            else init_rot = iniR * cameras[0].R.inv();
         }
-        cameras[i].R = cameras[i].R * init_rot;
-        //cameras[i].R = init_rot * cameras[i].R;
+        //cameras[i].R = cameras[i].R * init_rot;
+        cameras[i].R = init_rot * cameras[i].R;
         qDebug() << "Initial camera intrinsics #" << i + 1 << ":\nK:\n";
     }
 
@@ -622,8 +623,10 @@ int StitcherMl::warp_and_compositebyblend(const std::vector<cv::Mat>& frames, co
         //if (!blender)
         //{
             const auto& blend_type = config()->blend_type_;
-            if (blend_type >= 3)
+            if (blend_type == MLBlender::Simple)
                 blender = MLBlender::createDefault();
+            else if (blend_type == MLEdgeBlender::SimpleEdge)
+                blender = MLEdgeBlender::createDefault();
             else
                 blender = Blender::createDefault(blend_type, false);
             Size dst_sz = resultRoi(corners, sizes).size();
@@ -646,7 +649,6 @@ int StitcherMl::warp_and_compositebyblend(const std::vector<cv::Mat>& frames, co
         }
         blender->feed(img_warped_s, blend_mask_warped, corners[img_idx]);
     }
-
     qInfo() << "Blending finished: " << timer.elapsed() << "ms " << endl;
     Mat result, result_mask;
     blender->blend(result, result_mask);

@@ -62,6 +62,8 @@ public:
     int stitch_skip_frame_;
     string features_type_;
     float features_thres_;
+    // 0 - filter all 1 - filter only logo 2 - no filter
+    int filter_logo_mode_;
     float match_conf_;
     int match_range_width;
     float match_conf_thresh_;
@@ -112,12 +114,13 @@ void MLConfigStitcher::restore_default()
     stitch_skip_frame_ = 7;
     features_type_ = "surf";
     features_thres_ = 200;
+    filter_logo_mode_ = 0;
     warp_type_ = "spherical";
     match_conf_thresh_ = 1;
     match_conf_ = 0.6f;
     match_range_width = 5;
     seam_type_ = SeamType::NO;
-    blend_type_ = Blender::MULTI_BAND;
+    blend_type_ = 3;
     wave_correct_type_ = WAVE_CORRECT_HORIZ;
     blend_strength_ = 1;
     work_megapix_ = 0.7;

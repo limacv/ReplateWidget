@@ -33,22 +33,26 @@ Step4Widget::Step4Widget(QWidget *parent)
 	connect(ui->buttonExport, &QPushButton::clicked, this, &Step4Widget::exportVideo);
 	
 	// UI that change configuration
-	connect(ui->pathLineEdit, &QLineEdit::textEdited, [this](const QString& text) {setFilePath(text); });
+	connect(ui->pathLineEdit, &QLineEdit::returnPressed, [this]() {setFilePath(ui->pathLineEdit->text()); });
 	connect(ui->pathLineButton, &QPushButton::clicked, [this](bool checked) {
 		QString outfile = QFileDialog::getSaveFileName(this, tr("Select Save File"), "D:/MSI_NB/source/data/", tr("Videos (*.mp4 *.avi)"));
 		setFilePath(outfile);
 		});
 	ui->fpsLineEdit->setValidator(new QDoubleValidator(0, 1000, 1, this));
-	connect(ui->fpsLineEdit, &QLineEdit::textEdited, [this](const QString& text) {setFps(text.toDouble()); });
+	connect(ui->fpsLineEdit, &QLineEdit::returnPressed, [this]() {setFps(ui->fpsLineEdit->text().toDouble()); });
 	ui->resolutionhLineEdit->setValidator(new QIntValidator(0, 100000, this));
 	ui->resolutionwLineEdit->setValidator(ui->resolutionhLineEdit->validator());
-	connect(ui->resolutionhLineEdit, &QLineEdit::textEdited, [this](const QString& text) {	setResolutionHeight(text.toInt()); });
-	connect(ui->resolutionwLineEdit, &QLineEdit::textEdited, [this](const QString& text) {	setResolutionWidth(text.toInt());	});
+	connect(ui->resolutionhLineEdit, &QLineEdit::returnPressed, [this]() {	setResolutionHeight(ui->resolutionhLineEdit->text().toInt()); });
+	connect(ui->resolutionwLineEdit, &QLineEdit::returnPressed, [this]() {	setResolutionWidth(ui->resolutionwLineEdit->text().toInt());	});
+	ui->resolutionhSlider->setRange(100, 20000);
+	ui->resolutionwSlider->setRange(100, 20000);
+	connect(ui->resolutionhSlider, &QSlider::sliderMoved, this, &Step4Widget::setResolutionHeight);
+	connect(ui->resolutionwSlider, &QSlider::sliderMoved, this, &Step4Widget::setResolutionWidth);
 
 	ui->transxLineEdit->setValidator(new QIntValidator(-1000, 1000, this));
 	ui->transyLineEdit->setValidator(ui->transxLineEdit->validator());
-	connect(ui->transxLineEdit, &QLineEdit::textEdited, [this](const QString& text) {setTranslationx(text.toInt()); });
-	connect(ui->transyLineEdit, &QLineEdit::textEdited, [this](const QString& text) {setTranslationy(text.toInt()); });
+	connect(ui->transxLineEdit, &QLineEdit::returnPressed, [this]() {setTranslationx(ui->transxLineEdit->text().toInt()); });
+	connect(ui->transyLineEdit, &QLineEdit::returnPressed, [this]() {setTranslationy(ui->transyLineEdit->text().toInt()); });
 	ui->transxSlider->setRange(-1000, 1000);
 	ui->transySlider->setRange(-1000, 1000);
 	connect(ui->transxSlider, &QSlider::sliderMoved, this, &Step4Widget::setTranslationx);
@@ -56,15 +60,15 @@ Step4Widget::Step4Widget(QWidget *parent)
 
 	ui->scalexLineEdit->setValidator(new QDoubleValidator(0.5, 2, 2, this));
 	ui->scaleyLineEdit->setValidator(ui->scalexLineEdit->validator());
-	connect(ui->scalexLineEdit, &QLineEdit::textEdited, this, [this](const QString& text) {setScalingx(text.toDouble()); });
-	connect(ui->scaleyLineEdit, &QLineEdit::textEdited, this, [this](const QString& text) {setScalingy(text.toDouble()); });
+	connect(ui->scalexLineEdit, &QLineEdit::textEdited, this, [this]() {setScalingx(ui->transxLineEdit->text().toDouble()); });
+	connect(ui->scaleyLineEdit, &QLineEdit::textEdited, this, [this]() {setScalingy(ui->scaleyLineEdit->text().toDouble()); });
 	ui->scalexSlider->setRange(-100, 100);
 	ui->scaleySlider->setRange(-100, 100);
 	connect(ui->scalexSlider, &QSlider::sliderMoved, [this](int value) {setScalingx(powf(2.f, (float)value / 100)); });
 	connect(ui->scaleySlider, &QSlider::sliderMoved, [this](int value) {setScalingy(powf(2.f, (float)value / 100)); });
 
 	ui->rotationLineEdit->setValidator(new QDoubleValidator(-180, 180, 0.1, this));
-	connect(ui->rotationLineEdit, &QLineEdit::textEdited, [this](const QString& text) {setRotation(text.toDouble()); });
+	connect(ui->rotationLineEdit, &QLineEdit::returnPressed, [this]() {setRotation(ui->rotationLineEdit->text().toDouble()); });
 	ui->rotationSlider->setRange(-1800, 1800);
 	connect(ui->rotationSlider, &QSlider::sliderMoved, this, [this](int value) {setRotation((float)value / 10); });
 
@@ -94,11 +98,13 @@ void Step4Widget::setResolutionHeight(int y)
 {
 	cfg->size.height = y;
 	ui->resolutionhLineEdit->setText(QString::number(y));
+	ui->resolutionhSlider->setValue(y);
 	if (ui->resolutionLockButton->isChecked())
 	{
 		y = (float)y / MLDataManager::get().VideoHeight() * MLDataManager::get().VideoWidth();
 		cfg->size.width = y;
 		ui->resolutionwLineEdit->setText(QString::number(y));
+		ui->resolutionwSlider->setValue(y);
 	}
 	ui->imageWidget->update();
 }
@@ -107,11 +113,13 @@ void Step4Widget::setResolutionWidth(int x)
 {
 	cfg->size.width = x;
 	ui->resolutionwLineEdit->setText(QString::number(x));
+	ui->resolutionwSlider->setValue(x);
 	if (ui->resolutionLockButton->isChecked())
 	{
 		x = (float)x / MLDataManager::get().VideoWidth() * MLDataManager::get().VideoHeight();
 		cfg->size.height = x;
 		ui->resolutionhLineEdit->setText(QString::number(x));
+		ui->resolutionhSlider->setValue(x);
 	}
 	ui->imageWidget->update();
 }

@@ -70,20 +70,27 @@ void Step2Widget::showEvent(QShowEvent* event)
 	if (event->spontaneous()) return;
 	QWidget::show();
 	auto& global_data = MLDataManager::get();
-
-	if (!trajp->isDetectOk())
-		tryRunDetect();
-	if (!trajp->isTrackOk())
-		tryRunTrack();
-
-	if (!trajp->isDetectGlobalBoxOk()
-		|| !trajp->isTrackGlobalBoxOk()
-		|| !stitchdatap->isPrepared())
+	
+	try
 	{
-		tryRunStitching();
+		if (!trajp->isDetectOk())
+			tryRunDetect();
+		if (!trajp->isTrackOk())
+			tryRunTrack();
+
+		if (!trajp->isDetectGlobalBoxOk()
+			|| !trajp->isTrackGlobalBoxOk()
+			|| !stitchdatap->isPrepared())
+		{
+			tryRunStitching();
+		}
+		//if (!flowdatap->tryLoadFlows() || !flowdatap->isprepared())
+			//runOptflow();
 	}
-	//if (!flowdatap->tryLoadFlows() || !flowdatap->isprepared())
-		//runOptflow();
+	catch (MLUtil::UserCancelException& e)
+	{
+		qWarning(e.what());
+	}
 }
 
 void Step2Widget::forceRunAll()
@@ -142,7 +149,7 @@ void Step2Widget::runDetect()
 	{
 		QCoreApplication::processEvents();
 		if (bar.wasCanceled())
-			return;
+			throw MLUtil::UserCancelException();
 
 		bar.setValue(bar.value() >= 999 ? bar.value() : bar.value() + 1);
 		QThread::msleep(10);
@@ -188,7 +195,7 @@ void Step2Widget::runTrack()
 	{
 		QCoreApplication::processEvents();
 		if (bar.wasCanceled())
-			return;
+			throw MLUtil::UserCancelException();
 
 		bar.setValue(bar.value() >= 999 ? bar.value() : bar.value() + 1);
 		QThread::msleep(5);
@@ -206,7 +213,7 @@ void Step2Widget::runTrack()
 }
 
 
-void Step2Widget::generateMask(std::vector<cv::Mat>& masks)
+void Step2Widget::generateMask(std::vector<cv::Mat>& masks, bool isblend)
 {
 	const auto& pathcfg = MLConfigManager::get();
 	const auto& globaldata = MLDataManager::get();
@@ -231,18 +238,20 @@ void Step2Widget::generateMask(std::vector<cv::Mat>& masks)
 	for (int i = 0; i < framecount; ++i)
 	{
 		auto& mask = masks[i];
-		for (auto pbox : trajp->frameidx2detectboxes[i])
-			mask(pbox->rect & cv::Rect(cv::Point(0, 0), mask.size())).setTo(0);
-		//for (auto pbox : trajp->frameidx2trackboxes[i])
-			//mask(pbox->rect).setTo(0);
 
-		for (const QRectF& rect : globaldata.manual_masks)
-		{
-			int hei = globaldata.raw_video_cfg.size.height,
-				wid = globaldata.raw_video_cfg.size.width;
-			cv::Rect rectcv(rect.x() * wid, rect.y() * hei, rect.width() * wid, rect.height() * hei);
-			mask(rectcv).setTo(0);
-		}
+		int filter_mode = pathcfg.stitcher_cfg.filter_logo_mode_;
+		if (isblend || filter_mode == 0)
+			for (auto pbox : trajp->frameidx2detectboxes[i])
+				mask(pbox->rect & cv::Rect(cv::Point(0, 0), mask.size())).setTo(0);
+
+		if (isblend || filter_mode <= 1)
+			for (const QRectF& rect : globaldata.manual_masks)
+			{
+				int hei = globaldata.raw_video_cfg.size.height,
+					wid = globaldata.raw_video_cfg.size.width;
+				cv::Rect rectcv(rect.x() * wid, rect.y() * hei, rect.width() * wid, rect.height() * hei);
+				mask(rectcv).setTo(0);
+			}
 	}
 	ui->imageWidget->update();
 }
@@ -295,13 +304,14 @@ void Step2Widget::runStitching()
 
 	bool loaded = st->loadCameraParams(global_cfg.get_stitch_cameraparams_path().toStdString());
 	std::vector<cv::Mat> rawmasks;
-	generateMask(rawmasks);
 	if (ui->checkReCameraParameter->isChecked() || !loaded)
 	{
+		generateMask(rawmasks, false);
 		st->stitch(rawframes, rawmasks);
 		st->saveCameraParams(global_cfg.get_stitch_cameraparams_path().toStdString());
 	}
 
+	generateMask(rawmasks, true);
 	st->warp_and_composite(rawframes, rawmasks,
 		stitchdatap->warped_frames, stitchdatap->rois, stitchdatap->background);
 

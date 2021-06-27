@@ -42,6 +42,11 @@ void GMainDisplay::paintEvent(QPaintEvent *event)
     MLDataManager::get().paintWarpedFrames(painter, step3widget->cur_frameidx);
     paintMouseSelection(painter);
     
+    if (!rect_select_.isEmpty() || !path_select_.isEmpty())
+    {
+        step3widget->setCurrentEffect(nullptr);
+    }
+
     if (step3widget->cur_tracked_path)
         step3widget->cur_tracked_path->paint(painter, step3widget->cur_frameidx);
 }

@@ -97,7 +97,7 @@
       <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <Optimization>Disabled</Optimization>
+      <Optimization>MaxSpeed</Optimization>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -124,7 +124,6 @@
     <ClCompile Include="GUtil.cpp" />
     <ClCompile Include="GVideoPlayer.cpp" />
     <ClCompile Include="InpainterCV.cpp" />
-    <ClCompile Include="MLBlender.cpp" />
     <ClCompile Include="MLCacheFlow.cpp" />
     <ClCompile Include="MLCachePlatesConfig.cpp" />
     <ClCompile Include="MLConfigManager.cpp" />
@@ -182,6 +181,7 @@
     <ClInclude Include="InpainterBase.h" />
     <ClInclude Include="InpainterCV.h" />
     <ClInclude Include="MLBlender.hpp" />
+    <ClInclude Include="MLEdgeBlender.hpp" />
     <ClInclude Include="MLCacheFlow.h" />
     <ClInclude Include="MLCachePlatesConfig.h" />
     <ClInclude Include="MLConfigDetectTrack.hpp" />

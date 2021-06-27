@@ -71,7 +71,7 @@ void Step1Widget::selectVideo()
 
 	QString filepath = QFileDialog::getOpenFileName(
 		this, tr("Open Video"), "D:/MSI_NB/source/data/",
-		tr("Videos (*.mp4 *.avi)")
+		tr("Videos (*.mp4 *.avi *.mov)")
 	);
 
 	if (!global_data.load_raw_video(filepath))

@@ -35,6 +35,20 @@ GPath::GPath(int startframe, const QRectF & rect0, const QPainterPath & painterp
     dirty_(1, true)
 { }
 
+
+// this is used when user want to chagne single frame effect to multi frame effect
+void GPath::expandSingleFrame2Multiframe(int frame_count)
+{
+    if (space() == frame_count) return;
+    resize(frame_count);
+    
+    world_offset_ = 0;
+    for (int i = 0; i < startFrame(); ++i)
+        copyFrameState(startFrame(), i);
+    for (int i = endFrame() + 1; i < space(); ++i)
+        copyFrameState(endFrame(), i);
+}
+
 GPath::~GPath() { release(); }
 
 bool GPath::is_draw_trajectory = true;
@@ -78,6 +92,7 @@ void GPath::moveRectCenter(int frame_id, QPointF center, bool trycopyfromneighbo
         }
 
         roi_rect_[idx].moveCenter(center);
+        GUtil::boundRectF(roi_rect_[idx]);
         manual_adjust_[idx] = true;
         dirty_[idx] = true;
     }

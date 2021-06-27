@@ -96,6 +96,17 @@ void GEffectManager::applyBlack(const GPathPtr &path)
         QImage::Format_ARGB32_Premultiplied).copy();
 }
 
+void GEffectManager::applyLoop(const GPathPtr& path)
+{
+    const auto& global_data = MLDataManager::get();
+    if (path->space() == 1)
+    {
+        qInfo("GEffectManager::applyLoop: the path is not single-frame path");
+        path->expandSingleFrame2Multiframe(global_data.get_framecount());
+    }
+}
+
+
 void GEffectManager::refreshAllPathImage()
 {
     for (auto it = prioritied_effects_.begin(); it != prioritied_effects_.end(); ++it)
@@ -122,6 +133,8 @@ GEffectPtr GEffectManager::addEffect(const GPathPtr &path, G_EFFECT_ID type)
         applyBlack(path);
     else if (type == EFX_ID_INPAINT)
         applyInpaint(path);
+    else if (type == EFX_ID_LOOP)
+        applyLoop(path);
     else
         qWarning("GEffectManager::addEffect: unrecognized effect type");
 
@@ -148,6 +161,8 @@ GEffectPtr GEffectManager::addPathEffect(GPathPtr &path, G_EFFECT_ID type, const
         applyBlack(path);
     else if (type == EFX_ID_INPAINT)
         applyInpaint(path);
+    else if (type == EFX_ID_LOOP)
+        applyLoop(path);
 
     pushEffect(efx);
     return efx;
@@ -199,6 +214,7 @@ void GEffectManager::read(const QString& file)
 //            if ((G_EFFECT_ID)i != EFX_ID_TRASH || (G_EFFECT_ID)i != EFX_ID_STILL) continue;
             int path_id = (*it)["PathId"].as<int>();
             GPathPtr path = paths[path_id];
+            path->updateimages();
             GEffectPtr efx = addPathEffect(path, (G_EFFECT_ID)i, (*it)["Property"]);
             effect_map_read_tmp.push_back(efx);
         }
@@ -905,6 +921,9 @@ GEffectPtr GEffectManager::createEffect(const GPathPtr &path, G_EFFECT_ID type)
         break;
     case EFX_ID_BLACK:
         efx = GEffectPtr(new GEffectBlack(path));
+        break;
+    case EFX_ID_LOOP:
+        efx = GEffectPtr(new GEffectLoop(path));
         break;
     case EFX_ID_INPAINT:
         efx = GEffectPtr(new GEffectInpaint(path));

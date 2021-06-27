@@ -59,6 +59,8 @@ bool MLCacheTrajectories::tryLoadDetectionFromFile()
 	const auto& pathcfg = MLConfigManager::get();
 	const auto& globaldata = MLDataManager::get();
 	const int framecount = globaldata.get_framecount();
+	detect_boxes_list.clear();
+	frameidx2detectboxes.clear();
 	frameidx2detectboxes.resize(framecount);
 	for (int i = 0; i < framecount; ++i)
 	{
@@ -100,6 +102,9 @@ bool MLCacheTrajectories::tryLoadTrackFromFile()
 	//QVector<QVector<BBox*>> frameidx2trackboxes;
 	//QMap<int, QVector<BBox*>> objid2trajectories;
 	const int framecount = globaldata.get_framecount();
+	track_boxes_list.clear();
+	frameidx2trackboxes.clear();
+	objid2trajectories.clear();
 	frameidx2trackboxes.resize(framecount);
 	{
 		QFile file(pathcfg.get_track_result_cache());
@@ -178,6 +183,14 @@ bool MLCacheTrajectories::saveGlobalDetectBoxes() const
 	return saveWorldRects(detect_boxes_list, pathcfg.get_stitch_detect_bboxes_path().toStdString());
 }
 
+bool MLCacheTrajectories::isDetectOk()
+{
+	const auto& global_data = MLDataManager::get();
+	return !detect_boxes_list.empty()
+		&& (frameidx2detectboxes.size() == global_data.get_framecount());
+}
+
+
 bool MLCacheTrajectories::tryLoadGlobalTrackBoxes()
 {
 	const auto& pathcfg = MLConfigManager::get();
@@ -190,20 +203,29 @@ bool MLCacheTrajectories::saveGlobalTrackBoxes() const
 	return saveWorldRects(track_boxes_list, pathcfg.get_stitch_track_bboxes_path().toStdString());
 }
 
+bool MLCacheTrajectories::isTrackOk()
+{
+	const auto& global_data = MLDataManager::get();
+	return !track_boxes_list.empty()
+		&& (frameidx2trackboxes.size() == global_data.get_framecount());
+}
+
 bool MLCacheTrajectories::isDetectGlobalBoxOk()
 {
+	int count = 0;
 	for (const auto& pbox : detect_boxes_list)
 		if (!pbox->rectglobalupdated())
-			return false;
-	return true;
+			count++;
+	return count < detect_boxes_list.size() * 0.1 + 1;
 }
 
 bool MLCacheTrajectories::isTrackGlobalBoxOk()
 {
+	int count = 0;
 	for (const auto& pbox : track_boxes_list)
 		if (!pbox->rectglobalupdated())
-			return false;
-	return true;
+			count++;
+	return count < track_boxes_list.size() * 0.1 + 1;
 }
 
 QColor MLCacheTrajectories::getColor(const ObjID& id) const

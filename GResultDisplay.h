@@ -13,12 +13,13 @@
 
 class GResultDisplay;
 namespace Ui { class GResultWidget; }
+class Step3Widget;
 
 class GResultWidget : public QWidget
 {
     Q_OBJECT
 public:
-    explicit GResultWidget(QWidget* parent = 0);
+    explicit GResultWidget(QWidget* parent = 0, Step3Widget* step3widget = 0);
 
     void setPathSelectModel(bool b);
     void clearMouseSelection();
@@ -33,6 +34,7 @@ private:
     friend class GResultDisplay;
     QTimer timer;
     Ui::GResultWidget* ui;
+    Step3Widget* step3widget;
 
     int current_frame_id_;
     

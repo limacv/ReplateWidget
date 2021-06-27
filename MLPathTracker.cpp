@@ -21,7 +21,10 @@ BBox* findDetectBox(int frameidx, const cv::Rect& query_rect, int class_id = -1)
     {
         if (class_id >= 0 && pbox->classid != class_id) continue;
         float iou = compute_IoU(pbox->rect_global, query_rect);
-        if (iou > iou_max)
+        cv::Rect rect_global_margined = GUtil::addMarginToRect(pbox->rect_global, RECT_MARGIN);
+        float ratio = (std::abs(rect_global_margined.area()) + 0.00001) / (std::abs(query_rect.area()) + 0.00001);
+        ratio = ratio < 1 ? 1 / ratio : ratio;
+        if (iou > iou_max && ratio < 3.)
         {
             best = pbox;
             iou_max = iou;
@@ -35,15 +38,16 @@ BBox* findDetectBox(int frameidx, const cv::Rect& query_rect, int class_id = -1)
         {
             if (class_id >= 0 && pbox->classid != class_id) continue;
             float dist = compute_Euli(pbox->rect_global, query_rect);
-            float ratio = (std::abs(pbox->rect_global.area()) + 0.00001) / (std::abs(query_rect.area()) + 0.00001);
+            cv::Rect rect_global_margined = GUtil::addMarginToRect(pbox->rect_global, RECT_MARGIN);
+            float ratio = (std::abs(rect_global_margined.area()) + 0.00001) / (std::abs(query_rect.area()) + 0.00001);
             ratio = ratio < 1 ? 1 / ratio : ratio;
-            if (dist < dist_min && ratio < 7.)
+            if (dist < dist_min && ratio < 4.)
             {
                 best = pbox;
                 dist_min = dist;
             }
         }
-        if (dist_min > 30)
+        if (dist_min > 10000)
             best = nullptr;
     }
     return best;

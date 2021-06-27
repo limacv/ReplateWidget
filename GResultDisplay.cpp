@@ -3,9 +3,11 @@
 #include <qdialog.h>
 #include "ui_GResultWidget.h"
 #include "MLUtil.h"
+#include "Step3Widget.h"
 
-GResultWidget::GResultWidget(QWidget* parent)
+GResultWidget::GResultWidget(QWidget* parent, Step3Widget* step3widget)
     :QWidget(parent),
+    step3widget(step3widget),
     current_frame_id_(0),
     duration(&MLDataManager::get().plates_cache.replate_duration),
     ui(new Ui::GResultWidget()),
@@ -83,6 +85,12 @@ void GResultDisplay::paintEvent(QPaintEvent *event)
 {
     if (NULL == event) return;
     const auto& global_data = MLDataManager::get();
+
+    if (!rect_select_.isEmpty() || !path_select_.isEmpty())
+    {
+        parent_widget->step3widget->setCurrentEffect(nullptr);
+    }
+
     QPainter painter(this);
     global_data.paintReplateFrame(painter, parent_widget->player_manager->display_frameidx());
 

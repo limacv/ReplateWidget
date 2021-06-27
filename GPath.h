@@ -31,6 +31,7 @@ public:
     void setPathRoi(int frame_id, const GRoiPtr &roi);
     void setPathRoi(int frame_id, float dx, float dy);
     void copyFrameState(int frame_from, int frame_to);
+    void expandSingleFrame2Multiframe(int frame_count);
 
     QRectF frameRoiRect(int frame_id) const;
     QImage frameRoiImage(int frame_id) const;

@@ -75,13 +75,20 @@ void calForegroundBorderMy(cv::Mat& fg, const cv::Mat& bg, const cv::Mat& mask)
 	diff.forEach<float>([&](float& pix, const int* pos) {
 			cv::Vec4b fpix = fg.at<cv::Vec4b>(pos[0], pos[1]);
 			cv::Vec3b bpix = bg.at<cv::Vec3b>(pos[0], pos[1]);
+			//cv::Vec3b fpix3(fpix[0], fpix[1], fpix[2]);
+			//cv::Vec3b flab, blab;
+			//cv::cvtColor(fpix3, flab, cv::COLOR_BGR2Lab);
+			//cv::cvtColor(bpix, blab, cv::COLOR_BGR2Lab);
+			//MLUtil::CIEDE2000::LAB lab1({ (float)flab[0], (float)flab[1], (float)flab[2] });
+			//MLUtil::CIEDE2000::LAB lab2({ (float)flab[0], (float)flab[1], (float)flab[2] });
+			//double error = MLUtil::CIEDE2000::CIEDE2000(lab1, lab2);
 			int err = 0;
 			for (int i = 0; i < 3; ++i)
 				err += (fpix[i] > bpix[i] ? fpix[i] - bpix[i] : bpix[i] - fpix[i]);
 
-			if (err < 10) err = 0;
-			else if (err < 25) err = (err - 10) * 4;
-			else if (err < 35) err = (err - 25) * 20 + 60;
+			if (err < 20) err = 0;
+			else if (err < 45) err = (err - 20) * 5;
+			else if (err < 65) err = (err - 45) * 15 + 25 * 5;
 			else err = 255;
 			pix = err * fpix[3] / 255;
 			err = MIN(255, err);

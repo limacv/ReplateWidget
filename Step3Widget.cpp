@@ -22,7 +22,7 @@ Step3Widget::Step3Widget(QWidget *parent)
     control_widget_ = new QWidget(this);
     control_widget_ui_ = new Ui::GControlWidget();
     control_widget_ui_->setupUi(control_widget_);
-    result_widget_ = new GResultWidget(this);
+    result_widget_ = new GResultWidget(this, this);
     result_widget_display_ = result_widget_->display_widget;
     display_widget_ = new GMainDisplay(this, control_widget_ui_->control_play_slider_, this);
     //control_widget_ = CreateControlGroup(this);
@@ -145,11 +145,11 @@ bool Step3Widget::is_auto_selection() const { return control_widget_ui_->combo_a
 
 inline G_EFFECT_ID Step3Widget::selected_efx_type() const
 {
-    G_EFFECT_ID idx[4] = { EFX_ID_MOTION, EFX_ID_TRAIL, EFX_ID_STILL, EFX_ID_INPAINT };
+    G_EFFECT_ID idx[5] = { EFX_ID_MOTION, EFX_ID_TRAIL, EFX_ID_STILL, EFX_ID_INPAINT, EFX_ID_LOOP };
     return idx[control_widget_ui_->comboMode->currentIndex()];
 }
 
-inline bool Step3Widget::is_singleframe_efx() const { return selected_efx_type() == EFX_ID_STILL || selected_efx_type() == EFX_ID_INPAINT; }
+inline bool Step3Widget::is_singleframe_efx() const { return selected_efx_type() == EFX_ID_STILL || selected_efx_type() == EFX_ID_INPAINT || selected_efx_type() == EFX_ID_LOOP; }
 
 void Step3Widget::setPathRoi(const GRoiPtr& roi)
 {
@@ -536,7 +536,13 @@ void Step3Widget::addSingleFramePath()
 
 void Step3Widget::onAutoAddPressed(bool checked)
 {
-    if (is_singleframe_efx())
+    if (cur_tracked_path
+        &&(
+            cur_tracked_path->space() == 1 && is_singleframe_efx()
+            || cur_tracked_path->space() > 1 && !is_singleframe_efx()
+           ))
+        ;
+    else if (is_singleframe_efx())
     {
         addSingleFramePath();
     }

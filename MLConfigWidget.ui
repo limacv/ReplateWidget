@@ -35,9 +35,9 @@
       <property name="geometry">
        <rect>
         <x>0</x>
-        <y>-322</y>
+        <y>-415</y>
         <width>406</width>
-        <height>1077</height>
+        <height>1105</height>
        </rect>
       </property>
       <layout class="QGridLayout" name="gridLayout_5">
@@ -303,34 +303,34 @@
               </item>
              </widget>
             </item>
-            <item row="3" column="0">
+            <item row="4" column="0">
              <widget class="QLabel" name="matchConfLabel">
               <property name="text">
                <string>Match conf</string>
               </property>
              </widget>
             </item>
-            <item row="3" column="1">
+            <item row="4" column="1">
              <widget class="QLineEdit" name="matchConfLineEdit"/>
             </item>
-            <item row="4" column="0">
+            <item row="5" column="0">
              <widget class="QLabel" name="matchRangeLabel">
               <property name="text">
                <string>Match range</string>
               </property>
              </widget>
             </item>
-            <item row="4" column="1">
+            <item row="5" column="1">
              <widget class="QLineEdit" name="matchRangeLineEdit"/>
             </item>
-            <item row="5" column="0">
+            <item row="6" column="0">
              <widget class="QLabel" name="warpTypeLabel">
               <property name="text">
                <string>Warp type</string>
               </property>
              </widget>
             </item>
-            <item row="5" column="1">
+            <item row="6" column="1">
              <widget class="QComboBox" name="warpTypeComboBox">
               <item>
                <property name="text">
@@ -374,14 +374,14 @@
               </item>
              </widget>
             </item>
-            <item row="6" column="0">
+            <item row="7" column="0">
              <widget class="QLabel" name="blendTypeLabel">
               <property name="text">
                <string>Blend type</string>
               </property>
              </widget>
             </item>
-            <item row="6" column="1">
+            <item row="7" column="1">
              <widget class="QComboBox" name="blendTypeComboBox">
               <item>
                <property name="text">
@@ -403,26 +403,31 @@
                 <string>Simple</string>
                </property>
               </item>
+              <item>
+               <property name="text">
+                <string>SimpleEdge</string>
+               </property>
+              </item>
              </widget>
             </item>
-            <item row="7" column="0">
+            <item row="8" column="0">
              <widget class="QLabel" name="blendStrengthLabel">
               <property name="text">
                <string>Blend strength</string>
               </property>
              </widget>
             </item>
-            <item row="7" column="1">
+            <item row="8" column="1">
              <widget class="QLineEdit" name="blendStrengthLineEdit"/>
             </item>
-            <item row="8" column="0">
+            <item row="9" column="0">
              <widget class="QLabel" name="waveCorrectLabel">
               <property name="text">
                <string>Wave correct</string>
               </property>
              </widget>
             </item>
-            <item row="8" column="1">
+            <item row="9" column="1">
              <widget class="QComboBox" name="waveCorrectComboBox">
               <item>
                <property name="text">
@@ -441,44 +446,44 @@
               </item>
              </widget>
             </item>
-            <item row="9" column="0">
+            <item row="10" column="0">
              <widget class="QLabel" name="workScaleLabel">
               <property name="text">
                <string>Work megapix</string>
               </property>
              </widget>
             </item>
-            <item row="9" column="1">
+            <item row="10" column="1">
              <widget class="QLineEdit" name="workScaleLineEdit"/>
             </item>
-            <item row="10" column="0">
+            <item row="11" column="0">
              <widget class="QLabel" name="seamScaleLabel">
               <property name="text">
                <string>Seam megapix</string>
               </property>
              </widget>
             </item>
-            <item row="10" column="1">
+            <item row="11" column="1">
              <widget class="QLineEdit" name="seamScaleLineEdit"/>
             </item>
-            <item row="11" column="0">
+            <item row="12" column="0">
              <widget class="QLabel" name="composeScaleLabel">
               <property name="text">
                <string>Compose megapix</string>
               </property>
              </widget>
             </item>
-            <item row="11" column="1">
+            <item row="12" column="1">
              <widget class="QLineEdit" name="composeScaleLineEdit"/>
             </item>
-            <item row="12" column="0">
+            <item row="13" column="0">
              <widget class="QLabel" name="expoCompTypeLabel">
               <property name="text">
                <string>ExpoComp type</string>
               </property>
              </widget>
             </item>
-            <item row="12" column="1">
+            <item row="13" column="1">
              <widget class="QComboBox" name="expoCompTypeComboBox">
               <item>
                <property name="text">
@@ -507,44 +512,44 @@
               </item>
              </widget>
             </item>
-            <item row="13" column="0">
+            <item row="14" column="0">
              <widget class="QLabel" name="expoCompNrfeedsLabel">
               <property name="text">
                <string>ExpoComp nrfeeds</string>
               </property>
              </widget>
             </item>
-            <item row="13" column="1">
+            <item row="14" column="1">
              <widget class="QLineEdit" name="expoCompNrfeedsLineEdit"/>
             </item>
-            <item row="14" column="0">
+            <item row="15" column="0">
              <widget class="QLabel" name="expoCompNrfilteringLabel">
               <property name="text">
                <string>ExpoComp nrfiltering</string>
               </property>
              </widget>
             </item>
-            <item row="14" column="1">
+            <item row="15" column="1">
              <widget class="QLineEdit" name="expoCompNrfilteringLineEdit"/>
             </item>
-            <item row="15" column="0">
+            <item row="16" column="0">
              <widget class="QLabel" name="expoCompBlockszLabel">
               <property name="text">
                <string>ExpoComp blocksz</string>
               </property>
              </widget>
             </item>
-            <item row="15" column="1">
+            <item row="16" column="1">
              <widget class="QLineEdit" name="expoCompBlockszLineEdit"/>
             </item>
-            <item row="16" column="0">
+            <item row="17" column="0">
              <widget class="QLabel" name="stitcherTypeLabel">
               <property name="text">
                <string>Stitcher type</string>
               </property>
              </widget>
             </item>
-            <item row="16" column="1">
+            <item row="17" column="1">
              <widget class="QComboBox" name="stitcherTypeComboBox">
               <item>
                <property name="text">
@@ -568,14 +573,14 @@
               </item>
              </widget>
             </item>
-            <item row="17" column="0">
+            <item row="18" column="0">
              <widget class="QLabel" name="tryGPULabel">
               <property name="text">
                <string>Try GPU</string>
               </property>
              </widget>
             </item>
-            <item row="17" column="1">
+            <item row="18" column="1">
              <widget class="QCheckBox" name="tryGPUCheckBox"/>
             </item>
             <item row="0" column="0">
@@ -592,14 +597,14 @@
               </property>
              </widget>
             </item>
-            <item row="18" column="0">
+            <item row="19" column="0">
              <widget class="QLabel" name="verboseLabel">
               <property name="text">
                <string>Verbose</string>
               </property>
              </widget>
             </item>
-            <item row="18" column="1">
+            <item row="19" column="1">
              <widget class="QCheckBox" name="verboseCheckBox"/>
             </item>
             <item row="2" column="0">
@@ -611,6 +616,32 @@
             </item>
             <item row="2" column="1">
              <widget class="QLineEdit" name="featureThresLineEdit"/>
+            </item>
+            <item row="3" column="0">
+             <widget class="QLabel" name="featureFilterLabel">
+              <property name="text">
+               <string>Feature Filter</string>
+              </property>
+             </widget>
+            </item>
+            <item row="3" column="1">
+             <widget class="QComboBox" name="featureFilterComboBox">
+              <item>
+               <property name="text">
+                <string>logos and objects</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>logos only</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>no</string>
+               </property>
+              </item>
+             </widget>
             </item>
            </layout>
           </item>

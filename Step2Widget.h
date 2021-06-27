@@ -20,7 +20,7 @@ public:
 	Step2Widget(QWidget *parent = Q_NULLPTR);
 	virtual ~Step2Widget();
 	virtual void showEvent(QShowEvent* event);
-	void generateMask(std::vector<cv::Mat>& masks);
+	void generateMask(std::vector<cv::Mat>& masks, bool isblend);
 
 private slots:
 	// this set of funcs will block the main window and launch progress bar

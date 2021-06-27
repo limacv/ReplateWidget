@@ -41,8 +41,9 @@ public:
 	bool saveGlobalTrackBoxes() const;
 	bool saveGlobalDetectBoxes() const;
 
-	bool isDetectOk() { return !detect_boxes_list.empty(); }
-	bool isTrackOk() { return !track_boxes_list.empty(); }
+	bool isDetectOk();
+	
+	bool isTrackOk();
 	bool isDetectGlobalBoxOk();
 	bool isTrackGlobalBoxOk();
 

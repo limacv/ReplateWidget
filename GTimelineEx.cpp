@@ -231,8 +231,8 @@ void GTimelineEx::paintEvent(QPaintEvent *event)
 void GTimelineEx::mousePressEvent(QMouseEvent *event)
 {
     if (!isChecked()) {
-        setChecked(true);
-        toggled(true);
+        //setChecked(true);
+        //toggled(true);
         if (!intervals_.empty())
             onPressEffect(intervals(0)->effect());
     }
@@ -245,8 +245,9 @@ void GTimelineEx::mousePressEvent(QMouseEvent *event)
 //    }
     else
     {
-        setChecked(false);
-        toggled(false);
+        //setChecked(false);
+        //toggled(false);
+        onPressEffect(GEffectPtr(nullptr));
     }
     QPushButton::mousePressEvent(event);
     //else if (event->button() == Qt::LeftButton) {
@@ -286,6 +287,7 @@ void GTimelineEx::mouseReleaseEvent(QMouseEvent *event)
     //if (align_started_) {
         //align_started_ = false;
     //}
+    update();
 }
 
 void GTimelineEx::contextMenuEvent(QContextMenuEvent *event)

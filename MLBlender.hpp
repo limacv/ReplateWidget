@@ -9,6 +9,8 @@ namespace cv
             public Blender
         {
         public:
+            enum { Simple = 3 };
+
             MLBlender() {}
             virtual ~MLBlender() {}
 
@@ -60,7 +62,7 @@ void cv::detail::MLBlender::prepare(Rect dst_roi)
     countimg = cv::Mat(dst_roi_.size(), CV_32FC1, cv::Scalar(0.001));
 }
 
-inline Ptr<Blender> cv::detail::MLBlender::createDefault()
+inline cv::Ptr<cv::detail::Blender> cv::detail::MLBlender::createDefault()
 {
     return makePtr<MLBlender>();
 }

@@ -255,6 +255,11 @@
                    <string>Inpaint</string>
                   </property>
                  </item>
+                 <item>
+                  <property name="text">
+                   <string>Loop</string>
+                  </property>
+                 </item>
                 </widget>
                </item>
               </layout>

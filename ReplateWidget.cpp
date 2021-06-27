@@ -57,8 +57,8 @@ void ReplateWidget::setStepTo(int step)
     step = step < 0 ? 0 : (step >= STEP_COUNT ? STEP_COUNT - 1 : step);
     stepwidgets[current_step]->hide();
     ui.pipelineWidget->setCurrentIndex(step);
-    stepwidgets[current_step]->show();
     current_step = step;
+    stepwidgets[current_step]->show();
 
     if (step == 0)
     {
@@ -92,12 +92,12 @@ void ReplateWidget::setStepTo(int step)
 
 void ReplateWidget::nextStep()
 {
-    setStepTo(++current_step);
+    setStepTo(current_step + 1);
 }
 
 void ReplateWidget::lastStep()
 {
-    setStepTo(--current_step);
+    setStepTo(current_step - 1);
 }
 
 void ReplateWidget::setButtonActive(QPushButton& button)
