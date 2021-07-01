@@ -39,8 +39,14 @@ public:
 			return false;
 		return true;
 	}
-
+	
 	bool isPrepared() const;
+	void clear()
+	{
+		background.release();
+		warped_frames.clear();
+		rois.clear();
+	}
 
 	void update_global_roi()
 	{

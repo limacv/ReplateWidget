@@ -44,6 +44,7 @@ ReplateWidget::ReplateWidget(QWidget *parent)
     }
 
     // initialize index 0 layout
+    stepwidgets[0]->show();
     setStepTo(current_step);
 }
 

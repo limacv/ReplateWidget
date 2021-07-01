@@ -18,6 +18,7 @@
 #include "MLCacheTrajectories.h"
 #include "MLCacheStitching.h"
 #include "MLUtil.h"
+#include "GUtil.h"
 #include "SphericalSfm/SphericalSfm.h"
 #include "StitcherSsfm.h"
 #include "StitcherGe.h"
@@ -245,13 +246,17 @@ void Step2Widget::generateMask(std::vector<cv::Mat>& masks, bool isblend)
 				mask(pbox->rect & cv::Rect(cv::Point(0, 0), mask.size())).setTo(0);
 
 		if (isblend || filter_mode <= 1)
-			for (const QRectF& rect : globaldata.manual_masks)
+		{
+			int hei = globaldata.raw_video_cfg.size.height,
+				wid = globaldata.raw_video_cfg.size.width;
+			const std::vector<QRectF> rects = globaldata.get_processed_manual_masks(wid, hei);
+			for (const QRectF& rect : rects)
 			{
-				int hei = globaldata.raw_video_cfg.size.height,
-					wid = globaldata.raw_video_cfg.size.width;
-				cv::Rect rectcv(rect.x() * wid, rect.y() * hei, rect.width() * wid, rect.height() * hei);
+				cv::Rect rectcv(rect.left() + 0.5, rect.top() + 0.5, rect.width() + 0.5, rect.height() + 0.5);  // round
+				rectcv &= cv::Rect(cv::Point(0, 0), mask.size());
 				mask(rectcv).setTo(0);
 			}
+		}
 	}
 	ui->imageWidget->update();
 }

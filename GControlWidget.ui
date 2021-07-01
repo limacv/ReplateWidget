@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1301</width>
-    <height>165</height>
+    <width>1229</width>
+    <height>159</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -549,8 +549,14 @@
                 <enum>QFrame::Raised</enum>
                </property>
                <layout class="QVBoxLayout" name="verticalLayout_3">
+                <property name="leftMargin">
+                 <number>5</number>
+                </property>
                 <property name="topMargin">
                  <number>0</number>
+                </property>
+                <property name="rightMargin">
+                 <number>5</number>
                 </property>
                 <property name="bottomMargin">
                  <number>0</number>
@@ -587,6 +593,13 @@
                   </property>
                  </widget>
                 </item>
+                <item>
+                 <widget class="QPushButton" name="layer_reverse">
+                  <property name="text">
+                   <string>Reverse</string>
+                  </property>
+                 </widget>
+                </item>
                </layout>
               </widget>
              </item>
@@ -617,8 +630,14 @@
                 <enum>QFrame::Raised</enum>
                </property>
                <layout class="QVBoxLayout" name="verticalLayout_5">
+                <property name="leftMargin">
+                 <number>5</number>
+                </property>
                 <property name="topMargin">
                  <number>0</number>
+                </property>
+                <property name="rightMargin">
+                 <number>5</number>
                 </property>
                 <property name="bottomMargin">
                  <number>0</number>
@@ -679,8 +698,14 @@
                 <enum>QFrame::Raised</enum>
                </property>
                <layout class="QVBoxLayout" name="verticalLayout_6">
+                <property name="leftMargin">
+                 <number>5</number>
+                </property>
                 <property name="topMargin">
                  <number>0</number>
+                </property>
+                <property name="rightMargin">
+                 <number>5</number>
                 </property>
                 <property name="bottomMargin">
                  <number>0</number>
@@ -747,8 +772,14 @@
                 <enum>QFrame::Raised</enum>
                </property>
                <layout class="QVBoxLayout" name="verticalLayout_8">
+                <property name="leftMargin">
+                 <number>5</number>
+                </property>
                 <property name="topMargin">
                  <number>0</number>
+                </property>
+                <property name="rightMargin">
+                 <number>5</number>
                 </property>
                 <property name="bottomMargin">
                  <number>0</number>

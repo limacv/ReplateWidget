@@ -56,7 +56,7 @@ public:
     void restore_default();
     void write(YAML::Emitter& out) const;
     void read(const YAML::Node& doc);
-    void setWaveCorrect(const string& str);
+    WaveCorrectKind get_wave_correct_type() const;
 
     string stitcher_type_;
     int stitch_skip_frame_;
@@ -94,16 +94,10 @@ public:
     bool load_BA_;
     int try_gpu_;
     bool preview_;
-    WaveCorrectKind wave_correct_type_;
 
     friend YAML::Emitter& operator << (YAML::Emitter& out,
         const std::vector<QRectF>& rects);
     friend void operator >> (const YAML::Node& node, std::vector<QRectF>& rects);
-
-    void parseStitchArgs();
-
-private:
-    WaveCorrectKind convertWaveCorrect(const string& wave_correct) const;
 };
 
 
@@ -121,7 +115,6 @@ void MLConfigStitcher::restore_default()
     match_range_width = 5;
     seam_type_ = SeamType::NO;
     blend_type_ = 3;
-    wave_correct_type_ = WAVE_CORRECT_HORIZ;
     blend_strength_ = 1;
     work_megapix_ = 0.7;
     seam_megapix_ = 0.01;
@@ -208,103 +201,17 @@ void MLConfigStitcher::read(const YAML::Node& doc)
 }
 
 inline
-void MLConfigStitcher::setWaveCorrect(const string& str)
+WaveCorrectKind MLConfigStitcher::get_wave_correct_type() const
 {
-    wave_correct_ = str;
-
-    if (wave_correct_ != "no")
-        wave_correct_type_ = convertWaveCorrect(str);
-}
-
-inline
-void MLConfigStitcher::parseStitchArgs()
-{
-    MLConfigStitcher& st = *this;
-
-    //GCONFIGVALUE2(st.match_conf_, "match_conf", float);
-    //GCONFIGVALUE2(st.match_conf_thresh_, "conf_thresh", float);
-    //GCONFIGVALUE2(st.blend_step_, "blend_step", int);
-    //GCONFIGVALUE(st.load_BA_, "loadBa", bool);
-    //GCONFIGVALUE(st.save_BA_, "saveBa", bool);
-    //GCONFIGVALUE(st.warp_type_, "warpType", string);
-    //GCONFIGVALUE(st.preview_, "preview", bool);
-    //GCONFIGVALUE2(st.try_gpu_, "try_gpu", int);
-    //GCONFIGVALUE2(st.work_megapix_, "work_megapix", double);
-    //GCONFIGVALUE2(st.seam_megapix_, "seam_megapix", double);
-    //GCONFIGVALUE2(st.compose_megapix_, "compose_megapix", double);
-    //GCONFIGVALUE(st.features_type_, "features_type", string);
-    //GCONFIGVALUE(st.wave_correct_, "wave_correct", string);
-    if (!st.wave_correct_.empty())
-    {
-        if (st.wave_correct_ == "no")
-            st.wave_correct_ = "no";
-        else if (st.wave_correct_ == "vert") {
-            st.wave_correct_type_ = WAVE_CORRECT_VERT;
-        }
-        else if (st.wave_correct_ == "horiz")
-            st.wave_correct_type_ = WAVE_CORRECT_HORIZ;
-        else
-        {
-            cerr << "Bad wave_correct flag value: " << st.wave_correct_type_;
-        }
-    }
-    string expos_comp;
-    //GCONFIGVALUE(expos_comp, "expos_comp", string);
-    if (!expos_comp.empty())
-    {
-        if (expos_comp == "no")
-            st.expos_comp_type_ = ExposureCompensator::NO;
-        else if (expos_comp == "gain")
-            st.expos_comp_type_ = ExposureCompensator::GAIN;
-        else if (expos_comp == "gain_blocks")
-            st.expos_comp_type_ = ExposureCompensator::GAIN_BLOCKS;
-        else
-        {
-            cerr << "Bad exposure compensation method: " << expos_comp;
-        }
-    }
-    string seam_type;
-    //GCONFIGVALUE(seam_type, "seam", string);
-    if (!seam_type.empty()) {
-        if (seam_type == "no")
-            st.seam_type_ = SeamType::NO;
-        else if (seam_type == "voronoi")
-            st.seam_type_ = SeamType::VORONOI;
-        else if (seam_type == "gc_color")
-            st.seam_type_ = SeamType::GC_COLOR;
-        else if (seam_type == "gc_colorgrad")
-            st.seam_type_ = SeamType::GC_COLORGRAD;
-        else if (seam_type == "dp_color")
-            st.seam_type_ = SeamType::DP_COLOR;
-        else if (seam_type == "dp_colorgrad")
-            st.seam_type_ = SeamType::DP_COLORGRAD;
-    }
-
-    string blend;
-    //GCONFIGVALUE(blend, "blend", string);
-    if (!blend.empty())
-    {
-        if (blend == "no")
-            st.blend_type_ = Blender::NO;
-        else if (blend == "feather")
-            st.blend_type_ = Blender::FEATHER;
-        else if (blend == "multiband")
-            st.blend_type_ = Blender::MULTI_BAND;
-        else
-        {
-            cerr << "Bad blending method: " << blend;
-        }
-    }
-    //GCONFIGVALUE2(st.blend_strength_, "blend_strength", float);
-}
-
-inline
-WaveCorrectKind MLConfigStitcher::convertWaveCorrect(const string& wave_correct) const
-{
-    if (wave_correct == "vert")
-        return cv::detail::WAVE_CORRECT_VERT;
-    else if (wave_correct == "horiz")
-        return cv::detail::WAVE_CORRECT_HORIZ;
+    if (wave_correct_ == "Horiz")
+        return WAVE_CORRECT_HORIZ;
+    else if (wave_correct_ == "Verti")
+        return WAVE_CORRECT_VERT;
+    else if (wave_correct_ == "Auto")
+        return WAVE_CORRECT_AUTO;
     else
-        qDebug("Invalid wave_correct str input");
+    {
+        qWarning("Unrecognized wave_correct type");
+        return WAVE_CORRECT_AUTO;
+    }
 }

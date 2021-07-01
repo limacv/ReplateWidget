@@ -13,6 +13,11 @@ public:
 	bool tryLoadFlows();
 	bool isprepared() const;
 
+	bool clear()
+	{
+		flows.clear();
+	}
+
 	std::vector<cv::Mat> flows;
 	const std::vector<cv::Rect>& roisp;
 	const cv::Rect& global_roip;

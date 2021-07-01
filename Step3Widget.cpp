@@ -78,6 +78,7 @@ void Step3Widget::showEvent(QShowEvent* event)
 
     if (globaldata.effect_manager_.empty())  // try load from file
     {
+        timeline_widget_->clear();
         globaldata.effect_manager_.read(MLConfigManager::get().get_replatecfg_path());
         for (auto efxs: globaldata.effect_manager_.getEffects())
             for (auto efx: efxs.second)
@@ -137,7 +138,10 @@ void Step3Widget::CreateConnections()
 
     connect(control_widget_ui_->check_showtrace, &QCheckBox::toggled, [this](bool s) {GPath::is_draw_trajectory = s; display_widget_->update(); });
 
+    connect(control_widget_ui_->layer_reverse, &QPushButton::clicked, [this]() {if (cur_effect) cur_effect->reverseRenderOrder(); });
+
     connect(force_update_all_path_image_, &QAction::triggered, [](bool s) { MLDataManager::get().effect_manager_.refreshAllPathImage(); qWarning("force refresh all frames");});
+
 }
 
 int Step3Widget::get_selection_mode() const { return control_widget_ui_->combo_autoselection->currentIndex(); }
@@ -479,7 +483,7 @@ void Step3Widget::onCurrentEffectChanged()
     }
     else {
         control_widget_ui_->fade_spinbox->setEnabled(true);
-        control_widget_ui_->fade_spinbox->setValue(cur_effect->getTransLevel());
+        control_widget_ui_->fade_spinbox->setValue(cur_effect->getFadeLevel());
     }
 
     if (cur_effect->getMarker() == -1) {

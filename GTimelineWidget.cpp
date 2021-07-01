@@ -62,6 +62,8 @@ void GTimelineWidget::deleteTimeline(GObjLayer *obj)
     main_layout_->removeWidget(obj);
     button_group_->removeButton(obj->timeline());
     objects_.remove(obj);
+    
+
     delete obj;
     step3widget->setCurrentEffect(nullptr);
 }

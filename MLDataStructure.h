@@ -19,6 +19,17 @@ struct VideoConfig
 	{ }
 
 	bool isempty() const { return framecount <= 0; }
+	void clear()
+	{
+		framecount = -1;
+		fourcc = -1.;
+		fps = -1.;
+		size = cv::Size(-1, -1);
+		translation = cv::Point(-1, -1);
+		scaling = cv::Vec2f(1, 1);
+		rotation = 0;
+		repeat = 1;
+	}
 	int framecount;
 	int fourcc;
 	double fps;

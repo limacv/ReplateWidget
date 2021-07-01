@@ -18,6 +18,8 @@ public:
 	virtual ~Step1Widget();
 	virtual void showEvent(QShowEvent* event);
 
+	void resizerect0(int l, int t, int r, int b);
+
 public slots:
 	void selectVideo();
 	void selectProject();

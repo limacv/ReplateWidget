@@ -18,6 +18,12 @@ public:
     GTimelineWidget(Step3Widget* step3p, QWidget *parent = 0);
     void addTimeline(GEffectPtr &effect, const std::string &name = "");
     void updateDuration();
+    void clear()
+    {
+        std::vector<GObjLayer*> tmp(objects_.begin(), objects_.end());
+        for (auto p : tmp)
+            deleteTimeline(p);
+    }
 
 public slots:
     void changeCurrentEffectTo(GEffectPtr &effect);

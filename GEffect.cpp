@@ -18,6 +18,7 @@ GEffect::GEffect(const GPathPtr &path)
     , fade_level_(1)
     , trans_level_(0)
     , marker_mode_(0)
+    , reverse_render(false)
 {
     setPath(path);
     sync_id_ = this->startFrame();
@@ -128,6 +129,9 @@ void GEffect::readBasic(const YAML::Node &node)
     else if (node["Fade"]) // for old .proj conversion
         fade_level_ = node["Fade"].as<int>();
 
+    if (node["ReverseRender"])
+        reverse_render = node["ReverseRender"].as<bool>();
+
 }
 
 void GEffect::writeBasic(YAML::Emitter &out) const
@@ -151,6 +155,8 @@ void GEffect::writeBasic(YAML::Emitter &out) const
     out << YAML::Key << "TransLevel" << YAML::Value << trans_level_;
     out << YAML::Key << "FadeLevel" << YAML::Value << fade_level_;
     out << YAML::Key << "Marker" << YAML::Value << marker_mode_;
+
+    out << YAML::Key << "ReverseRender" << YAML::Value << reverse_render;
 }
 
 YAML::Emitter &operator <<(YAML::Emitter &out, const GEffectPtr &efx)
@@ -531,7 +537,9 @@ void GEffectMotion::render(QPainter &painter, int frame_id, int duration, bool v
 
 //    int loop_num = std::ceil(effectLength() / (float)duration);
     int trail_length = 0;
-    for (int idx = base_id; idx < this->effectLength(); idx += duration) {
+
+    int idx = reverse_render ? base_id + (effectLength() - base_id) / duration * duration : base_id;
+    for (; idx < this->effectLength() && idx >= base_id; idx = reverse_render ? idx - duration : idx + duration) {
         int local_id = (render_order_? idx: sum_id - idx);
         int render_frame = local_id + startFrame();
         int anchor_id = (base_id / duration +

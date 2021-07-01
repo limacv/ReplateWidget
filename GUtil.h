@@ -10,8 +10,8 @@
 
 namespace GUtil
 {
-    QRect cvtRect(cv::Rect rect);
-    cv::Rect cvtRect(QRect rect);
+    QRect cvtRect(const cv::Rect& rect);
+    cv::Rect cvtRect(const QRect& rect);
     QSize cvtSize(cv::Size rect);
     cv::Size cvtSize(QSize rect);
 

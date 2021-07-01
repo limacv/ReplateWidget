@@ -36,14 +36,6 @@ MLCacheTrajectories::MLCacheTrajectories()
 	}
 }
 
-MLCacheTrajectories::~MLCacheTrajectories()
-{
-	for (auto& pbox : track_boxes_list)
-		delete pbox;
-	for (auto& pbox : detect_boxes_list)
-		delete pbox;
-}
-
 bool MLCacheTrajectories::isDetectPrepared() const
 {
 	return frameidx2detectboxes.size() == (MLDataManager::get().get_framecount());

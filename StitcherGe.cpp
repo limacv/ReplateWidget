@@ -50,7 +50,7 @@ int StitcherGe::stitch(const std::vector<cv::Mat>& frames, const std::vector<cv:
         vector<Mat> rmats;
         for (size_t i = 0; i < cameras_.size(); ++i)
             rmats.push_back(cameras_[i].R);
-        waveCorrect(rmats, config()->wave_correct_type_);
+        waveCorrect(rmats, config()->get_wave_correct_type());
         for (size_t i = 0; i < cameras_.size(); ++i)
             cameras_[i].R = rmats[i];
     }

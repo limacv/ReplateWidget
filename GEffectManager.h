@@ -122,6 +122,13 @@ public:
     void pushEffect(const GEffectPtr &efx);
     bool popEffect(const GEffectPtr &efx);
 
+    void clear()
+    {
+        prioritied_effects_.clear();
+        still_trash_effects_.clear();
+        recent_effects_.clear();
+    }
+
     const PriorityEffectMap& getEffects() const {
         return prioritied_effects_;
     }

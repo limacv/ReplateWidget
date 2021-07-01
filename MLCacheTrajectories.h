@@ -14,7 +14,7 @@ class MLCacheTrajectories
 {
 public:
 	MLCacheTrajectories();
-	virtual ~MLCacheTrajectories();
+	virtual ~MLCacheTrajectories() { clear(); };
 	
 	bool isDetectPrepared() const;
 	bool isTrackPrepared() const;
@@ -46,6 +46,21 @@ public:
 	bool isTrackOk();
 	bool isDetectGlobalBoxOk();
 	bool isTrackGlobalBoxOk();
+
+	void clear()
+	{
+		// free memory
+		for (auto& pbox : track_boxes_list)
+			delete pbox;
+		for (auto& pbox : detect_boxes_list)
+			delete pbox;
+
+		detect_boxes_list.clear();
+		frameidx2detectboxes.clear();
+		track_boxes_list.clear();
+		frameidx2trackboxes.clear();
+		objid2trajectories.clear();
+	}
 
 	QColor getColor(const ObjID& id) const;
 

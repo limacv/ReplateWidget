@@ -106,7 +106,7 @@ void calForegroundBorderMy(cv::Mat& fg, const cv::Mat& bg, const cv::Mat& mask)
 		if (!MLConfigManager::get().border_elimination)
 			break;
 
-		cv::Mat ma = diff > 100;
+		cv::Mat ma = diff > 150;
 		cv::erode(ma, ma, cv::Mat());
 		cv::Mat connected, centers;
 		cv::connectedComponentsWithStats(ma, ma, connected, centers);
@@ -140,6 +140,7 @@ bool MLDataManager::load_raw_video(const QString& path)
 	}
 	raw_frames.resize(0);
 	int framenum = cap.get(cv::CAP_PROP_FRAME_COUNT);
+	double fourcc = cap.get(cv::CAP_PROP_FOURCC);
 	raw_frames.reserve(framenum);
 	cv::Mat frame;
 	while (true)
@@ -157,6 +158,7 @@ bool MLDataManager::load_raw_video(const QString& path)
 	raw_video_cfg.fps = cap.get(cv::CAP_PROP_FPS);
 	raw_video_cfg.size = raw_frames[0].size();
 
+	clear();
 	return true;
 }
 
@@ -329,11 +331,9 @@ cv::Rect MLDataManager::toCropROI(const QRectF& rect_norm) const
 void MLDataManager::paintManualMask(QPainter& painter) const
 {
 	auto viewport = painter.viewport();
-
-	for (const auto& rect : manual_masks)
-	{
-		painter.drawRect(rect.x() * viewport.width(), rect.y() * viewport.height(), rect.width() * viewport.width(), rect.height() * viewport.height());
-	}
+	const auto rects = get_processed_manual_masks(viewport.width(), viewport.height());
+	for (const auto& rect : rects)
+		painter.drawRect(rect);
 }
 
 void MLDataManager::paintRawFrames(QPainter& painter, int frameidx) const
@@ -473,6 +473,38 @@ void MLDataManager::paintReplateFrame(QPainter& painter, int frameidx) const
 {
 	painter.drawImage(painter.viewport(), getBackgroundQImg());
 	effect_manager_.drawEffects(painter, frameidx);
+}
+
+void MLDataManager::clear()
+{
+	// clear all the preprocess cache except raw data
+	manual_masks.resize(1);
+	trajectories.clear();
+	stitch_cache.clear();
+	effect_manager_.clear();
+	replate_video.clear();
+	out_video_cfg.clear();
+}
+
+vector<QRectF> MLDataManager::get_processed_manual_masks(int target_wid, int target_hei) const
+{
+	vector<QRectF> rects;
+
+	QMatrix scale; scale.scale(target_wid, target_hei);
+	if (!manual_masks.empty())
+	{
+		QRectF rect = manual_masks[0];
+		rects.push_back(scale.mapRect(QRectF(QPointF(0, 0), rect.bottomLeft())));
+		rects.push_back(scale.mapRect(QRectF(QPointF(0, 1), rect.bottomRight())));
+		rects.push_back(scale.mapRect(QRectF(QPointF(1, 1), rect.topRight())));
+		rects.push_back(scale.mapRect(QRectF(QPointF(1, 0), rect.topLeft())));
+		for (int i = 1; i < manual_masks.size(); ++i)
+		{
+			rect = manual_masks[i];
+			rects.push_back(scale.mapRect(rect));
+		}
+	}
+	return rects;
 }
 
 bool MLDataManager::is_prepared(int step) const

@@ -91,6 +91,7 @@ public:
             return;
         sync_id_ = id;
     }
+    void reverseRenderOrder() { reverse_render = !reverse_render; }
 
     static void setScalar(QSize size) {
         setScalar(size.width(), size.height());
@@ -137,6 +138,7 @@ protected:
     float trail_alpha_;
     int line_smooth_;
     bool draw_line_;
+    bool reverse_render;  // true: render from last frame to first frame
 };
 
 class GEffectTrash : public GEffect

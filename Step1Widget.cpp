@@ -32,7 +32,12 @@ Step1Widget::Step1Widget(QWidget* parent)
 	connect(ui->buttonLoadProject, &QPushButton::clicked, this, &Step1Widget::selectProject);
 
 	connect(ui->buttonAddMask, &QPushButton::clicked, this, &Step1Widget::addmask);
-	connect(ui->buttonDeleteMask, &QPushButton::clicked, []() {MLDataManager::get().manual_masks.clear(); });
+	connect(ui->buttonDeleteMask, &QPushButton::clicked, []() {MLDataManager::get().manual_masks.resize(1); });
+
+	connect(ui->lineEdit_l, &QLineEdit::textEdited, [this](const QString& t) {resizerect0(t.toInt(), -1, -1, -1); });
+	connect(ui->lineEdit_r, &QLineEdit::textEdited, [this](const QString& t) {resizerect0(-1, -1, t.toInt(), -1); });
+	connect(ui->lineEdit_t, &QLineEdit::textEdited, [this](const QString& t) {resizerect0(-1, t.toInt(), -1, -1); });
+	connect(ui->lineEdit_b, &QLineEdit::textEdited, [this](const QString& t) {resizerect0(-1, -1, -1, t.toInt()); });
 
 	ui->buttonAddMask->setEnabled(false);
 	ui->buttonDeleteMask->setEnabled(false);
@@ -50,7 +55,31 @@ Step1Widget::~Step1Widget()
 void Step1Widget::showEvent(QShowEvent* event)
 {
 	if (event->spontaneous()) return;
-	std::cout << "mmp" << std::endl;
+	auto& manual_maks = MLDataManager::get().manual_masks;
+	if (manual_maks.empty())
+		manual_maks.push_back(QRectF(0, 0, 1, 1));
+
+	const auto& raw_sz = MLDataManager::get().raw_video_cfg.size;
+	ui->lineEdit_l->setText(QString::number((int)(manual_maks[0].left() * raw_sz.width)));
+	ui->lineEdit_t->setText(QString::number((int)(manual_maks[0].top() * raw_sz.height)));
+	ui->lineEdit_r->setText(QString::number((int)(raw_sz.width - manual_maks[0].right() * raw_sz.width)));
+	ui->lineEdit_b->setText(QString::number((int)(raw_sz.height - manual_maks[0].bottom() * raw_sz.height)));
+}
+
+void Step1Widget::resizerect0(int l, int t, int r, int b)
+{
+	auto& manual_masks = MLDataManager::get().manual_masks;
+	const auto& raw_sz = MLDataManager::get().raw_video_cfg.size;
+	
+	if (manual_masks.empty())
+		manual_masks.push_back(QRectF(0, 0, 1, 1));
+
+	float lf = l < 0 ? manual_masks[0].left() : (float)l / raw_sz.width;
+	float tf = t < 0 ? manual_masks[0].top() : (float)t / raw_sz.height;
+	float rf = r < 0 ? manual_masks[0].right() : 1.f - (float)r / raw_sz.width;
+	float bf = b < 0 ? manual_masks[0].bottom() : 1.f - (float)b / raw_sz.height;
+	manual_masks[0] = QRectF(lf, tf, rf - lf, bf - tf);
+	ui->imageLabel->update();
 }
 
 void Step1Widget::addmask()

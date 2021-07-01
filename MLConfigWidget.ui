@@ -35,7 +35,7 @@
       <property name="geometry">
        <rect>
         <x>0</x>
-        <y>-415</y>
+        <y>-320</y>
         <width>406</width>
         <height>1105</height>
        </rect>
@@ -429,6 +429,11 @@
             </item>
             <item row="9" column="1">
              <widget class="QComboBox" name="waveCorrectComboBox">
+              <item>
+               <property name="text">
+                <string>Auto</string>
+               </property>
+              </item>
               <item>
                <property name="text">
                 <string>No</string>

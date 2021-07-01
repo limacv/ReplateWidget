@@ -76,10 +76,14 @@ public:
 	void paintReplateFrame(QPainter& painter, int frameidx) const;
 
 	bool is_prepared(int step) const;
+	void clear();
+
+	std::vector<QRectF> get_processed_manual_masks(int target_wid, int target_hei) const;
 
 public:
 	VideoConfig raw_video_cfg;
 	QVector<cv::Mat> raw_frames;
+	// the first rectF is the roi
 	QVector<QRectF> manual_masks;
 
 	MLCacheTrajectories trajectories;

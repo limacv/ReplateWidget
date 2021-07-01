@@ -78,6 +78,7 @@ std::list<BBox*> autoTrackPath(int start_frame, const QRectF& start_rectF)
 
     cv::Rect rect_world = global_data.toWorldROI(start_rectF);
     // first, try to directly use the tracking results
+    if (false)
     {
         std::vector<const Traject*> candidates;
         const auto& boxes = global_data.trajectories.frameidx2trackboxes[start_frame];

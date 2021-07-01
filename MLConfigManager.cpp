@@ -86,6 +86,7 @@ void MLConfigManager::update_videopath(const QString& video_path)
 	raw_video_path = ff.absoluteFilePath();
 	basename = ff.baseName();
 
+
 	if (!QDir().mkpath(get_cache_path()))
 		qWarning("MLConfigManager::failed to create directory %s", qPrintable(get_cache_path()));
 }

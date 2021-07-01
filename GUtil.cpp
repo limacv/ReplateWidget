@@ -60,12 +60,12 @@ static const int FadeDuration[] = {
 //    anchor_length = value;
 //}
 
-QRect GUtil::cvtRect(cv::Rect rect)
+QRect GUtil::cvtRect(const cv::Rect& rect)
 {
     return QRect(rect.x, rect.y, rect.width, rect.height);
 }
 
-cv::Rect GUtil::cvtRect(QRect rect)
+cv::Rect GUtil::cvtRect(const QRect& rect)
 {
     return cv::Rect(rect.x(), rect.y(), rect.width(), rect.height());
 }
