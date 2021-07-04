@@ -38,10 +38,11 @@ void GObjLayer::initialize(GEffectPtr &effect, const std::string &name)
     // picture
     picture_ = new GPictureLabel(this);
     picture_->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
-    int start_frame = effect->startFrame();
-    QRectF rectF = effect->path()->frameRoiRect(start_frame);
-    const QPixmap pic = QPixmap::fromImage(MLUtil::mat2qimage(global_data.getRoiofFrame(start_frame, rectF), QImage::Format_ARGB32_Premultiplied));
+    //int start_frame = effect->startFrame();
+    //QRectF rectF = effect->path()->frameRoiRect(start_frame);
+    //const QPixmap pic = QPixmap::fromImage(MLUtil::mat2qimage(global_data.getRoiofFrame(start_frame, rectF), QImage::Format_ARGB32_Premultiplied));
                 //GUtil::mat2qimage(video->getImage(start_frame, rectF)));
+    const QPixmap pic = QPixmap::fromImage(effect->path()->getIconImage().convertToFormat(QImage::Format_RGB888));
     
     picture_->setPixmap(pic.scaled(45, 45, Qt::KeepAspectRatio));
     picture_->setStyleSheet("QLabel {border-width: 1px;border-color: slategray;border-style: solid;}");

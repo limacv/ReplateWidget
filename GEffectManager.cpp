@@ -198,6 +198,10 @@ void GEffectManager::read(const QString& file)
     {
         qDebug() << "cannot find file" << file;
     }
+
+    if (doc["Duration"])
+        MLDataManager::get().set_duration(doc["Duration"].as<int>());
+
     YAML::Node path_nodes = doc["Path"];
     std::vector<GPathPtr> paths(path_nodes.size());
     for (size_t i = 0; i < path_nodes.size(); ++i) {
@@ -254,6 +258,7 @@ void GEffectManager::write(const QString& file)
     YAML::Emitter out;
     out << YAML::BeginMap;
     // write effects first
+    out << YAML::Key << "Duration" << YAML::Value << MLDataManager::get().get_duration();
     out << YAML::Key << "Effect" << YAML::Value;
     std::vector<std::vector<GEffectPtr>> effects(G_EFX_NUMBER, std::vector<GEffectPtr>());
     //    for (OrderedEffectMap::const_iterator it = ordered_effects_.begin();

@@ -8,7 +8,7 @@ void MLConfigManager::restore_to_default()
 {
 	stitcher_cfg.restore_default();
 	detectrack_cfg.restore_default();
-	border_elimination = true;
+	border_elimination = false;
 	update_ui();
 }
 

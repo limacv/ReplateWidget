@@ -256,6 +256,18 @@ void GPath::setPathRoi(int frame_id, float dx, float dy)
     dirty_[id] = true;
 }
 
+QImage GPath::getIconImage()
+{
+    updateimages();
+    int idx = 0;
+    for (; idx < space(); ++idx)
+        if (manual_adjust_[idx]) break;
+    if (idx == space()) idx = 0;
+    cv::Mat icon;
+    cv::cvtColor(roi_fg_mat_[idx], icon, cv::COLOR_RGBA2RGB);
+    return GUtil::mat2qimage(icon, QImage::Format_RGB888).copy();
+}
+
 void GPath::resize(int n) {
     if (n != 1 || n != MLDataManager::get().get_framecount())
         qWarning("Path resize different to the total frame count");

@@ -34,6 +34,8 @@ public:
 	// raw data
 	bool load_raw_video(const QString& path);
 	int get_framecount() const { return raw_frames.size(); }
+	int get_duration() const { return plates_cache.replate_duration; }
+	void set_duration(int duration) { plates_cache.replate_duration = duration; }
 
 	// data coordinate convertion
 	QMatrix imageScale() const;

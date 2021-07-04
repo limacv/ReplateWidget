@@ -79,7 +79,6 @@ private:
     
     Ptr<RotationWarper> m_warper;
 
-    Size full_img_size;
     double work_scale;
     double seam_scale;
     double compose_scale;

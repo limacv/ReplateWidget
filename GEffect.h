@@ -35,7 +35,7 @@ public:
     virtual void preRender(QPainter& painter, int frame_id, int duration) {};
     virtual void render(QPainter &painter, int frame_id, int duration, bool video = false) const = 0;
 
-    QRect renderLocation(int frame_id) const;
+    QRectF renderLocation(int frame_id) const;
     QImage renderImage(int frame_id) const;
 
     void readBasic(const YAML::Node &node);
@@ -75,8 +75,13 @@ public:
     virtual float getAlpha() const { return -1;}
     virtual bool setSmooth(int /*s*/) {qDebug() << "Smooth invalid!"; return false;}
     virtual int getSmooth() const {return -1;}
-    virtual bool setTransLevel(int a) {qDebug() << "Trans invalid!"; return false;}
-    virtual int getTransLevel() const {return -1;}
+
+    virtual bool setTransLevel(int a) { trans_level_ = a; return true; }
+    virtual int getTransLevel() const { return trans_level_; }
+
+    //virtual bool setTransLevel(int a) {qDebug() << "Trans invalid!"; return false;}
+    //virtual int getTransLevel() const {return -1;}
+
     virtual bool setFadeLevel(int a) {qDebug() << "Fade invalid!"; return false;}
     virtual int getFadeLevel() const {return -1;}
     virtual bool setMarker(int a) {qDebug() << "Marker invalid!"; return false;}
@@ -253,9 +258,6 @@ public:
     virtual bool setFadeLevel(int a) { fade_level_ = a; return true;}
     virtual int getFadeLevel() const {return fade_level_;}
 
-    virtual bool setTransLevel(int a) {trans_level_ = a; return true;}
-    virtual int getTransLevel() const {return trans_level_;}
-
     virtual bool setTrailLine(bool b);
     virtual int getTrailLine() const {return draw_line_;}
 
@@ -283,9 +285,6 @@ public:
 
     virtual bool setFadeLevel(int a) { fade_level_ = a; return true; }
     virtual int getFadeLevel() const { return fade_level_; }
-
-    virtual bool setTransLevel(int a) { trans_level_ = a; return true; }
-    virtual int getTransLevel() const { return trans_level_; }
 
     virtual bool setSpeed(int a) { speed_factor_ = a; return true; }
 };

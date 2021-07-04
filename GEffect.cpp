@@ -66,9 +66,9 @@ void GEffect::adjustAsync(int offset, int duration)
     qDebug() << "Adjust Offset" << offset << async_offset_;
 }
 
-QRect GEffect::renderLocation(int frame_id) const
+QRectF GEffect::renderLocation(int frame_id) const
 {
-    return scaleMat().mapRect(path()->frameRoiRect(frame_id)).toRect();
+    return scaleMat().mapRect(path()->frameRoiRect(frame_id));
 }
 
 QImage GEffect::renderImage(int frame_id) const
@@ -249,10 +249,14 @@ void GEffectTrash::write(YAML::Emitter &out) const
 void GEffectStill::render(QPainter &painter, int frame_id, int duration, bool video) const
 {
     int render_frame = startFrame();
-    QRect rect = renderLocation(render_frame);
+    QRectF rect = renderLocation(render_frame);
     //QImage dst = (video? MLDataManager::get().getRoiofFrame(render_frame, rect)
                         //: renderImage(render_frame));
     QImage dst = renderImage(render_frame);
+    QImage alpha(dst.size(), QImage::Format_Indexed8);
+    alpha.fill(255 * G_TRANS_LEVEL[trans_level_]);
+    dst.setAlphaChannel(alpha);
+
     QPainterPath pp = scaleMat().map(path()->painter_path_);
     if (!pp.isEmpty())
         painter.setClipPath(pp);
@@ -270,10 +274,15 @@ void GEffectStill::write(YAML::Emitter &out) const
 void GEffectInpaint::render(QPainter& painter, int frame_idx, int duration, bool video) const
 {
     int render_frame = startFrame();
-    QRect rect = renderLocation(render_frame);
+    QRectF rect = renderLocation(render_frame);
     //QImage dst = (video? MLDataManager::get().getRoiofFrame(render_frame, rect)
                         //: renderImage(render_frame));
     QImage dst = renderImage(render_frame);
+
+    QImage alpha(dst.size(), QImage::Format_Indexed8);
+    alpha.fill(255 * G_TRANS_LEVEL[trans_level_]);
+    dst.setAlphaChannel(alpha);
+
     QPainterPath pp = scaleMat().map(path()->painter_path_);
     if (!pp.isEmpty())
         painter.setClipPath(pp);
@@ -366,7 +375,7 @@ void GEffectTrail::generateTrail(QPainter& painter)
         int alp = qMin((int)(efx_alpha * lens[curIdx] * 5), 255);
         alpha.fill(alp);
         dst.setAlphaChannel(alpha);  // dst.alpha *= alpha
-        QRect rect = renderLocation(curIdx);
+        QRectF rect = renderLocation(curIdx);
         rect.moveCenter(trail_[i].toPoint());
         pt.drawImage(rect, dst);
         //            renderImage(curIdx).save(QString("_%1.png").arg(i));
@@ -392,10 +401,10 @@ void GEffectTrail::render(QPainter &painter, int frame_id, int duration, bool vi
     for (size_t i = startFrame(); i <= endFrame(); ++i) {
         QImage dst = d_images[i];
         QImage alpha(dst.size(), QImage::Format_Indexed8);
-        int alp = qMin((int)(efx_alpha * lens[i - startFrame()] * 5), 255);
+        int alp = qMin((int)(efx_alpha * lens[i - startFrame()] * 5), 255) * G_TRANS_LEVEL[trans_level_];
         alpha.fill(alp);
         dst.setAlphaChannel(alpha);  // dst.alpha *= alpha
-        QRect rect = renderLocation(i);
+        QRectF rect = renderLocation(i);
         rect.moveCenter(trail_[i - startFrame()].toPoint());
         painter.drawImage(rect, dst);
     }
@@ -496,7 +505,7 @@ void GEffectMotion::renderSlow(QPainter &painter, int frame_id, int duration, bo
         int render_frame = idx + startFrame();
         int fade = getFadeAlpha(this->effectLength(), idx, fade_level_);
         if (fade == 0) continue;
-        QRect rect = renderLocation(render_frame);
+        QRectF rect = renderLocation(render_frame);
         QImage dst = renderImage(render_frame);
         QImage alpha(dst.size(), QImage::Format_Indexed8);
         alpha.fill(fade * G_TRANS_LEVEL[trans_level_]);
@@ -546,7 +555,7 @@ void GEffectMotion::render(QPainter &painter, int frame_id, int duration, bool v
                          (render_frame - frame_id) / duration) % max_loop_num;
         if (anchor_id < 0) anchor_id += max_loop_num;
 
-        QRect rect = renderLocation(render_frame);
+        QRectF rect = renderLocation(render_frame);
         QImage dst = renderImage(render_frame);
         //QImage dst = (video? video->loadOriImageFg(render_frame, rect)
                            //: renderImage(render_frame));
@@ -658,7 +667,7 @@ void GEffectLoop::renderSlow(QPainter& painter, int frame_id, int duration, bool
         int render_frame = idx + startFrame();
         int fade = getFadeAlpha(this->effectLength(), idx, fade_level_);
         if (fade == 0) continue;
-        QRect rect = renderLocation(render_frame);
+        QRectF rect = renderLocation(render_frame);
         QImage dst = renderImage(render_frame);
         QImage alpha(dst.size(), QImage::Format_Indexed8);
         alpha.fill(fade * G_TRANS_LEVEL[trans_level_]);
@@ -706,7 +715,7 @@ void GEffectLoop::render(QPainter& painter, int frame_id, int duration, bool vid
             (render_frame - frame_id) / duration) % max_loop_num;
         if (anchor_id < 0) anchor_id += max_loop_num;
 
-        QRect rect = renderLocation(render_frame);
+        QRectF rect = renderLocation(render_frame);
         QImage dst = renderImage(render_frame);
         //QImage dst = (video? video->loadOriImageFg(render_frame, rect)
                            //: renderImage(render_frame));

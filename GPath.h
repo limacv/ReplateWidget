@@ -48,6 +48,8 @@ public:
     bool isBackward() const {return is_backward_;}
     void setBackward(bool b) {is_backward_ = b;}
 
+    QImage getIconImage(); // used for GObjLayer to show a 'preview' of the timeline
+
     bool isEmpty() const { return length() <= 0 || !space(); }
     int length() const {return frame_id_end_ - frame_id_start_ + 1;}
     size_t space() const { return roi_rect_.size(); }

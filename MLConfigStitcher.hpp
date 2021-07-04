@@ -143,6 +143,7 @@ void MLConfigStitcher::write(YAML::Emitter& out) const
 
     out << YAML::BeginMap;
     out << YAML::Key << "MatchConf" << match_conf_;
+    out << YAML::Key << "MatchRangeWidth" << match_range_width;
     out << YAML::Key << "ConfThresh" << match_conf_thresh_;
     out << YAML::Key << "FeatureType" << features_type_;
     out << YAML::Key << "FeatureThres" << features_thres_;
@@ -157,6 +158,11 @@ void MLConfigStitcher::write(YAML::Emitter& out) const
     out << YAML::Key << "ExpoCompNrFeeds" << expos_comp_nr_feeds;
     out << YAML::Key << "ExpoCompNrFiltering" << expos_comp_nr_filtering;
     out << YAML::Key << "ExpoCompBlockSize" << expos_comp_block_size;
+
+    out << YAML::Key << "WorkMegapix" << work_megapix_;
+    out << YAML::Key << "SeamMegapix" << seam_megapix_;
+    out << YAML::Key << "ComposeMegapix" << compose_megapix_;
+    out << YAML::Key << "FeatureLogoFilterMode" << filter_logo_mode_;
     
     out << YAML::Key << "StitcherDetectQualityLevel" << stitcher_detect_qualitylevel;
     out << YAML::Key << "StitcherDetectCellH" << stitcher_detect_cellH;
@@ -175,6 +181,7 @@ void MLConfigStitcher::read(const YAML::Node& doc)
     const YAML::Node& node = doc["StitchConfig"];
     if (node) {
         if (node["MatchConf"]) match_conf_ = node["MatchConf"].as<float>();
+        if (node["MatchRangeWidth"]) match_range_width = node["MatchRangeWidth"].as<int>();
         if (node["ConfThresh"]) match_conf_thresh_ = node["ConfThresh"].as<float>();
         if (node["FeatureType"]) features_type_ = node["FeatureType"].as<string>();
         if (node["FeatureThres"]) features_thres_ = node["FeatureThres"].as<float>();
@@ -189,6 +196,11 @@ void MLConfigStitcher::read(const YAML::Node& doc)
         if (node["ExpoCompNrFeeds"]) expos_comp_nr_feeds = node["ExpoCompNrFeeds"].as<double>();
         if (node["ExpoCompNrFiltering"]) expos_comp_nr_filtering = node["ExpoCompNrFiltering"].as<double>();
         if (node["ExpoCompBlockSize"]) expos_comp_block_size = node["ExpoCompBlockSize"].as<double>();
+
+        if (node["WorkMegapix"]) work_megapix_ = node["WorkMegapix"].as<double>();
+        if (node["SeamMegapix"]) seam_megapix_ = node["SeamMegapix"].as<double>();
+        if (node["ComposeMegapix"]) compose_megapix_ = node["ComposeMegapix"].as<double>();
+        if (node["FeatureLogoFilterMode"]) filter_logo_mode_ = node["FeatureLogoFilterMode"].as<int>();
 
         if (node["StitcherDetectQualityLevel"]) stitcher_detect_qualitylevel = node["StitcherDetectQualityLevel"].as<float>();
         if (node["StitcherDetectCellH"]) stitcher_detect_cellH = node["StitcherDetectCellH"].as<float>();

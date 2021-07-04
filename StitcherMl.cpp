@@ -21,7 +21,7 @@
 int StitcherMl::stitch(const std::vector<cv::Mat>& frames, const std::vector<cv::Mat>& masks)
 {
     int num_images_ = frames.size();
-    full_img_size = frames[0].size();
+    Size full_img_size = frames[0].size();
 
     QElapsedTimer timer; 
     timer.start();
@@ -164,6 +164,7 @@ int StitcherMl::warp_and_composite(const std::vector<cv::Mat>& frames, const std
 void StitcherMl::featureFinder(const vector<Mat>& fullImages, vector<ImageFeatures>& features, const vector<Mat>& fullMasks) const
 {
     int num_images_ = fullImages.size();
+    Size full_img_size = fullImages[0].size();
     features.resize(num_images_);
 
     Ptr<Feature2D> finder;
@@ -454,6 +455,7 @@ int StitcherMl::warp_and_compositebyblend(const std::vector<cv::Mat>& frames, co
     auto& warp_type = config_->warp_type_;
     if (progress_reporter) progress_reporter->beginStage("Warping... Warp Type: " + warp_type);
     const int num_images = frames.size();
+    const Size full_img_size = frames[0].size();
     images_warped.resize(num_images);
     masks_warped.resize(num_images);
     sizes.resize(num_images);
