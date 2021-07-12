@@ -39,23 +39,26 @@ public:
 
 	// data coordinate convertion
 	QMatrix imageScale() const;
-	// convert rect from world coordinate to paint coordinate (if return normalized rect, the rect_painter is not needed)
+	// convert rect from world coordinate to paintVisualize coordinate (if return normalized rect, the rect_painter is not needed)
 	QRectF toPaintROI(const cv::Rect& rect_w, const QRect& rect_painter=QRect(), bool ret_norm=false) const;
 	// convert rect from normalized coordinate to world coordinate
 	cv::Rect toWorldROI(const QRectF& rect_norm) const;
 	cv::Rect toCropROI(const QRectF& rect_norm) const;
 
 	// get images
-	cv::Mat4b getRoiofFrame(int frameidx, const QRectF& rectF) const;
+	cv::Mat4b getRoiofFrame(int frameidx, const QRectF& rectF) const;  // foreground overlayed with background
 	cv::Mat4b getRoiofFrame(int frameidx, const QRect& recF) const;
 	cv::Mat4b getRoiofFrame(int frameidx, const cv::Rect& rect) const;
-	cv::Mat3b getRoiofBackground(const QRectF& rectF) const;
+	cv::Mat4b getRoiofForeground(int frameidx, const QRectF& rectF) const;  // only foreground
+	cv::Mat4b getRoiofForeground(int frameidx, const QRect& recF) const;
+	cv::Mat4b getRoiofForeground(int frameidx, const cv::Rect& rect) const;
+	cv::Mat3b getRoiofBackground(const QRectF& rectF) const;  // only background
 	cv::Mat3b getRoiofBackground(const QRect& rect) const;
 	cv::Mat3b getRoiofBackground(const cv::Rect& rect) const;
 	cv::Mat4b getFlowImage(int i, QRectF rectF = QRect()) const;
-	cv::Mat4b getForeground(int i, QRectF rectF, const cv::Mat1b mask = cv::Mat1b()) const;
-	cv::Mat4b getForeground(int i, const QPainterPath& painterpath) const;
-	cv::Mat4b getForeground(int i, const GRoiPtr& roi) const;
+	cv::Mat4b getMattedRoi(int i, QRectF rectF, const cv::Mat1b mask = cv::Mat1b()) const;
+	cv::Mat4b getMattedRoi(int i, const QPainterPath& painterpath) const;
+	cv::Mat4b getMattedRoi(int i, const GRoiPtr& roi) const;
 	QImage getBackgroundQImg() const;
 	
 	// query bounding boxes
@@ -69,7 +72,7 @@ public:
 	int VideoLeft() const { return stitch_cache.global_roi.x; }
 
 	// painting function
-	// convert world coordinate to the paint coordinate
+	// convert world coordinate to the paintVisualize coordinate
 	void paintManualMask(QPainter& painter) const;
 	void paintRawFrames(QPainter& painter, int frameidx) const;
 	void paintWarpedFrames(QPainter& painter, int frameidx, bool paintbg = true, bool paintfg = true) const;

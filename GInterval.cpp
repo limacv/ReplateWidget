@@ -1,6 +1,7 @@
 #include <QtGui>
 
 #include "GInterval.h"
+#include "GEffect.h"
 //#include "GDataManager.h"
 #include "MLDataManager.h"
 
@@ -154,7 +155,7 @@ void GInterval::paintEvent(QPaintEvent * /*event*/)
 //    qDebug() << "After Anchor_length" << GUtil::getAnchor_length() << anchor_length_used;
     // draw segments
 //    qDebug() << effect()->type() << EFX_ID_MOTION << EFX_ID_MULTIPLE;
-    if (effect()->type() == EFX_ID_MOTION) {
+    if (effect()->type() == EFX_ID_MOTION || effect()->type() == EFX_ID_LOOP) {
 //        GEffectMotion* efx = dynamic_cast<GEffectMotion*>(effect_.get());
         int num = std::ceil(effect_->effectLength() / (float)duration_used);
         int seg_length = step_length_ * duration_used;

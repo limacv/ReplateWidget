@@ -379,9 +379,9 @@ void Step4RenderArea::paintEvent(QPaintEvent* event)
 		display_map = QPixmap(size.width, size.height);
 	
 	display_map.fill(Qt::transparent);
-	QPainter paint(&display_map);
-	step4widget->transformQPainter(paint);
-	paint.drawImage(paint.viewport(), MLUtil::mat2qimage(video[display_frameidx], QImage::Format_ARGB32_Premultiplied));
+	QPainter paintVisualize(&display_map);
+	step4widget->transformQPainter(paintVisualize);
+	paintVisualize.drawImage(paintVisualize.viewport(), MLUtil::mat2qimage(video[display_frameidx], QImage::Format_ARGB32_Premultiplied));
 
 	QPainter painter2(this);
 	QRect viewport = MLUtil::scaleViewportWithRatio(painter2, (float)size.width / size.height);

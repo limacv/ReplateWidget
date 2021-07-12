@@ -21,7 +21,7 @@ BBox* findDetectBox(int frameidx, const cv::Rect& query_rect, int class_id = -1)
     {
         if (class_id >= 0 && pbox->classid != class_id) continue;
         float iou = compute_IoU(pbox->rect_global, query_rect);
-        cv::Rect rect_global_margined = GUtil::addMarginToRect(pbox->rect_global, RECT_MARGIN);
+        cv::Rect rect_global_margined = GUtil::addMarginToRect(pbox->rect_global, RECT_MARGIN, RECT_MARGIN_MAX, RECT_MARGIN_MIN);
         float ratio = (std::abs(rect_global_margined.area()) + 0.00001) / (std::abs(query_rect.area()) + 0.00001);
         ratio = ratio < 1 ? 1 / ratio : ratio;
         if (iou > iou_max && ratio < 3.)
@@ -38,7 +38,7 @@ BBox* findDetectBox(int frameidx, const cv::Rect& query_rect, int class_id = -1)
         {
             if (class_id >= 0 && pbox->classid != class_id) continue;
             float dist = compute_Euli(pbox->rect_global, query_rect);
-            cv::Rect rect_global_margined = GUtil::addMarginToRect(pbox->rect_global, RECT_MARGIN);
+            cv::Rect rect_global_margined = GUtil::addMarginToRect(pbox->rect_global, RECT_MARGIN, RECT_MARGIN_MAX, RECT_MARGIN_MIN);
             float ratio = (std::abs(rect_global_margined.area()) + 0.00001) / (std::abs(query_rect.area()) + 0.00001);
             ratio = ratio < 1 ? 1 / ratio : ratio;
             if (dist < dist_min && ratio < 4.)
@@ -175,7 +175,7 @@ GPathPtr MLPathTracker::trackPath(int start_frame, const QRectF& start_rectF, in
 
     for (const auto pbox : trackedbox) // copy rects
     {
-        cv::Rect dilated = GUtil::addMarginToRect(pbox->rect_global, RECT_MARGIN);
+        cv::Rect dilated = GUtil::addMarginToRect(pbox->rect_global, RECT_MARGIN, RECT_MARGIN_MAX, RECT_MARGIN_MIN);
         path.roi_rect_[pbox->frameidx] = global_data.toPaintROI(dilated, QRect(), true);
         bound_rect(path.roi_rect_[pbox->frameidx]);
     }
@@ -225,7 +225,7 @@ void MLPathTracker::updateTrack(GPath* path_data)
             BBox* pbox = findDetectBox(backward_idx, rect_w);
             if (pbox)
             {
-                cv::Rect dilated = GUtil::addMarginToRect(pbox->rect_global, RECT_MARGIN);
+                cv::Rect dilated = GUtil::addMarginToRect(pbox->rect_global, RECT_MARGIN, RECT_MARGIN_MAX, RECT_MARGIN_MIN);
                 path.roi_rect_[backward_idx] = global_data.toPaintROI(dilated, QRect(), true);
                 bound_rect(path.roi_rect_[backward_idx]);
             }
@@ -243,7 +243,7 @@ void MLPathTracker::updateTrack(GPath* path_data)
             BBox* pbox = findDetectBox(forward_idx, rect_w);
             if (pbox)
             {
-                cv::Rect dilated = GUtil::addMarginToRect(pbox->rect_global, RECT_MARGIN);
+                cv::Rect dilated = GUtil::addMarginToRect(pbox->rect_global, RECT_MARGIN, RECT_MARGIN_MAX, RECT_MARGIN_MIN);
                 path.roi_rect_[forward_idx] = global_data.toPaintROI(dilated, QRect(), true);
                 bound_rect(path.roi_rect_[forward_idx]);
             }

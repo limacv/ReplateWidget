@@ -50,10 +50,7 @@ public:
     bool undo();
 
     void read(const QString& file);
-    void readOld(const QString& file);
     void write(const QString& file);
-
-    void loadOldPathData(const YAML::Node &node, GPathPtr &path);
 
     friend YAML::Emitter& operator << (YAML::Emitter& out,
                                        const GPathPtr &path);

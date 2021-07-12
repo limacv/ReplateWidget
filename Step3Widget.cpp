@@ -155,14 +155,6 @@ inline G_EFFECT_ID Step3Widget::selected_efx_type() const
 
 inline bool Step3Widget::is_singleframe_efx() const { return selected_efx_type() == EFX_ID_STILL || selected_efx_type() == EFX_ID_INPAINT || selected_efx_type() == EFX_ID_LOOP; }
 
-void Step3Widget::setPathRoi(const GRoiPtr& roi)
-{
-    if (!cur_tracked_path) return;
-    if (roi->painter_path_.isEmpty() && roi->rectF().isEmpty()) return;
-    cur_tracked_path->setPathRoi(cur_frameidx, roi);
-    cur_tracked_path->updateimages();
-}
-
 void Step3Widget::morphPathRoi(int dx, int dy)
 {
     if (!cur_tracked_path) return;

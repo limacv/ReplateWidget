@@ -5,6 +5,10 @@
 #include <string>
 #include <exception>
 
+const float FEATHER_MARGIN_PCT = 0.05;
+const int FEATHER_MARGIN_MIN = 1;
+const int FEATHER_MARGIN_MAX = 12;
+
 namespace MLUtil
 {
 	// you need to guarantee that cvmat is RGB
@@ -14,6 +18,9 @@ namespace MLUtil
 	cv::Mat qimage_to_mat_cpy(const QImage& img, int format);
 	void cvtrgba2rgb_a(const cv::Mat& rgba, cv::Mat& rgb, cv::Mat& a);
 	void cvtrgba2gray_a(const cv::Mat& rgba, cv::Mat& gray, cv::Mat& a);
+
+	void generateFeatherBorder(cv::Mat& feater, float marginpct);
+	void generateFeatherFrommask(cv::Mat& mask, float marginpct, int marginmax = INT_MAX, int marginmin = 0);
 
 	enum class ICON_ID
 	{

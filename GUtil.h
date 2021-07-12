@@ -41,7 +41,7 @@ namespace GUtil
 
     void averageImages(const std::vector<cv::Mat4b> &matarray, cv::Mat4b &out);
 
-    void adaptiveImages(const std::vector<cv::Mat> &matarray, std::vector<cv::Mat> &out);
+    void adaptiveImages(const std::vector<cv::Mat> &matarray, std::vector<cv::Mat> &out, int win_sz = -1);
 
     QRect scaleQRect(const QRect &src, float scale);
 
@@ -75,7 +75,7 @@ namespace GUtil
     QImage addHalo(const QImage &img, const std::set<int> &halo,
                           int id, int color_id = 1);
 
-    cv::Rect addMarginToRect(const cv::Rect& rect, float margin_pct);
+    cv::Rect addMarginToRect(const cv::Rect& rect, float margin_pct, int margin_max = INT_MAX, int margin_min = 0);
 
 //    cv::Mat1b cvtPainterPath2Mask(
 //            QSize window_size, const QPainterPath &path, QSize ori_size = QSize());

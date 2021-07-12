@@ -2,6 +2,8 @@
 #include "PathTrackerBase.h"
 
 const float RECT_MARGIN = 0.17;
+const int RECT_MARGIN_MIN = 1;
+const int RECT_MARGIN_MAX = 25;
 
 class MLPathTracker :
     public PathTrackerBase

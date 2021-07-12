@@ -322,8 +322,9 @@ void GUtil::averageImages(const std::vector<cv::Mat4b> &matarray, cv::Mat4b &out
 }
 
 void GUtil::adaptiveImages(const std::vector<cv::Mat> &matarray,
-                           std::vector<cv::Mat> &out)
+                           std::vector<cv::Mat> &out, int win_sz)
 {
+    if (win_sz < 0) win_sz = matarray.size() * 0.3;
     int n = matarray.size();
     if (n == 0) {
         qDebug() << "weighted Images: zero input";
@@ -344,78 +345,37 @@ void GUtil::adaptiveImages(const std::vector<cv::Mat> &matarray,
     for (auto& rect : rects)
         rect -= globalrect.tl();
     globalrect -= globalrect.tl();
-
+    
     std::vector<cv::Mat> matarray_f(n);
-    cv::Mat sumOne(globalrect.size(), CV_32FC4, cv::Scalar(0));
+    cv::Mat sumimg(globalrect.size(), CV_32FC4, cv::Scalar(0));
     cv::Mat denorm(globalrect.size(), CV_32FC4, cv::Scalar(0.001));
-    for (int i = 0; i < n; ++i) {
-        matarray[i].convertTo(matarray_f[i], CV_32FC4);
-        sumOne(rects[i]) += matarray_f[i];
-        denorm(rects[i]) += cv::Scalar(1, 1, 1, 1);
-//        cv::imwrite(QString("4i_%1.png").arg(i).toStdString(), matarray_f[i]);
+
+    int window = 0;
+
+    for (int i = 0; i < n + win_sz / 2; ++i) 
+    {
+        if (i < n)
+        {
+            matarray[i].convertTo(matarray_f[i], CV_32FC4);
+            sumimg(rects[i]) += matarray_f[i];
+            denorm(rects[i]) += cv::Scalar(1, 1, 1, 1);
+        }
+        window++;
+
+        if (window > win_sz / 2)
+        {
+            int idx = i - win_sz / 2;
+            cv::Mat4i avg = (matarray_f[idx] + (sumimg / denorm)(rects[idx]) * 3) / 4;
+            avg.convertTo(out[idx], CV_8UC4);
+        }
+        if (window > win_sz)
+        {
+            int idx = i - win_sz;
+            sumimg(rects[idx]) -= matarray_f[idx];
+            denorm(rects[idx]) -= cv::Scalar(1, 1, 1, 1);
+            window--;
+        }
     }
-    sumOne /= denorm;
-
-    // I did a simple composition here instead of the original method
-    for (int i = 0; i < n; ++i) {
-        cv::Mat4i avg = (matarray_f[i] + sumOne(rects[i]) * 3) / 4;
-        avg.convertTo(out[i], CV_8UC4);
-//        cv::imwrite(QString("%1.png").arg(i).toStdString(), out[i]);
-    }
-
-//    cv::Mat4i sumOne(rows, cols, cv::Vec4i(0));
-//    for (size_t i = 0; i < matarray.size(); ++i)
-//    {
-//        tmp4iArray[i].create(rows, cols);
-//        cv::Mat4i &mat = tmp4iArray[i];
-//        const cv::Mat4b &src = matarray[i];
-//        for (int y = 0; y < mat.rows; ++y)
-//        {
-//            cv::Vec4i *rowMat = mat[y];
-//            cv::Vec4i *rowSum = sumOne[y];
-//            const cv::Vec4b *rowSrc = src[y];
-//            for (int x = 0; x < mat.cols; ++x)
-//            {
-//                rowMat[x] = cv::Vec4i(rowSrc[x][0], rowSrc[x][1], rowSrc[x][2], rowSrc[x][3]);
-//                rowSum[x] += rowMat[x];
-//            }
-//        }
-//    }
-
-//    // calculate the base mat
-//    cv::Mat4i tmpArrayTar(rows, cols, cv::Vec4i(0));
-//    for (size_t i = 0; i < matarray.size(); ++i)
-//        tmpArrayTar += (maxN - i) * tmp4iArray[i];
-
-
-//    //cv::Mat4i off = sumOne.clone();
-//    int len = (matarray.size() * (matarray.size()+1)) / 2;
-//    int addlen = matarray.size();
-//    for (size_t i = 0; i < matarray.size(); ++i)
-//    {
-//        if (i != 0)
-//        {
-//            sumOne -= 2*tmp4iArray[i-1];
-//            tmpArrayTar += sumOne;
-//            addlen -= 2;
-//            len += addlen;
-//        }
-////        qDebug() << i << len << addlen;
-
-//        // subdivide
-//        out[i].create(rows, cols);
-//        for (int y = 0; y < rows; ++y)
-//        {
-//            const cv::Vec4i *rowTmpTar = tmpArrayTar[y];
-//            cv::Vec4b *rowOut = out[i][y];
-//            for (int x = 0; x < cols; ++x)
-//            {
-//                const cv::Vec4i &v = rowTmpTar[x];
-//                rowOut[x] = cv::Vec4b(v[0]/len, v[1]/len, v[2]/len, v[3]/len);
-//            }
-//        }
-//        //imwrite(QString("%1_.png").arg(i).toStdString(),out[i]);
-//    }
 }
 
 QRect GUtil::scaleQRect(const QRect &src, float scale)
@@ -659,16 +619,17 @@ QImage GUtil::addHalo(const QImage &img, const std::set<int> &halo, int id,
     return img;
 }
 
-cv::Rect GUtil::addMarginToRect(const cv::Rect& rect, float margin_pct)
+cv::Rect GUtil::addMarginToRect(const cv::Rect& rect, float margin_pct, int margin_max, int margin_min)
 {
-    int marginx = MAX(12, rect.width * margin_pct), marginy = MAX(12, rect.height * margin_pct);
+    int marginx = MIN(margin_max, MAX(margin_min, rect.width * margin_pct)), 
+        marginy = MIN(margin_max, MAX(margin_min, rect.height * margin_pct));
     return cv::Rect(rect.x - marginx, rect.y - marginy, rect.width + 2 * marginx, rect.height + 2 * marginy);
 }
 
 cv::Mat1b GUtil::cvtPainterPath2Mask(const QPainterPath &path)
 {
-    QRect rect = path.boundingRect().toRect();
-    QImage mask(rect.size(), QImage::Format_ARGB32_Premultiplied);
+    QRectF rect = path.boundingRect();
+    QImage mask((int)rect.width(), (int)rect.height(), QImage::Format_ARGB32_Premultiplied);
     mask.fill(0);
     QPainter pt(&mask);
     pt.setClipPath(path.translated(-rect.topLeft()));

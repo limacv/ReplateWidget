@@ -7,19 +7,6 @@
 #include "MLConfigManager.h"
 #include "GUtil.h"
 
-void generateFeaterMask(cv::Mat& feater, float marginpct)
-{
-	int hei = feater.rows, wid = feater.cols;
-	feater.forEach<uchar>([&](uchar& pix, const int* pos) {
-		int x = pos[1], y = pos[0];
-		float ax = (float)x / wid;
-		ax = ax < marginpct ? ax / marginpct : (ax > (1 - marginpct) ? (1 - ax) / marginpct : 1);
-		float ay = (float)y / hei;
-		ay = ay < marginpct ? ay / marginpct : (ay > (1 - marginpct) ? (1 - ay) / marginpct : 1);
-		pix = cv::saturate_cast<uchar>((float)pix * ax * ay);
-		});
-}
-
 void calForegroundBorder(cv::Mat& fg, const cv::Mat& bg, const cv::Mat& mask)
 {
 	CV_Assert(fg.channels() == 4 && bg.channels() == 3 && mask.channels() == 1);
@@ -130,7 +117,7 @@ void calForegroundBorderMy(cv::Mat& fg, const cv::Mat& bg, const cv::Mat& mask)
 		}
 	} while (false);
 	
-	generateFeaterMask(diff, 0.1);
+	MLUtil::generateFeatherBorder(diff, 0.1);
 	cv::cvtColor(fg, fg, cv::COLOR_BGRA2BGR);
 	cv::merge(std::vector<cv::Mat>({ fg, diff }), fg);
 }
@@ -202,6 +189,39 @@ cv::Mat4b MLDataManager::getRoiofFrame(int frameidx, const cv::Rect& rect) const
 	}
 }
 
+cv::Mat4b MLDataManager::getRoiofForeground(int frameidx, const QRectF& rectF) const
+{
+	if (!stitch_cache.isPrepared()) return cv::Mat4b();
+	return getRoiofForeground(frameidx, toCropROI(rectF));
+}
+
+cv::Mat4b MLDataManager::getRoiofForeground(int frameidx, const QRect& rect) const
+{
+	if (!stitch_cache.isPrepared()) return cv::Mat4b();
+	return getRoiofForeground(frameidx, GUtil::cvtRect(rect));
+}
+
+cv::Mat4b MLDataManager::getRoiofForeground(int frameidx, const cv::Rect& rect) const
+{
+	if (!stitch_cache.isPrepared()) return cv::Mat4b();
+	const auto& video = stitch_cache.warped_frames;
+	if (rect.area() > 0)
+	{
+		cv::Mat4b img(rect.size(), { 0, 0, 0, 0 });
+		cv::Rect frameroi = stitch_cache.rois[frameidx] - stitch_cache.global_roi.tl();
+		cv::Rect intersection = frameroi & rect;
+		if (!intersection.empty())
+			stitch_cache.warped_frames[frameidx](intersection - frameroi.tl()).copyTo(img(intersection - rect.tl()));
+		return img;
+	}
+	else
+	{
+		cv::Mat4b img(stitch_cache.background.size(), { 0, 0, 0, 0 });
+		cv::Rect frameroi = stitch_cache.rois[frameidx] - stitch_cache.global_roi.tl();
+		stitch_cache.warped_frames[frameidx].copyTo(img(frameroi));
+		return img;
+	}
+}
 
 cv::Mat3b MLDataManager::getRoiofBackground(const QRectF& rectF) const
 {
@@ -251,7 +271,7 @@ cv::Mat4b MLDataManager::getFlowImage(int frameidx, QRectF rectF) const
 	}
 }
 
-cv::Mat4b MLDataManager::getForeground(int i, QRectF rectF, const cv::Mat1b mask) const
+cv::Mat4b MLDataManager::getMattedRoi(int i, QRectF rectF, const cv::Mat1b mask) const
 {
 	cv::Mat4b fg = getRoiofFrame(i, rectF);
 	cv::Mat3b bg = getRoiofBackground(rectF);
@@ -260,19 +280,19 @@ cv::Mat4b MLDataManager::getForeground(int i, QRectF rectF, const cv::Mat1b mask
 	return fg;
 }
 
-cv::Mat4b MLDataManager::getForeground(int i, const QPainterPath& painterpath) const
+cv::Mat4b MLDataManager::getMattedRoi(int i, const QPainterPath& painterpath) const
 {
 	QPainterPath pp = imageScale().map(painterpath);
 	cv::Mat1b mask = GUtil::cvtPainterPath2Mask(pp);
-	return getForeground(i, painterpath.boundingRect(), mask);
+	return getMattedRoi(i, painterpath.boundingRect(), mask);
 }
 
-cv::Mat4b MLDataManager::getForeground(int i, const GRoiPtr& roi) const
+cv::Mat4b MLDataManager::getMattedRoi(int i, const GRoiPtr& roi) const
 {
 	if (!roi->painter_path_.isEmpty())
-		return getForeground(i, roi->painter_path_);
+		return getMattedRoi(i, roi->painter_path_);
 	else
-		return getForeground(i, roi->rectF_);
+		return getMattedRoi(i, roi->rectF_);
 }
 
 QImage MLDataManager::getBackgroundQImg() const
@@ -369,7 +389,7 @@ void MLDataManager::paintWorldTrackBoxes(QPainter& painter, int frameidx, bool p
 	const float scaley = (float)viewport.height() / VideoHeight();
 
 	/******************
-	* paint boxes and names
+	* paintVisualize boxes and names
 	******************/
 	for (auto it = boxes.constKeyValueBegin(); it != boxes.constKeyValueEnd(); ++it)
 	{
@@ -444,7 +464,7 @@ void MLDataManager::paintWorldDetectBoxes(QPainter& painter, int frameidx, bool 
 	const float scaley = (float)viewport.height() / VideoHeight();
 
 	/******************
-	* paint boxes and names
+	* paintVisualize boxes and names
 	******************/
 	for (auto it = boxes.constBegin(); it != boxes.constEnd(); ++it)
 	{
