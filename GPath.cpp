@@ -6,48 +6,21 @@ GPath::GPath(bool backward)
     :is_backward_(backward)
     ,frame_id_start_(-1)
     ,frame_id_end_(-1)
-    ,world_offset_(0)
+    ,is_singleframe(true)
 {}
-
-GPath::GPath(int startframe, int endframe, int space)
-    :is_backward_(false),
-    frame_id_start_(startframe),
-    frame_id_end_(endframe),
-    world_offset_(0)
-{
-    resize(space);
-}
-
 
 GPath::GPath(int startframe, const QRectF & rect0, const QPainterPath & painterpath, bool backward)
     :is_backward_(backward),
     frame_id_start_(startframe),
     frame_id_end_(startframe),
-    world_offset_(startframe),
+    is_singleframe(true),
     painter_path_(painterpath),
     roi_rect_(1, rect0),
-    flow_points_(1, 0),
-    number_flow_points_(1, 0),
     roi_fg_mat_(1),
     roi_fg_qimg_(1),
     manual_adjust_(1, false),
-    roi_reshape_(1, 0),
     dirty_(1, true)
 { }
-
-
-// this is used when user want to chagne single frame effect to multi frame effect
-void GPath::expandSingleFrame2Multiframe(int frame_count)
-{
-    if (space() == frame_count) return;
-    resize(frame_count);
-    
-    world_offset_ = 0;
-    for (int i = 0; i < startFrame(); ++i)
-        copyFrameState(startFrame(), i);
-    for (int i = endFrame() + 1; i < space(); ++i)
-        copyFrameState(endFrame(), i);
-}
 
 GPath::~GPath() { release(); }
 
@@ -102,12 +75,9 @@ void GPath::updateImage(int idx)
 {
     const auto& data = MLDataManager::get();
     
-    int frame_idx = idx + world_offset_;
-    if (roi_reshape_[idx]) {
-        roi_fg_mat_[idx] = data.getForeground(frame_idx, roi_reshape_[idx]);
-    }
-    else
-        roi_fg_mat_[idx] = data.getForeground(frame_idx, roi_rect_[idx]);
+    if (is_singleframe) idx = 0;
+
+    roi_fg_mat_[idx] = data.getMattedRoi(idx, roi_rect_[idx]);
 
     roi_fg_qimg_[idx] = GUtil::mat2qimage(
         roi_fg_mat_[idx], QImage::Format_ARGB32_Premultiplied);
@@ -132,70 +102,77 @@ void GPath::updateimages()
     }
 }
 
-QRectF GPath::frameRoiRect(int frame_id) const
+QRectF GPath::getPlateQRect(int frame_id) const
 {
-    assert(frame_id >= frame_id_start_ && frame_id <= frame_id_end_);
     int idx = worldid2thisid(frame_id);
-    if (roi_reshape_[idx])
-        return roi_reshape_[idx]->rectF();
-    else
-        return roi_rect_[idx];
+    
+    return roi_rect_[idx];
 }
 
-QImage GPath::frameRoiImage(int frame_id) const {
+QImage GPath::getPlateQImg(int frame_id) const {
     return roi_fg_qimg_[worldid2thisid(frame_id)];
 }
 
-cv::Mat4b GPath::frameRoiMat4b(int frame_id) const
+QImage& GPath::getPlateQImg(int frame_id) {
+    return roi_fg_qimg_[worldid2thisid(frame_id)];
+}
+
+cv::Mat GPath::getPlateCV(int frame_id) const
 {
     return roi_fg_mat_[worldid2thisid(frame_id)];
 }
 
-void GPath::paint(QPainter &painter, int frame_id) const
+cv::Mat& GPath::getPlateCV(int frame_id)
 {
+    return roi_fg_mat_[worldid2thisid(frame_id)];
+}
+
+cv::Mat GPath::getPlateMask(int frame_id) const
+{
+    const auto& data = MLDataManager::get();
+    cv::Mat mask;
+    if (!painter_path_.isEmpty())
+    {
+        QPainterPath painter_path = data.imageScale().map(painter_path_);
+        mask = GUtil::cvtPainterPath2Mask(painter_path);
+    }
+    else
+    {
+        const auto& rectf = getPlateQRect(frame_id);
+        cv::Rect rect = data.toCropROI(rectf);
+        mask = cv::Mat(rect.size(), CV_8UC1, 255);
+    }
+    return mask;
+}
+
+void GPath::paintVisualize(QPainter &painter, int frame_id) const
+{
+    paintTrace(painter, frame_id);
     if (frame_id < startFrame() || frame_id > endFrame()) {
-        paintTrace(painter, frame_id);
         return;
     }
-    if (this->isEmpty()) return;
+    if (isEmpty()) return;
 
     QSize size = painter.viewport().size();
     QMatrix mat;
     mat.scale(size.width(), size.height());
 
     int idx = worldid2thisid(frame_id);
-    if (roi_reshape_[idx]) {
-        Qt::PenStyle style = Qt::SolidLine;
-        QPen pen = QPen(Qt::red, 1, style);
-        painter.setPen(pen);
-        const GRoiPtr &roi = roi_reshape_[idx];
-        if (roi->isRect()) {
-            QRect rect = mat.mapRect(roi->rectF_).toRect();
-            painter.drawRect(rect);
-        }
-        else {
-            QPainterPath pp = mat.map(roi->painter_path_);
-            pp.closeSubpath();
-            painter.drawPath(pp);
-        }
+
+    Qt::PenStyle pen_style = (manual_adjust_[idx]? Qt::DotLine: Qt::DashLine);
+    QPen rect_pen = (isBackward()?QPen(Qt::green, 1, pen_style):
+                                    QPen(Qt::red, 1, pen_style));
+    painter.setPen(rect_pen);
+
+    if (painter_path_.isEmpty()) {
+        QRect rect = mat.mapRect(roi_rect_[idx]).toRect();
+        painter.drawRect(rect);
     }
     else {
-        Qt::PenStyle pen_style = (manual_adjust_[idx]? Qt::DotLine: Qt::DashLine);
-        QPen rect_pen = (isBackward()?QPen(Qt::green, 1, pen_style):
-                                      QPen(Qt::red, 1, pen_style));
-        painter.setPen(rect_pen);
-
-        if (painter_path_.isEmpty()) {
-            QRect rect = mat.mapRect(roi_rect_[idx]).toRect();
-            painter.drawRect(rect);
-        }
-        else {
-            QPainterPath pp = mat.map(painter_path_);
-            pp.closeSubpath();
-            painter.drawPath(pp);
-        }
+        QPainterPath pp = mat.map(painter_path_);
+        pp.closeSubpath();
+        painter.drawPath(pp);
     }
-    paintTrace(painter, frame_id);
 }
 
 void GPath::paintTrace(QPainter& painter, int frame_id) const
@@ -235,14 +212,6 @@ void GPath::copyFrameState(int frame_from, int frame_to)
     dirty_[frame_to] = true;
 }
 
-void GPath::setPathRoi(int frame_id, const GRoiPtr &roi)
-{
-    int id = worldid2thisid(frame_id);
-    roi_reshape_[id] = roi;
-    manual_adjust_[id] = true;
-    dirty_[id] = true;
-}
-
 void GPath::setPathRoi(int frame_id, float dx, float dy)
 {
     int id = worldid2thisid(frame_id);
@@ -272,24 +241,16 @@ void GPath::resize(int n) {
     if (n != 1 || n != MLDataManager::get().get_framecount())
         qWarning("Path resize different to the total frame count");
     roi_rect_.resize(n);
-    flow_points_.resize(n, 0);
-    number_flow_points_.resize(n,0);
     roi_fg_mat_.resize(n);
     roi_fg_qimg_.resize(n);
     manual_adjust_.resize(n, false);
-    roi_reshape_.resize(n, 0);
     dirty_.resize(n, true);
 }
 
 void GPath::release() {
-    for (size_t i = 0; i < flow_points_.size(); ++i)
-        delete [] flow_points_[i];
-    flow_points_.clear();
-    number_flow_points_.clear();
     roi_fg_mat_.clear();
     roi_fg_qimg_.clear();
     manual_adjust_.clear();
-    roi_reshape_.clear();
     dirty_.clear();
     qDebug() << "GPathTrackData Released";
 }

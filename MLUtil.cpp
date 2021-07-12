@@ -93,7 +93,33 @@ namespace MLUtil
         return rect_ori;
     }
 
+	void generateFeatherBorder(cv::Mat& feater, float marginpct)
+	{
+		int hei = feater.rows, wid = feater.cols;
+		feater.forEach<uchar>([&](uchar& pix, const int* pos) {
+			int x = pos[1], y = pos[0];
+			float ax = (float)x / wid;
+			ax = ax < marginpct ? ax / marginpct : (ax > (1 - marginpct) ? (1 - ax) / marginpct : 1);
+			float ay = (float)y / hei;
+			ay = ay < marginpct ? ay / marginpct : (ay > (1 - marginpct) ? (1 - ay) / marginpct : 1);
+			pix = cv::saturate_cast<uchar>((float)pix * ax * ay);
+			});
+	}
 
+	void generateFeatherFrommask(cv::Mat& mask, float marginpct, int marginmax, int marginmin)
+	{
+		cv::Mat dist;
+		cv::copyMakeBorder(mask, dist, 1, 1, 1, 1, cv::BORDER_CONSTANT, 0);
+		cv::Rect roi(cv::Point(1, 1), mask.size());
+		cv::distanceTransform(dist, dist, cv::DIST_L2, 3);
+		int margin = MIN(mask.cols, mask.rows) * marginpct;
+		margin = margin < marginmin ? marginmin : margin;
+		margin = margin > marginmax ? marginmax : margin;
+		dist.setTo(margin, dist > margin);
+		mask = (dist(roi) / margin * 255);
+		mask.convertTo(mask, CV_8U);
+	}
+	
 	constexpr float
 		CIEDE2000::deg2Rad(
 			const float deg)

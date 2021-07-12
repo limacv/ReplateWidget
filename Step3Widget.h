@@ -91,7 +91,6 @@ public:
     GEffectPtr cur_effect;
     GPathPtr cur_tracked_path;
     int cur_frameidx;
-    void setPathRoi(const GRoiPtr& roi);
     void morphPathRoi(int dx, int dy);
 
     // current states (about tracking)

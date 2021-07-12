@@ -480,12 +480,12 @@ void Step2RenderArea::paintEvent(QPaintEvent* event)
 	const float scalex = (float)viewport.width() / raw_frames[0].cols;
 	const float scaley = (float)viewport.height() / raw_frames[0].rows;
 	/******************
-	* paint background and foreground
+	* paintVisualize background and foreground
 	******************/
 	global_data.paintWarpedFrames(paint, frameidx, step2widget->display_showbackground(), step2widget->display_showwarped());
 
 	/******************
-	* paint boxes and names
+	* paintVisualize boxes and names
 	******************/
 	if (step2widget->display_showbox() && step2widget->display_showtrack())
 		global_data.paintWorldTrackBoxes(paint, frameidx, true, step2widget->display_showtraj());

@@ -48,7 +48,7 @@ void GMainDisplay::paintEvent(QPaintEvent *event)
     }
 
     if (step3widget->cur_tracked_path)
-        step3widget->cur_tracked_path->paint(painter, step3widget->cur_frameidx);
+        step3widget->cur_tracked_path->paintVisualize(painter, step3widget->cur_frameidx);
 }
 
 void GMainDisplay::wheelEvent(QWheelEvent* event)
@@ -99,7 +99,7 @@ void GMainDisplay::mouseMoveEvent(QMouseEvent *event)
         rect_pre_select_ = boxes.empty() 
             ? QRect() 
             : global_data.toPaintROI(
-                GUtil::addMarginToRect(boxes[selection_count++ / 5 % boxes.size()]->rect_global, RECT_MARGIN), 
+                GUtil::addMarginToRect(boxes[selection_count++ / 5 % boxes.size()]->rect_global, RECT_MARGIN, RECT_MARGIN_MAX, RECT_MARGIN_MIN), 
                 QRect(), true);
     }
     else

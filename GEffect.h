@@ -36,7 +36,7 @@ public:
     virtual void render(QPainter &painter, int frame_id, int duration, bool video = false) const = 0;
 
     QRectF renderLocation(int frame_id) const;
-    QImage renderImage(int frame_id) const;
+    QImage plateQImg(int frame_id) const;
 
     void readBasic(const YAML::Node &node);
     void writeBasic(YAML::Emitter &out) const;
@@ -57,9 +57,9 @@ public:
     bool shown() const {return is_shown_;}
     void toggleShown(bool checked) { is_shown_ = checked; }
 
-    bool adjustLeft(int step);
-    bool adjustRight(int step);
-    bool moveStart(int step);
+    virtual bool adjustLeft(int step);
+    virtual bool adjustRight(int step);
+    virtual bool moveStart(int step);
 
     int async() const { return async_offset_; }
     void adjustAsync(int offset, int duration);
@@ -271,6 +271,7 @@ public:
 class GEffectLoop : public GEffect
 {
     static int max_loop_num;
+    std::vector<QImage> plateFrames;
 public:
     explicit GEffectLoop(const GPathPtr& path);
 
@@ -287,6 +288,10 @@ public:
     virtual int getFadeLevel() const { return fade_level_; }
 
     virtual bool setSpeed(int a) { speed_factor_ = a; return true; }
+
+    virtual bool adjustLeft(int step);
+    virtual bool adjustRight(int step);
+    virtual bool moveStart(int step);
 };
 
 #endif // GEFFECT_H

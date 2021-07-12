@@ -6,6 +6,7 @@
 #include "GUtil.h"
 #include <fstream>
 #include "GPath.h"
+#include "MLUtil.h"
 
 //qreal GEffectManager::M_STREAK_LENGTH = 3;
 qreal GEffectManager::M_BLEND_ALPHA = 0.5;
@@ -26,7 +27,7 @@ GEffectManager::GEffectManager()
 
 void GEffectManager::applyTrash(const GPathPtr &path)
 {
-    QRectF rectF = path->frameRoiRect(path->startFrame());
+    QRectF rectF = path->getPlateQRect(path->startFrame());
     //video->inpaintBackground(rectF, path->painter_path_);
     qDebug("TODO::applyIntraining is not implemented");
     // TODO: add changebackground
@@ -35,22 +36,15 @@ void GEffectManager::applyTrash(const GPathPtr &path)
 void GEffectManager::applyInpaint(const GPathPtr& path)
 {
     const auto& data = MLDataManager::get();
-    QRectF rectF = path->frameRoiRect(path->startFrame());
+    QRectF rectF = path->getPlateQRect();
     cv::Rect rect = data.toCropROI(rectF);
-    cv::Mat mask;
-    if (!path->painter_path_.isEmpty())
-    {
-        QPainterPath painter_path = data.imageScale().map(path->painter_path_);
-        mask = GUtil::cvtPainterPath2Mask(painter_path);
-        rect.width = mask.cols;
-        rect.height = mask.rows;
-    }
-    else
-        mask = cv::Mat(rect.size(), CV_8UC1, 255);
+    cv::Mat mask = path->getPlateMask();
+    rect.width = mask.cols;
+    rect.height = mask.rows;
     
     // add context
     InpainterCV inpainter(10);
-    cv::Rect dilate_rect = GUtil::addMarginToRect(rect, 10);
+    cv::Rect dilate_rect = GUtil::addMarginToRect(rect, 0.1, 11, 10);
     cv::Rect roi = dilate_rect & cv::Rect(0, 0, data.VideoWidth(), data.VideoHeight());
     cv::Mat context = data.getRoiofBackground(roi);
     cv::Mat context_mask(context.size(), CV_8UC1, cv::Scalar(0));
@@ -64,46 +58,63 @@ void GEffectManager::applyInpaint(const GPathPtr& path)
     inpainter.inpaint(context, context_mask, inpainted);
     cv::merge(std::vector<cv::Mat>({ inpainted(rect - roi.tl()), mask }), inpainted);
 
-    path->roi_fg_mat_[0] = inpainted.clone();
-    path->roi_fg_qimg_[0] = GUtil::mat2qimage(path->roi_fg_mat_[0],
-        QImage::Format_ARGB32_Premultiplied).copy();
+    path->getPlateCV() = inpainted.clone();
+    path->getPlateQImg() = GUtil::mat2qimage(inpainted, QImage::Format_ARGB32_Premultiplied).copy();
 }
 
 void GEffectManager::applyStill(const GPathPtr &path)
 {
 //    qDebug() << path->size() << path->painter_path_;
-    QRectF rectF = path->frameRoiRect(path->startFrame());
-    cv::Mat4b fg = MLDataManager::get().getRoiofFrame(path->startFrame(), rectF);
-    path->roi_fg_mat_[0] = fg.clone();
-    path->roi_fg_qimg_[0] = GUtil::mat2qimage(path->roi_fg_mat_[0],
-            QImage::Format_ARGB32_Premultiplied).copy();
+    QRectF rectF = path->getPlateQRect(path->startFrame());
+    cv::Mat fg = MLDataManager::get().getRoiofFrame(path->startFrame(), rectF);
+
+    cv::Mat fgmask; cv::extractChannel(fg, fgmask, 3);
+    cv::Mat mask = path->getPlateMask();
+    mask = fgmask & mask;
+
+    MLUtil::generateFeatherFrommask(mask, FEATHER_MARGIN_PCT, FEATHER_MARGIN_MAX, FEATHER_MARGIN_MIN);
+    cv::cvtColor(fg, fg, cv::COLOR_BGRA2BGR);
+    cv::merge(std::vector<cv::Mat>({ fg, mask }), fg);
+
+    path->getPlateCV() = fg.clone();
+    path->getPlateQImg() = GUtil::mat2qimage(fg, QImage::Format_ARGB32_Premultiplied).copy();
 }
 
 void GEffectManager::applyBlack(const GPathPtr &path)
 {
-    const auto& global_data = MLDataManager::get();
-    QRectF rectF = path->frameRoiRect(path->startFrame());
-    const QMatrix mat = global_data.imageScale();
-
-    QRect rect = mat.mapRect(rectF).toRect();
-    QPainterPath painterpath = mat.map(path->painter_path_);
-    cv::Mat1b mask = GUtil::cvtPainterPath2Mask(painterpath);
-    cv::Mat4b black(GUtil::cvtSize(rect.size()), cv::Vec4b(0,0,0,255));
-    path->roi_fg_mat_[0].create(mask.size(), CV_8UC4);
-    path->roi_fg_mat_[0] = cv::Vec4b(0,0,0,0);
-    black.copyTo(path->roi_fg_mat_[0], mask);
-    path->roi_fg_qimg_[0] = GUtil::mat2qimage(path->roi_fg_mat_[0],
-        QImage::Format_ARGB32_Premultiplied).copy();
+    qCritical("GEffectManager::applyBlack is deprecated");
 }
 
 void GEffectManager::applyLoop(const GPathPtr& path)
 {
     const auto& global_data = MLDataManager::get();
-    if (path->space() == 1)
+    if (path->space() != 1)
+        qWarning("GEffectManager::applyLoop: the path is not single-frame path");
+
+    // find the best start/end frame
+    QRectF rectf = path->getPlateQRect();
+    cv::Mat mask = path->getPlateMask();
+    int start = -1, end = -1;
+    for (int i = 0; i < global_data.get_framecount(); ++i)
     {
-        qInfo("GEffectManager::applyLoop: the path is not single-frame path");
-        path->expandSingleFrame2Multiframe(global_data.get_framecount());
+        cv::Mat fg = global_data.getRoiofForeground(i, rectf);
+        cv::Mat fgmask;
+        cv::extractChannel(fg, fgmask, 3);
+        fgmask &= mask;
+        double pct = cv::mean(fgmask)[0] / 255;
+
+        if (start < 0 && pct > 0.5)
+            start = i;
+        
+        if (start >= 0 && pct > 0.5)
+            end = i;
+
+        if (end >= 0 && pct <= 0.5)
+            break;
     }
+
+    path->setStartFrame(start);
+    path->setEndFrame(end);
 }
 
 
@@ -225,34 +236,6 @@ void GEffectManager::read(const QString& file)
     }
 }
 
-void GEffectManager::readOld(const QString& file)
-{
-    YAML::Node doc = YAML::LoadFile(file.toStdString());
-    YAML::Node path_nodes = doc["Path"];
-    std::vector<GPathPtr> paths(path_nodes.size());
-    for (size_t i = 0; i < path_nodes.size(); ++i) {
-        qDebug() << "Load path" << i;
-        GPathPtr p(new GPath);
-//        path_nodes[i][i] >> p;
-        loadOldPathData(path_nodes[i][i], p);
-        paths[i] = p;
-    }
-
-    for (size_t i = 0; i < G_EFX_NUMBER; ++i) {
-        YAML::Node efx_node = doc["Effect"][G_EFFECT_STR[i]];
-//        qDebug() << "Load effect" << G_EFFECT_STR[i];
-        for (YAML::const_iterator it = efx_node.begin(); it != efx_node.end(); ++it) {
-//            if ((G_EFFECT_ID)i != EFX_ID_TRASH || (G_EFFECT_ID)i != EFX_ID_STILL) continue;
-            int path_id = (*it)["PathId"].as<int>();
-            GPathPtr path = paths[path_id];
-            G_EFFECT_ID id = (G_EFFECT_ID)i;
-            if (id == EFX_ID_MULTIPLE) id = EFX_ID_MOTION;
-            GEffectPtr efx = addPathEffect(path, id, (*it)["Property"]);
-            effect_map_read_tmp.push_back(efx);
-        }
-    }
-}
-
 void GEffectManager::write(const QString& file)
 {
     YAML::Emitter out;
@@ -337,30 +320,6 @@ void loadPainterPath(const YAML::Node &node, QPainterPath &painter_path)
     }
 }
 
-void GEffectManager::loadOldPathData(const YAML::Node &node, GPathPtr &path)
-{
-    int size = node["Length"].as<int>();
-    path->resize(size);
-    path->setBackward(node["Backward"].as<bool>());
-    path->setStartFrame( node["Start_id"].as<int>() );
-    QSize window_size;
-    node["Wnd_size"] >> window_size;
-    QMatrix mat;
-    mat.scale(1.0/(qreal)window_size.width(), 1.0/(qreal)window_size.height());
-
-    std::vector<QRect> tmpRect(size);
-    node["Roi_Rects"] >> tmpRect;
-    std::vector<QRectF> rectF(size);
-    for (int i = 0; i < tmpRect.size(); ++i) {
-        rectF[i] = mat.mapRect(QRectF(tmpRect[i]));
-    }
-    path->roi_rect_.assign(rectF.begin(), rectF.end());
-    QPainterPath painterpath;
-    loadPainterPath(node["Painter_Path"], painterpath);
-    path->painter_path_ = mat.map(painterpath);
-    node["Manual"] >> path->manual_adjust_;
-}
-
 YAML::Emitter& operator <<(YAML::Emitter &out, const GPathPtr &path)
 {
     out << YAML::BeginMap;
@@ -369,13 +328,10 @@ YAML::Emitter& operator <<(YAML::Emitter &out, const GPathPtr &path)
     out << YAML::Key << "Backward" << YAML::Value << path->isBackward();
     out << YAML::Key << "Start_id" << YAML::Value << path->startFrame();
     out << YAML::Key << "End_id" << YAML::Value << path->endFrame();
-    out << YAML::Key << "World_offset" << YAML::Value << path->world_offset_;
-//    out << YAML::Key << "Wnd_size" << YAML::Value << path->window_size_;
+    out << YAML::Key << "Is_singleframe" << YAML::Value << path->is_singleframe;
     out << YAML::Key << "Roi_Rects"  << YAML::Value << path->roi_rect_;
-    //    out << YAML::Key << "BB_Rects" << YAML::Value << path->window_boundbox_rect_;
     out << YAML::Key << "Painter_Path" << YAML::Value << path->painter_path_;
     out << YAML::Key << "Manual" << YAML::Value << path->manual_adjust_;
-    out << YAML::Key << "Reshape" << YAML::Value << path->roi_reshape_;
     out << YAML::EndMap;
     return out;
 }
@@ -387,12 +343,13 @@ void operator >> (const YAML::Node &node, GPathPtr &path)
     path->setBackward(node["Backward"].as<bool>());
     path->setStartFrame( node["Start_id"].as<int>() );
     path->setEndFrame(node["End_id"].as<int>());
-    path->world_offset_ = node["World_offset"].as<int>();
+
+    if (node["World_offset"]) path->is_singleframe = node["World_offset"].as<int>() != 0;
+    if (node["Is_singleframe"]) path->is_singleframe = node["Is_singleframe"].as<bool>();
     
     node["Roi_Rects"] >> path->roi_rect_;
     node["Painter_Path"] >> path->painter_path_;
     node["Manual"] >> path->manual_adjust_;
-    node["Reshape"] >> path->roi_reshape_;
 }
 
 YAML::Emitter &operator <<(
@@ -568,7 +525,7 @@ void operator >> (const YAML::Node &node, QSize &size)
 //    for (size_t i = 0; i < path->length(); ++i) {
 //        qDebug() << path->roi_rect_[i];
 //        int iFrame = i + path->startFrame();
-//        path->roi_fg_mat_[i] = video_->getForeground(iFrame, path->roi_rect_[i]);
+//        path->roi_fg_mat_[i] = video_->getMattedRoi(iFrame, path->roi_rect_[i]);
 //    }
 //}
 

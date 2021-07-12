@@ -68,12 +68,12 @@ void GEffect::adjustAsync(int offset, int duration)
 
 QRectF GEffect::renderLocation(int frame_id) const
 {
-    return scaleMat().mapRect(path()->frameRoiRect(frame_id));
+    return scaleMat().mapRect(path()->getPlateQRect(frame_id));
 }
 
-QImage GEffect::renderImage(int frame_id) const
+QImage GEffect::plateQImg(int frame_id) const
 {
-    return path()->frameRoiImage(frame_id);
+    return path()->getPlateQImg(frame_id);
 }
 
 void GEffect::readBasic(const YAML::Node &node)
@@ -251,13 +251,13 @@ void GEffectStill::render(QPainter &painter, int frame_id, int duration, bool vi
     int render_frame = startFrame();
     QRectF rect = renderLocation(render_frame);
     //QImage dst = (video? MLDataManager::get().getRoiofFrame(render_frame, rect)
-                        //: renderImage(render_frame));
-    QImage dst = renderImage(render_frame);
+                        //: plateQImg(render_frame));
+    QImage dst = plateQImg(render_frame);
     QImage alpha(dst.size(), QImage::Format_Indexed8);
     alpha.fill(255 * G_TRANS_LEVEL[trans_level_]);
     dst.setAlphaChannel(alpha);
 
-    QPainterPath pp = scaleMat().map(path()->painter_path_);
+    QPainterPath pp = scaleMat().map(path()->getPlatePainterPath());
     if (!pp.isEmpty())
         painter.setClipPath(pp);
     painter.drawImage(rect, dst);
@@ -276,14 +276,14 @@ void GEffectInpaint::render(QPainter& painter, int frame_idx, int duration, bool
     int render_frame = startFrame();
     QRectF rect = renderLocation(render_frame);
     //QImage dst = (video? MLDataManager::get().getRoiofFrame(render_frame, rect)
-                        //: renderImage(render_frame));
-    QImage dst = renderImage(render_frame);
+                        //: plateQImg(render_frame));
+    QImage dst = plateQImg(render_frame);
 
     QImage alpha(dst.size(), QImage::Format_Indexed8);
     alpha.fill(255 * G_TRANS_LEVEL[trans_level_]);
     dst.setAlphaChannel(alpha);
 
-    QPainterPath pp = scaleMat().map(path()->painter_path_);
+    QPainterPath pp = scaleMat().map(path()->getPlatePainterPath());
     if (!pp.isEmpty())
         painter.setClipPath(pp);
     painter.drawImage(rect, dst);
@@ -304,8 +304,8 @@ GEffectBlack::GEffectBlack(const GPathPtr &path): GEffect(path){
 
 void GEffectBlack::render(QPainter &painter, int frame_id, int duration, bool video) const
 {
-//    renderImage(0).save(QString("%1.png").arg(frame_id));
-    painter.drawImage(renderLocation(0), renderImage(0));
+//    plateQImg(0).save(QString("%1.png").arg(frame_id));
+    painter.drawImage(renderLocation(0), plateQImg(0));
 }
 
 void GEffectBlack::write(YAML::Emitter &out) const
@@ -327,16 +327,12 @@ GEffectTrail::GEffectTrail(const GPathPtr &path)
 //        cv::imwrite(QString("%1.png").arg(i).toStdString(), path->roi_fg_mat_[i]);
 
     std::vector<cv::Mat> blendImgs;
-    GUtil::adaptiveImages(path->roi_fg_mat_, blendImgs);
+    GUtil::adaptiveImages(path->getAllPlatesCV(), blendImgs);
 
     d_images.resize(path->space());
-    for (size_t i = 0; i < d_images.size(); ++i) {
+    for (size_t i = 0; i < d_images.size(); ++i)
         d_images[i] = GUtil::mat2qimage(blendImgs[i], QImage::Format_ARGB32_Premultiplied).copy();
-        qDebug() << i << d_images[i] << path->roi_fg_mat_[i].rows;
-    }
 }
-
-
 
 void GEffectTrail::preRender(QPainter &painter, int frame_id, int duration)
 {
@@ -378,7 +374,7 @@ void GEffectTrail::generateTrail(QPainter& painter)
         QRectF rect = renderLocation(curIdx);
         rect.moveCenter(trail_[i].toPoint());
         pt.drawImage(rect, dst);
-        //            renderImage(curIdx).save(QString("_%1.png").arg(i));
+        //            plateQImg(curIdx).save(QString("_%1.png").arg(i));
     }
 
     cached_effect_.push_back(img);
@@ -506,7 +502,7 @@ void GEffectMotion::renderSlow(QPainter &painter, int frame_id, int duration, bo
         int fade = getFadeAlpha(this->effectLength(), idx, fade_level_);
         if (fade == 0) continue;
         QRectF rect = renderLocation(render_frame);
-        QImage dst = renderImage(render_frame);
+        QImage dst = plateQImg(render_frame);
         QImage alpha(dst.size(), QImage::Format_Indexed8);
         alpha.fill(fade * G_TRANS_LEVEL[trans_level_]);
         dst.setAlphaChannel(alpha);
@@ -556,9 +552,9 @@ void GEffectMotion::render(QPainter &painter, int frame_id, int duration, bool v
         if (anchor_id < 0) anchor_id += max_loop_num;
 
         QRectF rect = renderLocation(render_frame);
-        QImage dst = renderImage(render_frame);
+        QImage dst = plateQImg(render_frame);
         //QImage dst = (video? video->loadOriImageFg(render_frame, rect)
-                           //: renderImage(render_frame));
+                           //: plateQImg(render_frame));
 
         QImage alpha(dst.size(), QImage::Format_Indexed8);
         int fade = getFadeAlpha(this->effectLength(), local_id, fade_level_);
@@ -608,7 +604,7 @@ bool GEffectMotion::setSmooth(int s)
     line_smooth_ = s;
     trail_.resize(n);
     for (size_t i = 0; i < n; ++i) {
-        trail_[i] = this->path()->frameRoiRect(i + startFrame()).center();
+        trail_[i] = this->path()->getPlateQRect(i + startFrame()).center();
 //        trail_[i] = this->renderLocation(i + startFrame()).center();
     }
     marker_trail_.assign(trail_.begin(), trail_.end());
@@ -643,24 +639,32 @@ GEffectLoop::GEffectLoop(const GPathPtr& path)
 {
     effect_type_ = EFX_ID_LOOP;
     priority_level_ = G_EFX_PRIORITY[effect_type_] * G_EFX_PRIORITY_STEP;
+
+    cv::Mat mask = path->getPlateMask();
+
+    const auto& global_data = MLDataManager::get();
+    plateFrames.resize(global_data.get_framecount());
+    for (int i = 0; i < plateFrames.size(); ++i)
+    {
+        cv::Mat fg = global_data.getRoiofForeground(i, path->getPlateQRect());
+        cv::Mat fgmask;
+        cv::extractChannel(fg, fgmask, 3);
+        fgmask &= mask;
+        MLUtil::generateFeatherFrommask(fgmask, FEATHER_MARGIN_PCT, FEATHER_MARGIN_MAX, FEATHER_MARGIN_MIN);
+        cv::cvtColor(fg, fg, cv::COLOR_RGBA2RGB);
+        cv::merge(std::vector<cv::Mat>({ fg, fgmask }), fg);
+        plateFrames[i] = MLUtil::mat2qimage(fg, QImage::Format_ARGB32_Premultiplied);
+    }
 }
 
 // TODO this function is modified, not sure it's correct
 void GEffectLoop::renderSlow(QPainter& painter, int frame_id, int duration, bool video) const
 {
-    //if (video) {
-    //    renderSlowVideo(painter, frame_id, duration);
-    //    return;
-    //}
-
     int base_id = getSyncLocalIndex2(
         frame_id, startFrame(), duration,
         sync_id_, speed_factor_);
     base_id = (base_id + async_offset_) % duration;
 
-    //    qDebug() << "BB";
-    //    int length = qMin(duration + FadeDuration[fade_level_], effectLength());
-    //    for (int idx = base_id; idx < length; idx += duration)
     for (int idx = base_id; idx < this->effectLength(); idx += duration)
     {
         //        qDebug() << "CC" << idx << duration << FadeDuration[fade_level_];
@@ -668,13 +672,12 @@ void GEffectLoop::renderSlow(QPainter& painter, int frame_id, int duration, bool
         int fade = getFadeAlpha(this->effectLength(), idx, fade_level_);
         if (fade == 0) continue;
         QRectF rect = renderLocation(render_frame);
-        QImage dst = renderImage(render_frame);
-        QImage alpha(dst.size(), QImage::Format_Indexed8);
+        QImage dst = plateFrames[render_frame];
+        QImage alpha(dst.size(), QImage::Format_Grayscale8);
         alpha.fill(fade * G_TRANS_LEVEL[trans_level_]);
         dst.setAlphaChannel(alpha);
         painter.drawImage(rect, dst);
     }
-    //    qDebug() << "DD";
 }
 
 void GEffectLoop::preRender(QPainter& painter, int frame_id, int duration)
@@ -682,9 +685,6 @@ void GEffectLoop::preRender(QPainter& painter, int frame_id, int duration)
     if (duration <= 0) duration = effectLength();
     int loop_num = std::ceil(this->effectLength() / (float)duration);
     max_loop_num = qMax(loop_num, max_loop_num);
-
-    if (marker_mode_ != 0 || draw_line_)
-        setSmooth(line_smooth_);
 }
 
 void GEffectLoop::render(QPainter& painter, int frame_id, int duration, bool video) const
@@ -716,9 +716,9 @@ void GEffectLoop::render(QPainter& painter, int frame_id, int duration, bool vid
         if (anchor_id < 0) anchor_id += max_loop_num;
 
         QRectF rect = renderLocation(render_frame);
-        QImage dst = renderImage(render_frame);
+        QImage dst = plateFrames[render_frame];
         //QImage dst = (video? video->loadOriImageFg(render_frame, rect)
-                           //: renderImage(render_frame));
+                           //: plateQImg(render_frame));
 
         QImage alpha(dst.size(), QImage::Format_Indexed8);
         int fade = getFadeAlpha(this->effectLength(), local_id, fade_level_);
@@ -728,6 +728,37 @@ void GEffectLoop::render(QPainter& painter, int frame_id, int duration, bool vid
 
         painter.drawImage(rect, dst);
     }
+}
+
+bool GEffectLoop::adjustLeft(int step)
+{
+    int new_left = startFrame() + step;
+    if (new_left < 0 || new_left >= plateFrames.size())
+        return false;
+    path_->setStartFrame(new_left);
+    return true;
+}
+
+bool GEffectLoop::adjustRight(int step)
+{
+    int new_right = endFrame() + step;
+    if (new_right >= plateFrames.size() || new_right < 0)
+        return false;
+    path_->setEndFrame(new_right);
+    return true;
+}
+
+bool GEffectLoop::moveStart(int step)
+{
+    int new_left = startFrame() + step;
+    int new_right = endFrame() + step;
+    if (new_left < 0 || new_left >= plateFrames.size())
+        return false;
+    if (new_right >= plateFrames.size() || new_right < 0)
+        return false;
+    path_->setStartFrame(new_left);
+    path_->setEndFrame(new_right);
+    return true;
 }
 
 void GEffectLoop::write(YAML::Emitter& out) const
