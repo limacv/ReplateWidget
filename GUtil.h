@@ -75,7 +75,7 @@ namespace GUtil
     QImage addHalo(const QImage &img, const std::set<int> &halo,
                           int id, int color_id = 1);
 
-    cv::Rect addMarginToRect(const cv::Rect& rect, int margin);
+    cv::Rect addMarginToRect(const cv::Rect& rect, float margin_pct);
 
 //    cv::Mat1b cvtPainterPath2Mask(
 //            QSize window_size, const QPainterPath &path, QSize ori_size = QSize());

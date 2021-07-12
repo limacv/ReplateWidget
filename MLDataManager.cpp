@@ -95,6 +95,12 @@ void calForegroundBorderMy(cv::Mat& fg, const cv::Mat& bg, const cv::Mat& mask)
 		});
 
 	diff.convertTo(diff, CV_8UC1);
+	if (diff.cols > 45 && diff.rows > 45)
+	{
+		cv::Mat_<uchar> kernel(3, 3); kernel << 0, 1, 0, 1, 1, 1, 0, 1, 0;
+		cv::erode(diff, diff, kernel);
+		cv::dilate(diff, diff, kernel, cv::Point(-1, -1), 2);
+	}
 	auto in_border = [&](double x, double y) -> bool
 	{
 		x /= fg.cols; y /= fg.rows;

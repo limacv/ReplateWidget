@@ -1,7 +1,7 @@
 #pragma once
 #include "PathTrackerBase.h"
 
-const int RECT_MARGIN = 15;
+const float RECT_MARGIN = 0.17;
 
 class MLPathTracker :
     public PathTrackerBase
