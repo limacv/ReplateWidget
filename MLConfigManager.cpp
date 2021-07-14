@@ -62,6 +62,7 @@ void MLConfigManager::setup_ui(QWidget* parent)
 		[this](int i) {stitcher_cfg.blend_type_ = i; });
 	QObject::connect(config_widget_ui->blendStrengthLineEdit, &QLineEdit::textEdited, [this](const QString& str) {stitcher_cfg.blend_strength_ = str.toDouble(); });
 	QObject::connect(config_widget_ui->waveCorrectComboBox, &QComboBox::currentTextChanged, [this](const QString& str) {stitcher_cfg.wave_correct_ = str.toStdString(); });
+	QObject::connect(config_widget_ui->rotate90CheckBox, &QCheckBox::toggled, [this](bool s) {stitcher_cfg.rotate90_ = s; });
 	QObject::connect(config_widget_ui->workScaleLineEdit, &QLineEdit::textEdited, [this](const QString& str) {stitcher_cfg.work_megapix_ = str.toDouble(); });
 	QObject::connect(config_widget_ui->seamScaleLineEdit, &QLineEdit::textEdited, [this](const QString& str) {stitcher_cfg.seam_megapix_ = str.toDouble(); });
 	QObject::connect(config_widget_ui->composeScaleLineEdit, &QLineEdit::textEdited, [this](const QString& str) {stitcher_cfg.compose_megapix_ = str.toDouble(); });
@@ -119,6 +120,7 @@ void MLConfigManager::update_ui()
 	config_widget_ui->blendTypeComboBox->setCurrentIndex(stitcher_cfg.blend_type_);
 	config_widget_ui->blendStrengthLineEdit->setText(QString::number(stitcher_cfg.blend_strength_));
 	config_widget_ui->waveCorrectComboBox->setCurrentText(QString::fromStdString(stitcher_cfg.wave_correct_));
+	config_widget_ui->rotate90CheckBox->setChecked(stitcher_cfg.rotate90_);
 	config_widget_ui->workScaleLineEdit->setText(QString::number(stitcher_cfg.work_megapix_));
 	config_widget_ui->seamScaleLineEdit->setText(QString::number(stitcher_cfg.seam_megapix_));
 	config_widget_ui->composeScaleLineEdit->setText(QString::number(stitcher_cfg.compose_megapix_));

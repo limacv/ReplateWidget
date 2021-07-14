@@ -263,11 +263,18 @@ void Step2Widget::generateMask(std::vector<cv::Mat>& masks, bool isblend)
 
 void Step2Widget::tryRunStitching()
 {
-	MLProgressDialog bar(this);
-	if (!trajp->tryLoadGlobalTrackBoxes()
-		|| !trajp->tryLoadGlobalDetectBoxes()
-		|| !stitchdatap->tryLoadAllFromFiles(&bar))
-		runStitching();
+	try
+	{
+		MLProgressDialog bar(this);
+		if (!trajp->tryLoadGlobalTrackBoxes()
+			|| !trajp->tryLoadGlobalDetectBoxes()
+			|| !stitchdatap->tryLoadAllFromFiles(&bar))
+			runStitching();
+	}
+	catch (MLUtil::UserCancelException& e)
+	{
+		qWarning(e.what());
+	}
 }
 
 void Step2Widget::runStitching()

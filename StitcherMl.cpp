@@ -116,14 +116,27 @@ int StitcherMl::stitch(const std::vector<cv::Mat>& frames, const std::vector<cv:
 
     if (config()->wave_correct_ != "no")
     {
-
-        auto wave_correct_type_ = WAVE_CORRECT_VERT;
         vector<Mat> rmats;
         for (size_t i = 0; i < cameras_.size(); ++i)
             rmats.push_back(cameras_[i].R);
         waveCorrect(rmats, config()->get_wave_correct_type());
+
+        cv::Mat_<float> rot90(3, 3);
+        if (config_->rotate90_)
+        {
+            rot90 << 0, -1, 0, 
+                1, 0, 0, 
+                0, 0, 1;
+        }
+        else
+        {
+            rot90 << 1, 0, 0,
+                0, 1, 0,
+                0, 0, 1;
+        }
+
         for (size_t i = 0; i < cameras_.size(); ++i)
-            cameras_[i].R = rmats[i];
+            cameras_[i].R = rot90 * rmats[i];
     }
 
     qInfo() << "Finish analying camera parameters: " << (double)timer.elapsed() / 1000 << " s";
@@ -255,9 +268,12 @@ void StitcherMl::pairwiseMatch(const vector<ImageFeatures>& features,
     qDebug() << "Pairwise matchings..."; 
 
     // _pairwiseMatch1(features, pairwise_matches);
-    Ptr<FeaturesMatcher> matcher = makePtr<BestOf2NearestMatcher>(true, config()->match_conf_);
-    //else
-        //matcher = makePtr<BestOf2NearestRangeMatcher>(config()->match_range_width, true, config()->match_conf_);
+    Ptr<FeaturesMatcher> matcher;
+    if (config()->match_range_width <= 0)
+        matcher = makePtr<BestOf2NearestMatcher>(true, config()->match_conf_);
+    else
+        matcher = makePtr<BestOf2NearestRangeMatcher>(config()->match_range_width, false, config()->match_conf_);
+
     (*matcher)(features, pairwise_matches);
     matcher->collectGarbage();
      

@@ -35,7 +35,7 @@ public:
     virtual void preRender(QPainter& painter, int frame_id, int duration) {};
     virtual void render(QPainter &painter, int frame_id, int duration, bool video = false) const = 0;
 
-    QRectF renderLocation(int frame_id) const;
+    QRect renderLocation(int frame_id) const;
     QImage plateQImg(int frame_id) const;
 
     void readBasic(const YAML::Node &node);

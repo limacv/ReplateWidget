@@ -44,8 +44,9 @@ public:
     QImage getIconImage();
     cv::Mat getPlateMask(int frame_id = -1) const;
 
-    void forceUpdateImages();
+    void updateImage(int idx);
     void updateimages();
+    void forceUpdateImages();
 
     // common accessor
     int startFrame() const {return frame_id_start_;}
@@ -67,7 +68,6 @@ public:
 
 private:
     int worldid2thisid(int frameidx) const { return is_singleframe ? 0 : frameidx; }
-    void updateImage(int idx);
     void paintTrace(QPainter& painter, int frame_id) const;
 
 public:

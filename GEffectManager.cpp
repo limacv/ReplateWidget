@@ -35,6 +35,7 @@ void GEffectManager::applyTrash(const GPathPtr &path)
 
 void GEffectManager::applyInpaint(const GPathPtr& path)
 {
+    path->updateImage(0);  // touch dirty flag
     const auto& data = MLDataManager::get();
     QRectF rectF = path->getPlateQRect();
     cv::Rect rect = data.toCropROI(rectF);
@@ -64,17 +65,22 @@ void GEffectManager::applyInpaint(const GPathPtr& path)
 
 void GEffectManager::applyStill(const GPathPtr &path)
 {
-//    qDebug() << path->size() << path->painter_path_;
+    path->updateImage(0);  // touch dirty flag
+
     QRectF rectF = path->getPlateQRect(path->startFrame());
-    cv::Mat fg = MLDataManager::get().getRoiofFrame(path->startFrame(), rectF);
+    cv::Mat fg = MLDataManager::get().getRoiofForeground(path->startFrame(), rectF);
 
     cv::Mat fgmask; cv::extractChannel(fg, fgmask, 3);
     cv::Mat mask = path->getPlateMask();
-    mask = fgmask & mask;
 
-    MLUtil::generateFeatherFrommask(mask, FEATHER_MARGIN_PCT, FEATHER_MARGIN_MAX, FEATHER_MARGIN_MIN);
+    cv::Rect fgmaskrect(cv::Point(0, 0), fgmask.size());
+    cv::Rect maskrect(cv::Point(0, 0), mask.size());
+    cv::Rect roi = fgmaskrect & maskrect;
+    fgmask(roi) &= mask(roi);
+
+    MLUtil::generateFeatherFrommask(fgmask, FEATHER_MARGIN_PCT, FEATHER_MARGIN_MAX, FEATHER_MARGIN_MIN);
     cv::cvtColor(fg, fg, cv::COLOR_BGRA2BGR);
-    cv::merge(std::vector<cv::Mat>({ fg, mask }), fg);
+    cv::merge(std::vector<cv::Mat>({ fg, fgmask }), fg);
 
     path->getPlateCV() = fg.clone();
     path->getPlateQImg() = GUtil::mat2qimage(fg, QImage::Format_ARGB32_Premultiplied).copy();
@@ -87,9 +93,14 @@ void GEffectManager::applyBlack(const GPathPtr &path)
 
 void GEffectManager::applyLoop(const GPathPtr& path)
 {
+    // TODO: move the path->roi_fg_mat and qmat to Geffect instead of GPath
     const auto& global_data = MLDataManager::get();
     if (path->space() != 1)
         qWarning("GEffectManager::applyLoop: the path is not single-frame path");
+
+    // means best start/end frame already calculated (read from file)
+    if (path->endFrame() > path->startFrame())
+        return;
 
     // find the best start/end frame
     QRectF rectf = path->getPlateQRect();
@@ -100,7 +111,11 @@ void GEffectManager::applyLoop(const GPathPtr& path)
         cv::Mat fg = global_data.getRoiofForeground(i, rectf);
         cv::Mat fgmask;
         cv::extractChannel(fg, fgmask, 3);
-        fgmask &= mask;
+
+        cv::Rect fgmaskrect(cv::Point(0, 0), fgmask.size());
+        cv::Rect maskrect(cv::Point(0, 0), mask.size());
+        cv::Rect roi = fgmaskrect & maskrect;
+        fgmask(roi) &= mask(roi);
         double pct = cv::mean(fgmask)[0] / 255;
 
         if (start < 0 && pct > 0.5)
@@ -344,7 +359,7 @@ void operator >> (const YAML::Node &node, GPathPtr &path)
     path->setStartFrame( node["Start_id"].as<int>() );
     path->setEndFrame(node["End_id"].as<int>());
 
-    if (node["World_offset"]) path->is_singleframe = node["World_offset"].as<int>() != 0;
+    if (node["World_offset"]) path->is_singleframe = (path->startFrame() == path->endFrame());  // backward compatiablity
     if (node["Is_singleframe"]) path->is_singleframe = node["Is_singleframe"].as<bool>();
     
     node["Roi_Rects"] >> path->roi_rect_;

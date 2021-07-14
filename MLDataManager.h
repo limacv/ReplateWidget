@@ -44,6 +44,7 @@ public:
 	// convert rect from normalized coordinate to world coordinate
 	cv::Rect toWorldROI(const QRectF& rect_norm) const;
 	cv::Rect toCropROI(const QRectF& rect_norm) const;
+	QRectF toNormROI(const cv::Rect& rect_crop) const;
 
 	// get images
 	cv::Mat4b getRoiofFrame(int frameidx, const QRectF& rectF) const;  // foreground overlayed with background

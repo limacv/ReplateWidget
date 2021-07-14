@@ -72,6 +72,7 @@ public:
 	static QVector<QString> classid2name;
 	static QHash<QString, int> name2classid;
 	static QHash<ObjID, QColor> colormap;
+	static QString classidfilter;
 
 	QVector<BBox*> detect_boxes_list;
 	QVector<QVector<BBox*>> frameidx2detectboxes;
