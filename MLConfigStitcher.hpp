@@ -68,6 +68,7 @@ public:
     int match_range_width;
     float match_conf_thresh_;
     string wave_correct_;
+    bool rotate90_;
     string warp_type_;
     SeamType seam_type_;
     int blend_type_;
@@ -105,14 +106,15 @@ inline
 void MLConfigStitcher::restore_default()
 {
     stitcher_type_ = "Ml";
-    stitch_skip_frame_ = 7;
+    stitch_skip_frame_ = 5;
     features_type_ = "surf";
     features_thres_ = 200;
     filter_logo_mode_ = 0;
     warp_type_ = "spherical";
+    rotate90_ = false;
     match_conf_thresh_ = 1;
     match_conf_ = 0.6f;
-    match_range_width = 5;
+    match_range_width = 15;
     seam_type_ = SeamType::NO;
     blend_type_ = 3;
     blend_strength_ = 1;
@@ -150,6 +152,7 @@ void MLConfigStitcher::write(YAML::Emitter& out) const
     out << YAML::Key << "SkipFrame" << stitch_skip_frame_;
     out << YAML::Key << "StitcherType" << stitcher_type_;
     out << YAML::Key << "WaveCorrect" << wave_correct_;
+    out << YAML::Key << "Rotate90" << rotate90_;
     out << YAML::Key << "WarpType" << warp_type_;
     out << YAML::Key << "SeamType" << seam_type_;
     out << YAML::Key << "BlendType" << blend_type_;
@@ -188,6 +191,7 @@ void MLConfigStitcher::read(const YAML::Node& doc)
         if (node["SkipFrame"]) stitch_skip_frame_ = node["SkipFrame"].as<int>();
         if (node["StitcherType"]) stitcher_type_ = node["StitcherType"].as<string>();
         if (node["WaveCorrect"]) wave_correct_ = node["WaveCorrect"].as<string>();
+        if (node["Rotate90"]) rotate90_ = node["Rotate90"].as<bool>();
         if (node["WarpType"]) warp_type_ = node["WarpType"].as<string>();
         if (node["SeamType"]) seam_type_ = (SeamType)node["SeamType"].as<int>();
         if (node["BlendType"]) blend_type_ = node["BlendType"].as<int>();

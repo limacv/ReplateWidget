@@ -12,7 +12,7 @@ int callDetectPy()
 	const auto& globaldata = MLDataManager::get();
 	const auto& detectrackcfg = pathcfg.detectrack_cfg;
 	
-	QString cmd = QString("%1 %2/detect.pyw --weights %3 --source %4 --save_path %5 --img-size %6 --conf-thres %7 --iou-thres %8 --device %9 %10").arg(
+	QString cmd = QString("%1 %2/detect.pyw --weights %3 --source %4 --save_path %5 --img-size %6 --conf-thres %7 --iou-thres %8 --device %9 --classes %10 %11").arg(
 		pathcfg.get_python_path(),
 		pathcfg.get_yolov5_path(),
 		pathcfg.get_yolov5_weight(),
@@ -22,6 +22,7 @@ int callDetectPy()
 		QString::number(detectrackcfg.detect_conf_threshold),
 		QString::number(detectrackcfg.detect_iou_threshold),
 		detectrackcfg.detect_device,
+		MLCacheTrajectories::classidfilter,
 		detectrackcfg.detect_save_visualization ? "" : "--nosave"
 	);
 	qDebug("Step1Widget::executing command: %s", cmd.toLocal8Bit().constData());

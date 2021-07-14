@@ -6,7 +6,7 @@ GPath::GPath(bool backward)
     :is_backward_(backward)
     ,frame_id_start_(-1)
     ,frame_id_end_(-1)
-    ,is_singleframe(true)
+    ,is_singleframe(false)
 {}
 
 GPath::GPath(int startframe, const QRectF & rect0, const QPainterPath & painterpath, bool backward)
@@ -73,18 +73,26 @@ void GPath::moveRectCenter(int frame_id, QPointF center, bool trycopyfromneighbo
 
 void GPath::updateImage(int idx)
 {
+    if (!dirty_[idx]) return;
+
     const auto& data = MLDataManager::get();
     
     if (is_singleframe) idx = 0;
 
+    // int-lize the rect
+    cv::Rect rect = data.toCropROI(roi_rect_[idx]);
+    roi_rect_[idx] = data.toNormROI(rect);
+    
     roi_fg_mat_[idx] = data.getMattedRoi(idx, roi_rect_[idx]);
 
     roi_fg_qimg_[idx] = GUtil::mat2qimage(
         roi_fg_mat_[idx], QImage::Format_ARGB32_Premultiplied);
+    dirty_[idx] = false;
 }
 
 void GPath::forceUpdateImages()
 {
+    if (is_singleframe) return;
     for (int i = 0; i < space(); ++i)
         dirty_[i] = true;
     updateimages();
@@ -94,11 +102,8 @@ void GPath::updateimages()
 {
     for (int i = 0; i < space(); ++i)
     {
-        if (dirty_[i])
-        {
-            updateImage(i);
-            dirty_[i] = false;
-        }
+        updateImage(i);
+        dirty_[i] = false;
     }
 }
 

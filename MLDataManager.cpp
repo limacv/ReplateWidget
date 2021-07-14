@@ -354,6 +354,16 @@ cv::Rect MLDataManager::toCropROI(const QRectF& rect_norm) const
 		rect_norm.height() * VideoHeight());
 }
 
+QRectF MLDataManager::toNormROI(const cv::Rect& rect_crop) const
+{
+	float top_norm = (float)rect_crop.y / VideoHeight(),
+		left_norm = (float)rect_crop.x / VideoWidth(),
+		wid_norm = (float)rect_crop.width / VideoWidth(),
+		hei_norm = (float)rect_crop.height / VideoHeight();
+
+	return QRectF(left_norm, top_norm, wid_norm, hei_norm);
+}
+
 void MLDataManager::paintManualMask(QPainter& painter) const
 {
 	auto viewport = painter.viewport();

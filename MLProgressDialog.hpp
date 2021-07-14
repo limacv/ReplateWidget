@@ -9,10 +9,10 @@ class MLProgressDialog :
 {
 public:
     MLProgressDialog(QWidget* parent = Q_NULLPTR)
-        :dialog("Processing", "Cancel", 0, 100, parent)
+        :dialog()
     {
         dialog.setWindowModality(Qt::WindowModal);
-        dialog.setAutoClose(false);
+        dialog.setAutoClose(true);
     }
     virtual ~MLProgressDialog() { }
 

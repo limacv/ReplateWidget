@@ -66,9 +66,13 @@ void GEffect::adjustAsync(int offset, int duration)
     qDebug() << "Adjust Offset" << offset << async_offset_;
 }
 
-QRectF GEffect::renderLocation(int frame_id) const
+QRect GEffect::renderLocation(int frame_id) const
 {
-    return scaleMat().mapRect(path()->getPlateQRect(frame_id));
+    QRectF rectnorm = path()->getPlateQRect(frame_id);
+    return QRect(rectnorm.x() * scale_mat_.m11(),
+        rectnorm.y() * scale_mat_.m22(),
+        rectnorm.width() * scale_mat_.m11(),
+        rectnorm.height() * scale_mat_.m22());
 }
 
 QImage GEffect::plateQImg(int frame_id) const
@@ -649,7 +653,12 @@ GEffectLoop::GEffectLoop(const GPathPtr& path)
         cv::Mat fg = global_data.getRoiofForeground(i, path->getPlateQRect());
         cv::Mat fgmask;
         cv::extractChannel(fg, fgmask, 3);
-        fgmask &= mask;
+
+        cv::Rect fgmaskrect(cv::Point(0, 0), fgmask.size());
+        cv::Rect maskrect(cv::Point(0, 0), mask.size());
+        cv::Rect roi = fgmaskrect & maskrect;
+        fgmask(roi) &= mask(roi);
+
         MLUtil::generateFeatherFrommask(fgmask, FEATHER_MARGIN_PCT, FEATHER_MARGIN_MAX, FEATHER_MARGIN_MIN);
         cv::cvtColor(fg, fg, cv::COLOR_RGBA2RGB);
         cv::merge(std::vector<cv::Mat>({ fg, fgmask }), fg);
