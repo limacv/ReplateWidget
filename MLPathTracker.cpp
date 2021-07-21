@@ -118,7 +118,8 @@ std::list<BBox*> autoTrackPath(int start_frame, const QRectF& start_rectF)
         for (int frameidx = tracked.front()->frameidx - 1; frameidx >= 0; --frameidx)
         {
             const auto& pbox0 = tracked.front();
-            BBox* pbox1 = findDetectBox(frameidx, pbox0->rect_global, pbox0->classid);
+            auto rect_global0 = GUtil::addMarginToRect(pbox0->rect_global, RECT_MARGIN, RECT_MARGIN_MAX, RECT_MARGIN_MIN);
+            BBox* pbox1 = findDetectBox(frameidx, rect_global0, pbox0->classid);
             if (pbox1) tracked.push_front(pbox1);
             else break;
         }
@@ -126,7 +127,8 @@ std::list<BBox*> autoTrackPath(int start_frame, const QRectF& start_rectF)
         for (int frameidx = tracked.back()->frameidx + 1; frameidx < global_data.get_framecount(); ++frameidx)
         {
             const auto& pbox0 = tracked.back();
-            BBox* pbox1 = findDetectBox(frameidx, pbox0->rect_global, pbox0->classid);
+            auto rect_global0 = GUtil::addMarginToRect(pbox0->rect_global, RECT_MARGIN, RECT_MARGIN_MAX, RECT_MARGIN_MIN);
+            BBox* pbox1 = findDetectBox(frameidx, rect_global0, pbox0->classid);
             if (pbox1) tracked.push_back(pbox1);
             else break;
         }
