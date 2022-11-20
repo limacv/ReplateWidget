@@ -71,7 +71,7 @@ void GMainDisplay::mousePressEvent(QMouseEvent *event)
     }
     else if (is_modify_ && event->button() == Qt::RightButton)
     {
-        auto& flag = step3widget->cur_tracked_path->manual_adjust_[step3widget->cur_frameidx];
+        auto flag = step3widget->cur_tracked_path->manual_adjust_[step3widget->cur_frameidx];
         flag = !flag;
     }
     else if (step3widget->is_auto_selection())

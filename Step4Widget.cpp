@@ -358,7 +358,6 @@ void Step4Widget::updateUIfromcfg()
 
 void Step4Widget::transformQPainter(QPainter& paint) const
 {
-	auto& viewport = paint.viewport();
 	paint.translate(cfg->translation.x, cfg->translation.y);
 	paint.scale(cfg->scaling[0], cfg->scaling[1]);
 	paint.translate(cfg->size.width / 2, cfg->size.height / 2);

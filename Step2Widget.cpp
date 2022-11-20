@@ -341,7 +341,7 @@ void Step2Widget::runStitching()
 			st->warp_points(frameidx, points);
 
 			int i = 0;
-			for (auto& it = boxes.begin(); it != boxes.end(); ++it, i+=2)
+			for (auto it = boxes.begin(); it != boxes.end(); ++it, i+=2)
 				it.value()->rect_global = cv::Rect(points[i], points[i + 1]);
 		}
 		{ // warp detection boxes

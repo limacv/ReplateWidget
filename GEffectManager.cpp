@@ -139,7 +139,7 @@ void GEffectManager::refreshAllPathImage()
     {
         for (auto iit = it->second.begin(); iit != it->second.end(); ++iit)
         {
-            auto& path = (*iit)->path();
+            auto path = (*iit)->path();
             path->forceUpdateImages();
         }
     }

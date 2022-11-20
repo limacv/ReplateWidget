@@ -52,7 +52,7 @@ protected:
 signals:
     void frameChanged(int iFrame);
     void intervalAdded(GInterval* interval);
-    void onPressEffect(GEffectPtr &efx);
+    void onPressEffect(GEffectPtr efx);
 
 public slots:
 //    void setCurFrame(int iFrame);

@@ -160,7 +160,7 @@ bool MLCacheTrajectories::tryLoadGlobalTrackBoxes_deprecated()
 		if (frameidx < 0 || frameidx >= framecount)
 			continue;
 		auto& boxes = frameidx2trackboxes[frameidx];
-		auto& it = boxes.find(ObjID(classid, instanceid));
+		auto it = boxes.find(ObjID(classid, instanceid));
 		if (it == boxes.end())
 			return false;
 		it.value()->rect_global = cv::Rect(x, y, wid, hei);
