@@ -339,11 +339,11 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="packages.config" />
     <None Include="config.yaml">
       <Filter>Config Files</Filter>
     </None>
     <None Include="ClassDiagram.cd" />
+    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="ReplateWidget.rc">
